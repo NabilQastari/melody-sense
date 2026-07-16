@@ -1,4 +1,4 @@
-import 'package:just_audio/just_audio.dart';
+import 'package:flutter_soloud/flutter_soloud.dart';
 
 /// 9 nada dasar sesuai hardware Smart Piano (prototipe Arduino Mega).
 const List<String> kSupportedNotes = [
@@ -15,49 +15,67 @@ const List<String> kSupportedNotes = [
 
 /// Mengelola playback audio nada untuk Explorer Mode (virtual piano).
 ///
-/// Desain: satu [AudioPlayer] per nada, di-preload sekali lewat
-/// [initialize], supaya saat nada ditekan playback nyaris instan
-/// (`seek(Duration.zero)` + `play()`) — bukan load-dari-nol tiap kali,
-/// yang akan terasa lag untuk kebutuhan ear training real-time.
+/// PINDAH DARI just_audio KE flutter_soloud (evaluasi Sesi 3):
+/// just_audio ternyata tidak cukup responsif untuk ear training —
+/// delay terasa & tidak bisa "spam" tuts yang sama karena satu
+/// AudioPlayer cuma punya satu posisi playback aktif.
+///
+/// flutter_soloud (native, berbasis SoLoud C++ engine) menyelesaikan
+/// dua masalah itu sekaligus:
+/// - Latensi jauh lebih rendah karena engine native, bukan lewat
+///   platform channel per pemanggilan seperti just_audio.
+/// - Tiap panggilan [SoLoud.instance.play] menghasilkan voice
+///   instance baru & independen (polyphony) — nada yang sama bisa
+///   ditumpuk/di-spam tanpa perlu menunggu instance sebelumnya
+///   selesai atau di-reset.
 ///
 /// CATATAN PENTING: path asset di bawah membutuhkan file audio
 /// sungguhan di `assets/audio/notes/{note}.mp3`, didaftarkan di
-/// `pubspec.yaml` (lihat instruksi terpisah). Selama file belum ada,
-/// [playNote] akan diam-diam no-op (tidak crash), supaya UI tetap
-/// bisa dites tanpa aset. Evaluasi latensi (lihat context file)
-/// dilakukan setelah file asli terpasang — kalau masih terasa lag,
-/// pertimbangkan flutter_soloud sebagai pengganti.
+/// `pubspec.yaml`. Selama file belum ada, [playNote] akan diam-diam
+/// no-op (tidak crash).
 class AudioService {
-  final Map<String, AudioPlayer> _players = {};
+  final Map<String, AudioSource> _sources = {};
   bool _isInitialized = false;
 
   bool get isInitialized => _isInitialized;
 
-  /// Preload semua sample nada. Panggil sekali di awal (mis. lewat
-  /// Riverpod provider), bukan tiap kali mau main nada.
+  /// Inisialisasi SoLoud engine & preload semua sample nada. Panggil
+  /// sekali di awal (lewat Riverpod provider), bukan tiap kali mau
+  /// main nada.
   Future<void> initialize() async {
     if (_isInitialized) return;
+
+    try {
+      await SoLoud.instance.init();
+    } catch (_) {
+      // Sudah ter-init sebelumnya, atau native lib gagal dimuat —
+      // tidak boleh sampai crash app.
+    }
+
     for (final note in kSupportedNotes) {
-      final player = AudioPlayer();
       try {
-        await player.setAsset('assets/audio/notes/$note.mp3');
+        final source =
+            await SoLoud.instance.loadAsset('assets/audio/notes/$note.mp3');
+        _sources[note] = source;
       } catch (_) {
         // Asset belum ada — aman diabaikan saat masih tahap UI-only.
         // playNote() akan no-op untuk nada ini sampai asetnya tersedia.
       }
-      _players[note] = player;
     }
     _isInitialized = true;
   }
 
-  /// Mainkan satu nada dari awal. No-op kalau nada tidak dikenali
-  /// atau asetnya belum ter-load.
+  /// Mainkan satu nada. No-op kalau nada tidak dikenali atau asetnya
+  /// belum ter-load.
+  ///
+  /// Bisa dipanggil berkali-kali beruntun untuk nada yang sama
+  /// (spam tuts) — tiap panggilan jadi voice instance baru yang
+  /// independen, tidak saling menunggu/reset.
   Future<void> playNote(String note) async {
-    final player = _players[note];
-    if (player == null) return;
+    final source = _sources[note];
+    if (source == null) return;
     try {
-      await player.seek(Duration.zero);
-      await player.play();
+      await SoLoud.instance.play(source);
     } catch (_) {
       // Abaikan error playback — audio gagal main tidak boleh sampai
       // meng-crash UI.
@@ -80,12 +98,17 @@ class AudioService {
   }
 
   /// Panggil saat AudioService tidak dipakai lagi (mis. lewat
-  /// `ref.onDispose` di provider) untuk melepas semua resource player.
+  /// `ref.onDispose` di provider) untuk melepas semua resource.
   Future<void> dispose() async {
-    for (final player in _players.values) {
-      await player.dispose();
+    for (final source in _sources.values) {
+      try {
+        await SoLoud.instance.disposeSource(source);
+      } catch (_) {
+        // Sudah disposed atau error lain — aman diabaikan saat cleanup.
+      }
     }
-    _players.clear();
+    _sources.clear();
+    SoLoud.instance.deinit();
     _isInitialized = false;
   }
 }

@@ -15,13 +15,23 @@ const List<String> kDefaultPianoNotes = [
   'C5',
 ];
 
+/// Jarak antar tuts (harus sinkron dengan spacer di _buildKeys).
+const double _kKeyGap = 6.0;
+
 /// Virtual piano reusable — dipakai di Explorer Mode (semua mode latihan).
 ///
 /// Menangani tampilan saja (presentation). Pemanggil bertanggung jawab
 /// memutar audio & mencatat attempt lewat callback [onNotePressed],
 /// sesuai prinsip Clean Architecture (widget ini tidak tahu soal
 /// domain/data layer).
-class VirtualPiano extends StatelessWidget {
+///
+/// Mendukung GLISSANDO: satu sentuhan yang digeser (swipe) lintas
+/// beberapa tuts akan memicu [onNotePressed] untuk tiap tuts yang
+/// dilewati, bukan cuma tuts yang pertama disentuh. Deteksi posisi
+/// jari dihitung manual dari koordinat X terhadap lebar tiap tuts
+/// (bukan pakai gesture detector per-tuts individual), supaya gesture
+/// tunggal bisa "membaca" perpindahan lintas widget.
+class VirtualPiano extends StatefulWidget {
   const VirtualPiano({
     super.key,
     this.notes = kDefaultPianoNotes,
@@ -38,8 +48,10 @@ class VirtualPiano extends StatelessWidget {
   /// atau baru saja ditekan user). Null = tidak ada yang aktif.
   final String? activeNote;
 
-  /// Dipanggil saat user menekan salah satu tuts. Null = piano nonaktif
-  /// (misal saat sequence contoh sedang diputar).
+  /// Dipanggil saat user menyentuh/menggeser jari ke atas salah satu
+  /// tuts. Bisa terpanggil beberapa kali dalam satu sentuhan kalau
+  /// jari digeser lintas tuts (glissando). Null = piano nonaktif
+  /// (misal saat menampilkan status hardware read-only).
   final ValueChanged<String>? onNotePressed;
 
   /// Tampilkan label nama nada di bawah tiap tuts.
@@ -54,27 +66,81 @@ class VirtualPiano extends StatelessWidget {
   bool get _isInteractive => onNotePressed != null;
 
   @override
+  State<VirtualPiano> createState() => _VirtualPianoState();
+}
+
+class _VirtualPianoState extends State<VirtualPiano> {
+  /// Index tuts terakhir yang sudah dipicu dalam gesture yang sedang
+  /// berjalan. Dipakai supaya jari yang diam di satu tuts tidak
+  /// memicu onNotePressed berulang-ulang tiap frame — hanya berpindah
+  /// tuts yang memicu panggilan baru.
+  int? _lastTriggeredIndex;
+
+  void _handleTouch(Offset localPosition, double totalWidth) {
+    if (!widget._isInteractive) return;
+
+    final count = widget.notes.length;
+    if (count == 0 || totalWidth <= 0) return;
+
+    final keyWidth = (totalWidth - _kKeyGap * (count - 1)) / count;
+    if (keyWidth <= 0) return;
+
+    final stride = keyWidth + _kKeyGap;
+    final dx = localPosition.dx.clamp(0.0, totalWidth);
+    final index = (dx / stride).floor().clamp(0, count - 1);
+
+    if (index != _lastTriggeredIndex) {
+      _lastTriggeredIndex = index;
+      widget.onNotePressed!(widget.notes[index]);
+    }
+  }
+
+  void _resetGesture() {
+    _lastTriggeredIndex = null;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final row = Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (final note in notes) ...[
-          Expanded(
-            child: _PianoKey(
-              note: note,
-              isActive: note == activeNote,
-              showLabel: showLabels,
-              interactive: _isInteractive,
-              onTap: _isInteractive ? () => onNotePressed!(note) : null,
-            ),
-          ),
-          if (note != notes.last) const SizedBox(width: 6),
-        ],
-      ],
+    final content = LayoutBuilder(
+      builder: (context, constraints) {
+        final keys = Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final note in widget.notes) ...[
+              Expanded(
+                child: _PianoKey(
+                  note: note,
+                  isActive: note == widget.activeNote,
+                  showLabel: widget.showLabels,
+                ),
+              ),
+              if (note != widget.notes.last) const SizedBox(width: _kKeyGap),
+            ],
+          ],
+        );
+
+        if (!widget._isInteractive) return keys;
+
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          // onPanDown fires langsung saat pertama disentuh (bukan
+          // menunggu gerakan/pelepasan) — jadi tuts pertama tetap
+          // responsif instan seperti tap biasa.
+          onPanDown: (details) =>
+              _handleTouch(details.localPosition, constraints.maxWidth),
+          // onPanUpdate menangani jari yang bergeser lintas tuts —
+          // inilah yang mewujudkan glissando.
+          onPanUpdate: (details) =>
+              _handleTouch(details.localPosition, constraints.maxWidth),
+          onPanEnd: (_) => _resetGesture(),
+          onPanCancel: _resetGesture,
+          child: keys,
+        );
+      },
     );
 
-    if (height == null) return row;
-    return SizedBox(height: height, child: row);
+    if (widget.height == null) return content;
+    return SizedBox(height: widget.height, child: content);
   }
 }
 
@@ -83,53 +149,46 @@ class _PianoKey extends StatelessWidget {
     required this.note,
     required this.isActive,
     required this.showLabel,
-    required this.interactive,
-    this.onTap,
   });
 
   final String note;
   final bool isActive;
   final bool showLabel;
-  final bool interactive;
-  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
+    // Catatan: tidak lagi pakai Material/InkWell di sini — deteksi
+    // sentuhan sekarang ditangani satu GestureDetector di level
+    // VirtualPiano (lihat _VirtualPianoState), supaya swipe lintas
+    // tuts bisa terdeteksi. Widget ini murni visual.
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 120),
+      curve: Curves.easeOut,
+      decoration: BoxDecoration(
+        color: isActive ? AppColors.accent : AppColors.surfaceWhite,
         borderRadius: BorderRadius.circular(16),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          curve: Curves.easeOut,
-          decoration: BoxDecoration(
-            color: isActive ? AppColors.accent : AppColors.surfaceWhite,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primaryDark.withValues(alpha: 0.08),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryDark.withValues(alpha: 0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
-          alignment: Alignment.bottomCenter,
-          padding: const EdgeInsets.only(bottom: 12),
-          child: showLabel
-              ? Text(
-                  note,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isActive
-                        ? AppColors.surfaceWhite
-                        : AppColors.primaryDarkFaded,
-                  ),
-                )
-              : null,
-        ),
+        ],
       ),
+      alignment: Alignment.bottomCenter,
+      padding: const EdgeInsets.only(bottom: 12),
+      child: showLabel
+          ? Text(
+              note,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isActive
+                    ? AppColors.surfaceWhite
+                    : AppColors.primaryDarkFaded,
+              ),
+            )
+          : null,
     );
   }
 }

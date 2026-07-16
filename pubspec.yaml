@@ -33,9 +33,10 @@ dependencies:
   sqlite3_flutter_libs: ^0.5.24
   path_provider: ^2.1.4
   path: ^1.9.0
-  just_audio: ^0.9.40           # audio playback
+  flutter_soloud: ^3.4.6
   shared_preferences: ^2.3.2    # settings ringan
   go_router: ^14.2.7            # navigasi antar layar/mode
+  audio_session: ^0.1.21
 
 dev_dependencies:
   flutter_test:
@@ -48,7 +49,8 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
-
+  assets:
+  - assets/audio/notes/
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.

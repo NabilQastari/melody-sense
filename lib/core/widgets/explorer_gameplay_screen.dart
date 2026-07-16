@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/virtual_piano.dart';
@@ -61,10 +63,30 @@ class ExplorerGameplayScreen extends StatefulWidget {
 
 class _ExplorerGameplayScreenState extends State<ExplorerGameplayScreen> {
   String? _activeNote;
+  Timer? _clearHighlightTimer;
+
+  /// Durasi highlight tuts sebelum otomatis hilang. Meniru tuts piano
+  /// fisik yang kembali ke posisi normal setelah bunyi/sentuhan
+  /// selesai — bukan menetap sampai tuts lain ditekan.
+  static const _highlightDuration = Duration(milliseconds: 100);
 
   void _handleNotePressed(String note) {
     setState(() => _activeNote = note);
     widget.onNotePressed?.call(note);
+
+    // Reset timer tiap kali ada tekanan baru, supaya kalau user
+    // menekan cepat berturut-turut, highlight tidak berkedip putus-
+    // nyambung sebelum waktunya.
+    _clearHighlightTimer?.cancel();
+    _clearHighlightTimer = Timer(_highlightDuration, () {
+      if (mounted) setState(() => _activeNote = null);
+    });
+  }
+
+  @override
+  void dispose() {
+    _clearHighlightTimer?.cancel();
+    super.dispose();
   }
 
   @override
