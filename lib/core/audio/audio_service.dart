@@ -64,6 +64,7 @@ class AudioService {
 
     try {
       await SoLoud.instance.init();
+      SoLoud.instance.setGlobalVolume(1.8);
     } catch (_) {
       // Sudah ter-init sebelumnya, atau native lib gagal dimuat —
       // tidak boleh sampai crash app.
@@ -93,7 +94,7 @@ class AudioService {
     final source = _sources[note];
     if (source == null) return;
     try {
-      await SoLoud.instance.play(source);
+      await SoLoud.instance.play(source, volume: 1.8);
     } catch (_) {
       // Abaikan error playback — audio gagal main tidak boleh sampai
       // meng-crash UI.

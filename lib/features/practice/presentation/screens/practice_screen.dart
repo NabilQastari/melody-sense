@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../stats/presentation/providers/stats_providers.dart';
 import '../../../free_play/presentation/screens/free_play_screen.dart';
 import '../../../interval_training/presentation/screens/interval_training_screen.dart';
 import '../../../melody_echo/presentation/screens/melody_echo_screen.dart';
@@ -13,18 +15,15 @@ import '../widgets/challenge_card.dart';
 ///
 /// Manages the navigation between the initial "Choose Your Path" screen
 /// and the sub-challenge list "Pick a Challenge" internally using state.
-class PracticeScreen extends StatefulWidget {
+class PracticeScreen extends ConsumerStatefulWidget {
   const PracticeScreen({super.key});
 
   @override
-  State<PracticeScreen> createState() => _PracticeScreenState();
+  ConsumerState<PracticeScreen> createState() => _PracticeScreenState();
 }
 
-class _PracticeScreenState extends State<PracticeScreen> {
+class _PracticeScreenState extends ConsumerState<PracticeScreen> {
   bool _showChallenges = false;
-
-  // Mock streak days
-  static const int _mockStreakDays = 5;
 
   List<ChallengeInfo> _buildChallenges() {
     return [
@@ -283,7 +282,10 @@ class _PracticeScreenState extends State<PracticeScreen> {
           const SizedBox(height: 12),
         ],
         const SizedBox(height: 8),
-        const _StreakBanner(days: _mockStreakDays),
+        ref.watch(streakProvider).maybeWhen(
+              data: (days) => _StreakBanner(days: days),
+              orElse: () => const _StreakBanner(days: 0),
+            ),
       ],
     );
   }

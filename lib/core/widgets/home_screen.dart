@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/app_bottom_nav.dart';
 import 'package:melody_sense/features/practice/presentation/screens/practice_screen.dart';
+import 'package:melody_sense/features/progression/presentation/screens/progression_screen.dart';
 import 'package:melody_sense/features/stats/presentation/screens/stats_screen.dart';
 
 /// Shell utama app — menampung semua tab di satu tempat lewat
@@ -41,7 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: const [
                   _DashboardContent(),   // 0
                   PracticeScreen(),      // 1
-                  _ProgressionContent(), // 2
+                  ProgressionScreen(),   // 2
                   StatsScreen(),         // 3
                 ],
               ),
@@ -98,36 +99,3 @@ class _DashboardContent extends StatelessWidget {
   }
 }
 
-class _ProgressionContent extends StatelessWidget {
-  const _ProgressionContent();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.swap_horiz_rounded,
-              size: 56, color: AppColors.primaryDark.withValues(alpha: 0.2)),
-          const SizedBox(height: 16),
-          const Text(
-            'Progression',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: AppColors.primaryDark,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Coming soon — Sesi 8',
-            style: TextStyle(
-              fontSize: 13,
-              color: AppColors.primaryDark.withValues(alpha: 0.5),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
