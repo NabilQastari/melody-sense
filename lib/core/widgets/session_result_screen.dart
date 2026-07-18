@@ -18,8 +18,7 @@ class SessionResultScreen extends StatelessWidget {
     required this.xpEarned,
     this.streakDays = 0,
     this.leveledUp = false,
-    this.onContinue,
-    this.onRetry,
+    this.retryScreenBuilder,
   });
 
   /// Menang = sesi selesai dengan hearts tersisa. Kalah = hearts habis.
@@ -29,16 +28,18 @@ class SessionResultScreen extends StatelessWidget {
   final double accuracy;
   final int xpEarned;
 
-  /// TODO(progression): masih placeholder — sistem streak harian
-  /// belum dibangun (rencana Sesi 6-9). Isi 0 sampai tersedia.
   final int streakDays;
-
-  /// TODO(progression): masih placeholder — sistem level/XP-threshold
-  /// belum dibangun. False sampai tersedia.
   final bool leveledUp;
 
-  final VoidCallback? onContinue;
-  final VoidCallback? onRetry;
+  /// Builder untuk layar yang dibuka saat user tap Retry. Null = tombol
+  /// Retry tidak muncul. Continue selalu pop() kembali ke layar
+  /// sebelumnya (PracticeScreen).
+  ///
+  /// Navigasi ditangani di sini (bukan lewat VoidCallback dari caller)
+  /// supaya pakai BuildContext SessionResultScreen sendiri yang valid —
+  /// caller (NoteRecognitionScreen, dst.) sudah di-pushReplacement jadi
+  /// context-nya mati.
+  final WidgetBuilder? retryScreenBuilder;
 
   String get _headline {
     if (!isWin) return 'Keep Practicing!';
@@ -141,11 +142,21 @@ class SessionResultScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              _PrimaryButton(label: 'Continue', onTap: onContinue),
+              _PrimaryButton(
+                label: 'Continue',
+                onTap: () => Navigator.of(context).pop(),
+              ),
               const SizedBox(height: 10),
-              _SecondaryButton(label: 'Retry', onTap: onRetry),
-              const SizedBox(height: 12),
-              const _StaticBottomNav(),
+              if (retryScreenBuilder != null)
+                _SecondaryButton(
+                  label: 'Retry',
+                  onTap: () {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: retryScreenBuilder!),
+                    );
+                  },
+                ),
+              if (retryScreenBuilder != null) const SizedBox(height: 12),
               const SizedBox(height: 8),
             ],
           ),
@@ -331,45 +342,4 @@ class _SecondaryButton extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Bottom nav dekoratif, meniru desain 06/07. BELUM fungsional —
-/// navigasi antar tab utama app (Dashboard/Practice/Progression/Stats)
-/// belum dibangun karena go_router belum dipasang penuh. Tab
-/// "Practice" ditandai aktif karena layar ini muncul setelah sesi
-/// latihan.
-class _StaticBottomNav extends StatelessWidget {
-  const _StaticBottomNav();
-
-  @override
-  Widget build(BuildContext context) {
-    Widget item(IconData icon, String label, {bool active = false}) {
-      final color = active ? AppColors.primaryDark : Colors.grey.shade400;
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 20, color: color),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-              color: color,
-            ),
-          ),
-        ],
-      );
-    }
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-        item(Icons.grid_view_rounded, 'Dashboard'),
-        item(Icons.music_note_rounded, 'Practice', active: true),
-        item(Icons.trending_up_rounded, 'Progression'),
-        item(Icons.bar_chart_rounded, 'Stats'),
-      ],
-    );
-  }
-}
+}

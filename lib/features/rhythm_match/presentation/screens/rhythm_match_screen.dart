@@ -4,34 +4,36 @@ import 'package:melody_sense/core/providers/audio_providers.dart';
 import 'package:melody_sense/core/widgets/explorer_gameplay_screen.dart';
 import 'package:melody_sense/core/widgets/session_result_screen.dart';
 
-import '../controllers/note_recognition_controller.dart';
+import '../controllers/rhythm_match_controller.dart';
 
-/// Note Recognition — Explorer Mode.
+/// Rhythm Match — Explorer Mode.
 ///
-/// Sesi 4: wrapper ini disambungkan penuh ke [NoteRecognitionController]
-/// — target nada, xp, hearts, dan progress semuanya berasal dari domain
-/// logic + database lewat PracticeRepository.
+/// Wrapper screen yang menyambungkan [RhythmMatchController] ke
+/// [ExplorerGameplayScreen] shell. Pola sama persis dengan
+/// NoteRecognitionScreen & IntervalTrainingScreen:
 ///
-/// Sesi 5: [SessionResultScreen] sekarang diisi streakDays & leveledUp
-/// dari [NoteRecognitionController.completeSession] (lewat
-/// `state.completion`), bukan placeholder 0/false lagi. Karena
-/// completeSession() berjalan async setelah sesi ditandai selesai,
-/// layar menunggu `state.completion` terisi dulu sebelum berpindah,
-/// supaya data yang ditampilkan sudah final.
-class NoteRecognitionScreen extends ConsumerWidget {
-  const NoteRecognitionScreen({super.key});
+/// 1. Gate ganda: state != null DAN audioReady bukan loading.
+/// 2. Menunggu `state.completion` terisi sebelum push ke
+///    SessionResultScreen (supaya streakDays/leveledUp sudah final).
+/// 3. Retry = pushReplacement ke instance baru (autoDispose bikin
+///    controller & sesi baru otomatis).
+///
+/// Perbedaan utama dari mode lain: controller punya Timer internal
+/// untuk timeout per ronde — tapi itu urusan controller, screen ini
+/// tidak perlu tahu soal itu (clean separation).
+class RhythmMatchScreen extends ConsumerWidget {
+  const RhythmMatchScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final audioReady = ref.watch(audioReadyProvider);
-    final state = ref.watch(noteRecognitionControllerProvider);
-    final controller = ref.read(noteRecognitionControllerProvider.notifier);
+    final state = ref.watch(rhythmMatchControllerProvider);
+    final controller = ref.read(rhythmMatchControllerProvider.notifier);
 
     if (state == null || audioReady.isLoading) {
       // Dua hal yang mesti kelar dulu sebelum piano boleh disentuh:
       // sesi sudah dibuat di database (state != null) DAN semua
-      // sample nada sudah ter-load (audioReady). Belum ada desain
-      // loading khusus, jadi sementara pakai spinner polos.
+      // sample nada sudah ter-load (audioReady).
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
@@ -41,7 +43,7 @@ class NoteRecognitionScreen extends ConsumerWidget {
       // Sesi sudah berakhir tapi orkestrasi progression (personal
       // best/level/streak/achievement) masih berjalan di background —
       // tahan dulu di spinner supaya SessionResultScreen tidak sempat
-      // menampilkan streakDays/leveledUp yang belum final.
+      // menampilkan data yang belum final.
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
@@ -49,8 +51,6 @@ class NoteRecognitionScreen extends ConsumerWidget {
 
     if (state.isSessionOver) {
       final completion = state.completion!;
-      // pushReplacement dijadwalkan lewat post-frame callback supaya
-      // tidak memanggil Navigator di tengah proses build.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!context.mounted) return;
         Navigator.of(context).pushReplacement(
@@ -61,7 +61,7 @@ class NoteRecognitionScreen extends ConsumerWidget {
               xpEarned: state.xp,
               streakDays: completion.streakDays,
               leveledUp: completion.leveledUp,
-              retryScreenBuilder: (_) => const NoteRecognitionScreen(),
+              retryScreenBuilder: (_) => const RhythmMatchScreen(),
             ),
           ),
         );
@@ -69,7 +69,7 @@ class NoteRecognitionScreen extends ConsumerWidget {
     }
 
     return ExplorerGameplayScreen(
-      targetLabel: 'Play the note',
+      targetLabel: 'Tap on the beat!',
       targetValue: state.targetNote,
       xp: state.xp,
       livesTotal: state.livesTotal,
@@ -77,7 +77,7 @@ class NoteRecognitionScreen extends ConsumerWidget {
       progress: state.progress,
       onClose: () => Navigator.of(context).maybePop(),
       onAutoPlay: controller.playTarget,
-      onNotePressed: controller.submitAnswer,
+      onNotePressed: controller.submitTap,
     );
   }
 }
