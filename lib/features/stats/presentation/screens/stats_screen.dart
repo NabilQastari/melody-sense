@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:melody_sense/core/domain/entities/practice_entities.dart';
 import 'package:melody_sense/core/domain/entities/progression_entities.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
+import 'package:melody_sense/core/widgets/settings_screen.dart';
 
 import '../providers/stats_providers.dart';
 
@@ -44,8 +45,13 @@ class StatsScreen extends ConsumerWidget {
                 ),
               ),
               const Spacer(),
-              Icon(Icons.settings_outlined,
-                  color: AppColors.primaryDark.withValues(alpha: 0.6)),
+              GestureDetector(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                ),
+                child: Icon(Icons.settings_outlined,
+                    color: AppColors.primaryDark.withValues(alpha: 0.6)),
+              ),
             ],
           ),
         ),

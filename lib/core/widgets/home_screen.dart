@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/app_bottom_nav.dart';
+import 'package:melody_sense/features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'package:melody_sense/features/practice/presentation/screens/practice_screen.dart';
 import 'package:melody_sense/features/progression/presentation/screens/progression_screen.dart';
 import 'package:melody_sense/features/stats/presentation/screens/stats_screen.dart';
@@ -20,7 +21,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 1; // Practice tab
+  int _currentIndex = 0; // Dashboard tab (Sesi 9 default)
 
   static const _tabs = <AppTab>[
     AppTab.dashboard,
@@ -40,7 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: IndexedStack(
                 index: _currentIndex,
                 children: const [
-                  _DashboardContent(),   // 0
+                  DashboardScreen(),     // 0
                   PracticeScreen(),      // 1
                   ProgressionScreen(),   // 2
                   StatsScreen(),         // 3
@@ -61,41 +62,4 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  Placeholder tab contents (Dashboard & Progression)
-// ═══════════════════════════════════════════════════════════════════
-
-class _DashboardContent extends StatelessWidget {
-  const _DashboardContent();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.grid_view_rounded,
-              size: 56, color: AppColors.primaryDark.withValues(alpha: 0.2)),
-          const SizedBox(height: 16),
-          const Text(
-            'Dashboard',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: AppColors.primaryDark,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Coming soon — Sesi 9',
-            style: TextStyle(
-              fontSize: 13,
-              color: AppColors.primaryDark.withValues(alpha: 0.5),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 

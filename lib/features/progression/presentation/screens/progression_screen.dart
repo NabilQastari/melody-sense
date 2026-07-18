@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:melody_sense/core/theme/app_colors.dart';
+import 'package:melody_sense/core/widgets/settings_screen.dart';
 import 'package:melody_sense/features/stats/presentation/providers/stats_providers.dart';
 
 /// Progression Screen - Sesi 8 (Peta Level / Progression Path)
@@ -35,7 +36,12 @@ class ProgressionScreen extends ConsumerWidget {
                 style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryDark),
               ),
               const Spacer(),
-              Icon(Icons.settings_outlined, color: AppColors.primaryDark.withValues(alpha: 0.6)),
+              GestureDetector(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                ),
+                child: Icon(Icons.settings_outlined, color: AppColors.primaryDark.withValues(alpha: 0.6)),
+              ),
             ],
           ),
         ),

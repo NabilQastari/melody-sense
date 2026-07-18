@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import 'package:melody_sense/core/widgets/settings_screen.dart';
 import '../../../stats/presentation/providers/stats_providers.dart';
 import '../../../free_play/presentation/screens/free_play_screen.dart';
 import '../../../interval_training/presentation/screens/interval_training_screen.dart';
@@ -87,7 +88,12 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                 style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryDark),
               ),
               const Spacer(),
-              Icon(Icons.settings_outlined, color: AppColors.primaryDark.withValues(alpha: 0.6)),
+              GestureDetector(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                ),
+                child: Icon(Icons.settings_outlined, color: AppColors.primaryDark.withValues(alpha: 0.6)),
+              ),
             ],
           ),
         ),

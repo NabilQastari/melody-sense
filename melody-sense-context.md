@@ -261,7 +261,7 @@ Implementasi konkret (DAO, domain entities, repository, Riverpod providers) suda
 | 6 | Fitur latihan lain (Interval Training, Rhythm Match) + Practice tab | ✅ Selesai — Melody Echo **ditunda ke Sesi 10** (keputusan user). |
 | 7 | Statistik & grafik progres + refactor navbar arsitektur | ✅ Selesai |
 | 8 | Progression path UI (peta level) + polish Explorer Mode | ✅ Selesai |
-| 9 | Halaman Dashboard (baru ditambahkan Sesi 5 — belum ada detail konten/desain, lihat catatan) | ⏳ Belum mulai — placeholder sudah ada di HomeScreen |
+| 9 | Halaman Dashboard (baru ditambahkan Sesi 5 — belum ada detail konten/desain, lihat catatan) | ✅ Selesai |
 | 10 | Persiapan Maestro Mode (WebSocket client) + **Melody Echo** (ditunda dari Sesi 6) | ⏳ Belum mulai |
 | 11 | Testing & persiapan submission tahap 2 | ⏳ Belum mulai |
 | 12 | Fitur Kustomisasi & Reward Peti Rahasia (Piano Skins / Themes) | ⏳ Belum mulai |
@@ -518,7 +518,18 @@ Fokus: **Fitur Note Recognition end-to-end** — jadi pola template untuk fitur 
 - Refactor `PracticeScreen` menjadi `ConsumerStatefulWidget` agar bisa mengakses provider Riverpod.
 - Menghubungkan banner Daily Streak di tab Practice ke provider `streakProvider` database asli, menghilangkan nilai mock hardcoded (`_mockStreakDays = 5`).
 
-**Kalau chat baru melanjutkan:** Sesi 9 (Dashboard) — placeholder sudah ada di HomeScreen, tinggal diisi konten.
+**Kalau chat baru melanjutkan:** Sesi 10 (Maestro Mode & Melody Echo) — integrasi WebSocket client + menghubungkan Smart Piano fisik.
+
+---
+
+## Ringkasan Sesi 9 (SELESAI)
+
+**1. Dashboard Screen:**
+- `dashboard_screen.dart` diimplementasikan secara penuh menggantikan placeholder lama di HomeScreen.
+- **Level & XP Header**: Menampilkan nama "Hello, Maestro!", level pill badge (e.g. Level 5) dan total XP dari database via Riverpod.
+- **Smart Piano Status Card**: Menunjukkan status koneksi "Not Connected" dengan tombol "Connect" interaktif yang menampilkan status integrasi WebSocket Sesi 10.
+- **2x2 Challenges Grid**: Menyediakan akses cepat ke 4 mode utama (Note Recognition, Interval Training, Melody Echo, Rhythm Match) yang langsung membuka screen masing-masing saat di-tap.
+- **Personal Best Banner**: Menampilkan ringkasan pencapaian terbaik (skor tertinggi) yang dikemas dengan visual linear progress bar.
 
 ---
 
