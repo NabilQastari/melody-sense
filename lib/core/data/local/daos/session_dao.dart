@@ -44,7 +44,8 @@ class SessionDao extends DatabaseAccessor<AppDatabase> with _$SessionDaoMixin {
         .watch();
   }
 
-  /// XP total dihitung on-the-fly dari SUM(xp_earned), sesuai keputusan Sesi 1.
+  /// XP total dihitung on-the-fly dari SUM(xp_earned), sesuai keputusan
+  /// Sesi 1.
   Stream<int> watchTotalXp() {
     final xpSum = sessions.xpEarned.sum();
     final query = selectOnly(sessions)..addColumns([xpSum]);
@@ -56,5 +57,20 @@ class SessionDao extends DatabaseAccessor<AppDatabase> with _$SessionDaoMixin {
     final query = selectOnly(sessions)..addColumns([xpSum]);
     final row = await query.getSingle();
     return row.read(xpSum) ?? 0;
+  }
+
+  /// Tanggal (tanpa komponen jam) dari sesi-sesi yang SUDAH selesai,
+  /// dipakai ProgressionRepository untuk menghitung streak harian.
+  /// Dedupe per-hari dilakukan di Dart, bukan lewat SQL date(), supaya
+  /// tidak bergantung ke fungsi tanggal spesifik SQLite.
+  Future<List<DateTime>> getDistinctSessionDays() async {
+    final rows =
+        await (select(sessions)..where((s) => sessions.endedAt.isNotNull()))
+            .get();
+    return rows
+        .map((r) => r.endedAt!)
+        .map((dt) => DateTime(dt.year, dt.month, dt.day))
+        .toSet()
+        .toList();
   }
 }

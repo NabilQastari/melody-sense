@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_soloud/flutter_soloud.dart';
 
 /// 9 nada dasar sesuai hardware Smart Piano (prototipe Arduino Mega).
@@ -37,11 +39,26 @@ class AudioService {
   final Map<String, AudioSource> _sources = {};
   bool _isInitialized = false;
 
+  /// Diselesaikan (completed) begitu [initialize] benar-benar selesai
+  /// memuat semua sample nada. Dipakai UI (lewat [audioReadyProvider])
+  /// untuk menahan interaksi user sebelum audio benar-benar siap —
+  /// tanpa ini, panggilan [playNote] yang terjadi SAAT proses load
+  /// masih berjalan akan no-op diam-diam (bug: nada pertama senyap).
+  final Completer<void> _readyCompleter = Completer<void>();
+
   bool get isInitialized => _isInitialized;
+
+  /// Future yang selesai begitu semua sample nada sudah ter-load dan
+  /// siap dimainkan. Await ini sebelum mengizinkan user menekan tuts.
+  Future<void> get ready => _readyCompleter.future;
 
   /// Inisialisasi SoLoud engine & preload semua sample nada. Panggil
   /// sekali di awal (lewat Riverpod provider), bukan tiap kali mau
   /// main nada.
+  ///
+  /// PENTING: pemanggil WAJIB meng-`await` ini (atau meng-`await`
+  /// [ready]) sebelum mengizinkan UI memicu [playNote] — kalau tidak,
+  /// panggilan yang terjadi sebelum load selesai akan no-op senyap.
   Future<void> initialize() async {
     if (_isInitialized) return;
 
@@ -63,6 +80,7 @@ class AudioService {
       }
     }
     _isInitialized = true;
+    if (!_readyCompleter.isCompleted) _readyCompleter.complete();
   }
 
   /// Mainkan satu nada. No-op kalau nada tidak dikenali atau asetnya
