@@ -44,7 +44,7 @@ const kIntervalDefinitions = [
 /// Dipakai untuk menghitung nada target dari root note + interval.
 /// NOTE: nada-nada ini diatonis (bukan kromatis penuh), jadi jaraknya
 /// tidak selalu 1 semitone antar nada bertetangga di daftar.
-const _semitoneByNote = {
+const kSemitoneByNote = {
   'B3': -1,
   'C4': 0,
   'D4': 2,
@@ -81,12 +81,12 @@ final List<IntervalRoundOption> kValidIntervalRounds = _buildValidRounds();
 
 List<IntervalRoundOption> _buildValidRounds() {
   final noteBySemitone = {
-    for (final entry in _semitoneByNote.entries) entry.value: entry.key,
+    for (final entry in kSemitoneByNote.entries) entry.value: entry.key,
   };
 
   final options = <IntervalRoundOption>[];
   for (final root in kAvailableNotes) {
-    final rootSemitone = _semitoneByNote[root]!;
+    final rootSemitone = kSemitoneByNote[root]!;
     for (final interval in kIntervalDefinitions) {
       final targetNote = noteBySemitone[rootSemitone + interval.semitones];
       if (targetNote != null) {
@@ -114,6 +114,9 @@ class IntervalTrainingState {
     this.totalRounds = 10,
     this.feedback = RoundFeedback.none,
     this.isSessionOver = false,
+    this.mysteryRoundIndex = -1,
+    this.lastPressedNote,
+    this.isPlaying = false,
     this.completion,
   });
 
@@ -132,6 +135,9 @@ class IntervalTrainingState {
   final int totalRounds;
   final RoundFeedback feedback;
   final bool isSessionOver;
+  final int mysteryRoundIndex;
+  final String? lastPressedNote;
+  final bool isPlaying;
 
   /// Hasil ProgressionRepository.completeSession() — null selama sesi
   /// masih berjalan ATAU sudah berakhir tapi orkestrasi progression
@@ -170,6 +176,9 @@ class IntervalTrainingState {
     int? totalRounds,
     RoundFeedback? feedback,
     bool? isSessionOver,
+    int? mysteryRoundIndex,
+    String? lastPressedNote,
+    bool? isPlaying,
     SessionCompletionResult? completion,
   }) {
     return IntervalTrainingState(
@@ -183,6 +192,9 @@ class IntervalTrainingState {
       totalRounds: totalRounds ?? this.totalRounds,
       feedback: feedback ?? this.feedback,
       isSessionOver: isSessionOver ?? this.isSessionOver,
+      mysteryRoundIndex: mysteryRoundIndex ?? this.mysteryRoundIndex,
+      lastPressedNote: lastPressedNote ?? this.lastPressedNote,
+      isPlaying: isPlaying ?? this.isPlaying,
       completion: completion ?? this.completion,
     );
   }

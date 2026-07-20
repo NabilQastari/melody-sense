@@ -53,6 +53,8 @@ class _FreePlayScreenState extends ConsumerState<FreePlayScreen> {
   Widget build(BuildContext context) {
     final audioReady = ref.watch(audioReadyProvider);
 
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -60,7 +62,7 @@ class _FreePlayScreenState extends ConsumerState<FreePlayScreen> {
           children: [
             // ── App bar ──
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+              padding: EdgeInsets.fromLTRB(20, isLandscape ? 6 : 12, 20, 0),
               child: Row(
                 children: [
                   GestureDetector(
@@ -128,19 +130,21 @@ class _FreePlayScreenState extends ConsumerState<FreePlayScreen> {
                             Text(
                               'Tekan tuts untuk bermain',
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: isLandscape ? 11 : 13,
                                 color: AppColors.primaryDark
                                     .withValues(alpha: 0.5),
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            SizedBox(height: isLandscape ? 6 : 16),
                             AnimatedSwitcher(
                               duration: const Duration(milliseconds: 200),
                               child: Text(
                                 _lastPlayedNote ?? '♪',
                                 key: ValueKey(_lastPlayedNote),
                                 style: TextStyle(
-                                  fontSize: _lastPlayedNote != null ? 64 : 48,
+                                  fontSize: _lastPlayedNote != null
+                                      ? (isLandscape ? 40 : 64)
+                                      : (isLandscape ? 30 : 48),
                                   fontWeight: FontWeight.w900,
                                   color: _lastPlayedNote != null
                                       ? AppColors.primaryDark
@@ -149,16 +153,17 @@ class _FreePlayScreenState extends ConsumerState<FreePlayScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            if (_lastPlayedNote != null)
+                            if (_lastPlayedNote != null) ...[
+                              SizedBox(height: isLandscape ? 2 : 8),
                               Text(
                                 _getNoteDescription(_lastPlayedNote!),
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: isLandscape ? 12 : 14,
                                   color: AppColors.accent,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
+                            ],
                           ],
                         ),
                       ),
@@ -166,11 +171,11 @@ class _FreePlayScreenState extends ConsumerState<FreePlayScreen> {
 
                     // ── Piano ──
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+                      padding: EdgeInsets.fromLTRB(12, 0, 12, isLandscape ? 8 : 16),
                       child: VirtualPiano(
                         activeNote: _activeNote,
                         onNotePressed: _onNotePressed,
-                        height: 180,
+                        height: isLandscape ? 110 : 180,
                       ),
                     ),
                   ],

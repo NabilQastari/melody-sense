@@ -28,6 +28,9 @@ class ExplorerGameplayScreen extends StatefulWidget {
     this.sequenceNotes = const [],
     this.correctNote,
     this.wrongNote,
+    this.bridgeStartNote,
+    this.bridgeEndNote,
+    this.bridgeLabel,
     this.isMysteryRound = false,
     this.feedback = RoundFeedback.none,
     this.roundIndex = 0,
@@ -62,6 +65,9 @@ class ExplorerGameplayScreen extends StatefulWidget {
 
   final String? correctNote;
   final String? wrongNote;
+  final String? bridgeStartNote;
+  final String? bridgeEndNote;
+  final String? bridgeLabel;
   final bool isMysteryRound;
   final RoundFeedback feedback;
   final int roundIndex;
@@ -268,6 +274,9 @@ class _ExplorerGameplayScreenState extends State<ExplorerGameplayScreen> {
               activeNote: _activeNote,
               correctNote: widget.correctNote,
               wrongNote: widget.wrongNote,
+              bridgeStartNote: widget.bridgeStartNote,
+              bridgeEndNote: widget.bridgeEndNote,
+              bridgeLabel: widget.bridgeLabel,
               onNotePressed: _handleNotePressed,
             ),
           ),
@@ -438,6 +447,9 @@ class _ExplorerGameplayScreenState extends State<ExplorerGameplayScreen> {
               activeNote: _activeNote,
               correctNote: widget.correctNote,
               wrongNote: widget.wrongNote,
+              bridgeStartNote: widget.bridgeStartNote,
+              bridgeEndNote: widget.bridgeEndNote,
+              bridgeLabel: widget.bridgeLabel,
               onNotePressed: _handleNotePressed,
             ),
           ),
@@ -455,6 +467,9 @@ class _CappedPiano extends StatelessWidget {
     required this.activeNote,
     this.correctNote,
     this.wrongNote,
+    this.bridgeStartNote,
+    this.bridgeEndNote,
+    this.bridgeLabel,
     required this.onNotePressed,
   });
 
@@ -462,6 +477,9 @@ class _CappedPiano extends StatelessWidget {
   final String? activeNote;
   final String? correctNote;
   final String? wrongNote;
+  final String? bridgeStartNote;
+  final String? bridgeEndNote;
+  final String? bridgeLabel;
   final ValueChanged<String> onNotePressed;
 
   @override
@@ -476,6 +494,9 @@ class _CappedPiano extends StatelessWidget {
             activeNote: activeNote,
             correctNote: correctNote,
             wrongNote: wrongNote,
+            bridgeStartNote: bridgeStartNote,
+            bridgeEndNote: bridgeEndNote,
+            bridgeLabel: bridgeLabel,
             onNotePressed: onNotePressed,
           ),
         );

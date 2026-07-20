@@ -38,6 +38,9 @@ class VirtualPiano extends StatefulWidget {
     this.activeNote,
     this.correctNote,
     this.wrongNote,
+    this.bridgeStartNote,
+    this.bridgeEndNote,
+    this.bridgeLabel,
     this.onNotePressed,
     this.showLabels = true,
     this.height,
@@ -55,6 +58,15 @@ class VirtualPiano extends StatefulWidget {
 
   /// Nada yang salah yang ditekan user, akan di-highlight merah.
   final String? wrongNote;
+
+  /// Nada awal jembatan visual (mis. rootNote).
+  final String? bridgeStartNote;
+
+  /// Nada akhir jembatan visual (mis. lastPressedNote).
+  final String? bridgeEndNote;
+
+  /// Label yang ditampilkan di atas jembatan (mis. "5 semitones").
+  final String? bridgeLabel;
 
   /// Dipanggil saat user menyentuh/menggeser jari ke atas salah satu
   /// tuts. Bisa terpanggil beberapa kali dalam satu sentuhan kalau
@@ -129,23 +141,52 @@ class _VirtualPianoState extends State<VirtualPiano> {
           ],
         );
 
-        if (!widget._isInteractive) return keys;
+        Widget pianoLayout = keys;
+        if (widget._isInteractive) {
+          pianoLayout = GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            // onPanDown fires langsung saat pertama disentuh (bukan
+            // menunggu gerakan/pelepasan) — jadi tuts pertama tetap
+            // responsif instan seperti tap biasa.
+            onPanDown: (details) =>
+                _handleTouch(details.localPosition, constraints.maxWidth),
+            // onPanUpdate menangani jari yang bergeser lintas tuts —
+            // inilah yang mewujudkan glissando.
+            onPanUpdate: (details) =>
+                _handleTouch(details.localPosition, constraints.maxWidth),
+            onPanEnd: (_) => _resetGesture(),
+            onPanCancel: _resetGesture,
+            child: keys,
+          );
+        }
 
-        return GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          // onPanDown fires langsung saat pertama disentuh (bukan
-          // menunggu gerakan/pelepasan) — jadi tuts pertama tetap
-          // responsif instan seperti tap biasa.
-          onPanDown: (details) =>
-              _handleTouch(details.localPosition, constraints.maxWidth),
-          // onPanUpdate menangani jari yang bergeser lintas tuts —
-          // inilah yang mewujudkan glissando.
-          onPanUpdate: (details) =>
-              _handleTouch(details.localPosition, constraints.maxWidth),
-          onPanEnd: (_) => _resetGesture(),
-          onPanCancel: _resetGesture,
-          child: keys,
-        );
+        // Overlay visual jembatan jarak jika parameter terpenuhi
+        if (widget.bridgeStartNote != null && widget.bridgeEndNote != null) {
+          final count = widget.notes.length;
+          final keyWidth = (constraints.maxWidth - _kKeyGap * (count - 1)) / count;
+          pianoLayout = Stack(
+            clipBehavior: Clip.none,
+            children: [
+              pianoLayout,
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: CustomPaint(
+                    painter: _PianoBridgePainter(
+                      notes: widget.notes,
+                      startNote: widget.bridgeStartNote!,
+                      endNote: widget.bridgeEndNote!,
+                      label: widget.bridgeLabel ?? '',
+                      keyWidth: keyWidth,
+                      keyGap: _kKeyGap,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
+
+        return pianoLayout;
       },
     );
 
@@ -218,4 +259,104 @@ class _PianoKey extends StatelessWidget {
       ),
     );
   }
-}
+}
+
+class _PianoBridgePainter extends CustomPainter {
+  _PianoBridgePainter({
+    required this.notes,
+    required this.startNote,
+    required this.endNote,
+    required this.label,
+    required this.keyWidth,
+    required this.keyGap,
+  });
+
+  final List<String> notes;
+  final String startNote;
+  final String endNote;
+  final String label;
+  final double keyWidth;
+  final double keyGap;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final i1 = notes.indexOf(startNote);
+    final i2 = notes.indexOf(endNote);
+    if (i1 == -1 || i2 == -1) return;
+
+    final x1 = i1 * (keyWidth + keyGap) + keyWidth / 2;
+    final x2 = i2 * (keyWidth + keyGap) + keyWidth / 2;
+    // Draw the bridge at 45% height of the keys
+    final y = size.height * 0.45;
+
+    final paint = Paint()
+      ..color = AppColors.primaryDark
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.0
+      ..strokeCap = StrokeCap.round;
+
+    final path = Path();
+    path.moveTo(x1, y);
+    // Control point for a nice curved arch
+    final controlX = (x1 + x2) / 2;
+    final controlY = y - 45;
+    path.quadraticBezierTo(controlX, controlY, x2, y);
+
+    // Draw connection dots at start/end
+    canvas.drawCircle(Offset(x1, y), 5.0, Paint()..color = AppColors.primaryDark..style = PaintingStyle.fill);
+    canvas.drawCircle(Offset(x2, y), 5.0, Paint()..color = AppColors.primaryDark..style = PaintingStyle.fill);
+
+    // Draw the main curve
+    canvas.drawPath(path, paint);
+
+    // Draw the label pill at the peak of the curve
+    final bx = 0.25 * x1 + 0.5 * controlX + 0.25 * x2;
+    final by = 0.25 * y + 0.5 * controlY + 0.25 * y;
+
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: label,
+        style: const TextStyle(
+          color: AppColors.primaryDark,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+
+    final pillRect = Rect.fromCenter(
+      center: Offset(bx, by - 5),
+      width: textPainter.width + 12,
+      height: textPainter.height + 6,
+    );
+
+    // Fill white background for readability
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(pillRect, const Radius.circular(8)),
+      Paint()..color = Colors.white..style = PaintingStyle.fill,
+    );
+    // Draw outline
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(pillRect, const Radius.circular(8)),
+      Paint()
+        ..color = AppColors.primaryDark.withValues(alpha: 0.2)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2,
+    );
+
+    // Paint text
+    textPainter.paint(canvas, Offset(bx - textPainter.width / 2, by - 5 - textPainter.height / 2));
+  }
+
+  @override
+  bool shouldRepaint(covariant _PianoBridgePainter oldDelegate) {
+    return oldDelegate.startNote != startNote ||
+        oldDelegate.endNote != endNote ||
+        oldDelegate.label != label ||
+        oldDelegate.keyWidth != keyWidth ||
+        oldDelegate.keyGap != keyGap;
+  }
+}
+

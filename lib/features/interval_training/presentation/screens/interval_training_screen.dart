@@ -5,6 +5,7 @@ import 'package:melody_sense/core/widgets/explorer_gameplay_screen.dart';
 import 'package:melody_sense/core/widgets/session_result_screen.dart';
 
 import '../controllers/interval_training_controller.dart';
+import '../state/interval_training_state.dart';
 
 /// Interval Training — Explorer Mode.
 ///
@@ -55,6 +56,33 @@ class IntervalTrainingScreen extends ConsumerWidget {
       });
     }
 
+    final isWrong = state.feedback == RoundFeedback.wrong;
+    final hasFeedback = state.feedback != RoundFeedback.none;
+
+    String? correctNote;
+    String? wrongNote;
+    String? bridgeStartNote;
+    String? bridgeEndNote;
+    String? bridgeLabel;
+
+    // Hanya tampilkan highlight & bridge saat fase feedback (sudah dijawab)
+    if (hasFeedback && state.lastPressedNote != null) {
+      correctNote = state.targetNote;
+      if (isWrong) {
+        wrongNote = state.lastPressedNote;
+
+        // Bridge: hubungkan rootNote ke jawaban user (salah) sebagai
+        // alat edukasi — user bisa lihat jarak yang dia tekan vs yang benar
+        bridgeStartNote = state.rootNote;
+        bridgeEndNote = state.lastPressedNote;
+
+        final startSemitone = kSemitoneByNote[state.rootNote] ?? 0;
+        final endSemitone = kSemitoneByNote[state.lastPressedNote!] ?? 0;
+        final semitones = (endSemitone - startSemitone).abs();
+        bridgeLabel = '$semitones semitone${semitones == 1 ? "" : "s"}';
+      }
+    }
+
     return ExplorerGameplayScreen(
       targetLabel: 'Target',
       targetValue: state.intervalName,
@@ -62,10 +90,20 @@ class IntervalTrainingScreen extends ConsumerWidget {
       livesTotal: state.livesTotal,
       livesRemaining: state.livesRemaining,
       progress: state.progress,
-      // Cuma root note yang ditampilkan/didengar duluan — nada kedua
-      // (targetNote) sengaja tidak dikirim ke UI, itu yang harus
-      // ditebak user lewat tuts piano.
-      sequenceNotes: [state.rootNote],
+      // Kosongkan sequenceNotes — rootNote TIDAK ditampilkan di UI agar
+      // user tidak bisa menghitung jarak secara visual dari posisi tuts.
+      // Tantangannya harus murni mengandalkan pendengaran.
+      sequenceNotes: const [],
+      correctNote: correctNote,
+      wrongNote: wrongNote,
+      bridgeStartNote: bridgeStartNote,
+      bridgeEndNote: bridgeEndNote,
+      bridgeLabel: bridgeLabel,
+      isMysteryRound: state.roundIndex == state.mysteryRoundIndex,
+      feedback: state.feedback,
+      roundIndex: state.roundIndex,
+      totalRounds: state.totalRounds,
+      isPlaying: state.isPlaying,
       onClose: () => Navigator.of(context).maybePop(),
       onAutoPlay: controller.playSequence,
       onHint: () {

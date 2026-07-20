@@ -35,6 +35,7 @@ class IntervalTrainingController
   final Ref _ref;
   final _random = Random();
   DateTime? _roundStartedAt;
+  bool _isTransitioning = false;
 
   PracticeRepository get _practiceRepo =>
       _ref.read(practiceRepositoryProvider);
@@ -43,6 +44,7 @@ class IntervalTrainingController
   AudioService get _audio => _ref.read(audioServiceProvider);
 
   Future<void> _start() async {
+    _isTransitioning = false;
     // Idempotent, sama seperti NoteRecognitionController — lihat
     // catatan di sana soal kenapa dipanggil di titik ini.
     await _progressionRepo.seedDefaultAchievementsIfEmpty();
@@ -50,11 +52,18 @@ class IntervalTrainingController
     final sessionId = await _practiceRepo.startSession(
       TrainingMode.intervalTraining,
     );
+    final mysteryIndex = _random.nextInt(10);
     state = IntervalTrainingState(
       currentRound: _pickNextRound(),
       sessionId: sessionId,
+      mysteryRoundIndex: mysteryIndex,
     );
     _roundStartedAt = DateTime.now();
+
+    // Auto-play interval di awal sesi
+    Future.delayed(const Duration(milliseconds: 300), () {
+      playSequence();
+    });
   }
 
   /// Pilih kombinasi root+interval acak dari [kValidIntervalRounds],
@@ -76,10 +85,18 @@ class IntervalTrainingController
   /// Dipanggil dari tombol Auto Play — memutar root note lalu target
   /// note berurutan ("Listen to the sequence..." di desain). User
   /// mendengar kedua nada, lalu harus menebak nada kedua di piano.
-  void playSequence() {
+  Future<void> playSequence() async {
     final current = state;
-    if (current == null) return;
-    _audio.playSequence([current.rootNote, current.targetNote]);
+    if (current == null || current.isPlaying) return;
+    await _playSequenceWithStatus([current.rootNote, current.targetNote]);
+  }
+
+  Future<void> _playSequenceWithStatus(List<String> notes) async {
+    if (!mounted) return;
+    state = state?.copyWith(isPlaying: true);
+    await _audio.playSequence(notes);
+    if (!mounted) return;
+    state = state?.copyWith(isPlaying: false);
   }
 
   /// Dipanggil setiap kali user menekan tuts piano — dianggap sebagai
@@ -87,11 +104,15 @@ class IntervalTrainingController
   /// Note Recognition.
   Future<void> submitAnswer(String note) async {
     final current = state;
-    if (current == null || current.isSessionOver) return;
+    if (current == null || current.isSessionOver || _isTransitioning) return;
 
+    _isTransitioning = true;
     _audio.playNote(note);
 
     final isCorrect = note == current.targetNote;
+    final isMystery = current.roundIndex == current.mysteryRoundIndex;
+    final xpEarned = isCorrect ? (isMystery ? 20 : _xpPerCorrect) : 0;
+
     final responseTimeMs = _roundStartedAt == null
         ? 0
         : DateTime.now().difference(_roundStartedAt!).inMilliseconds;
@@ -105,7 +126,7 @@ class IntervalTrainingController
 
     final nextLives =
         isCorrect ? current.livesRemaining : current.livesRemaining - 1;
-    final nextXp = isCorrect ? current.xp + _xpPerCorrect : current.xp;
+    final nextXp = current.xp + xpEarned;
     final nextRoundIndex = current.roundIndex + 1;
     final nextCorrectCount =
         isCorrect ? current.correctCount + 1 : current.correctCount;
@@ -115,22 +136,48 @@ class IntervalTrainingController
     state = current.copyWith(
       xp: nextXp,
       livesRemaining: nextLives,
-      roundIndex: nextRoundIndex,
-      correctCount: nextCorrectCount,
       feedback: isCorrect ? RoundFeedback.correct : RoundFeedback.wrong,
-      isSessionOver: sessionOver,
-      // Sama seperti Note Recognition: kalau sesi berakhir, ronde
-      // TIDAK diganti, biar layar sesaat sebelum ditutup masih
-      // menampilkan interval terakhir yang relevan.
-      currentRound: sessionOver
-          ? current.currentRound
-          : _pickNextRound(current.currentRound),
+      lastPressedNote: note,
     );
 
+    if (!isCorrect) {
+      // Compare Playback: target interval -> jeda -> user chosen interval
+      Future.delayed(const Duration(milliseconds: 600), () async {
+        if (!mounted) return;
+        await _audio.playSequence([current.rootNote, current.targetNote]);
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (!mounted) return;
+        await _audio.playSequence([current.rootNote, note]);
+      });
+    }
+
+    final delay = isCorrect
+        ? const Duration(milliseconds: 1200)
+        : const Duration(milliseconds: 3200);
+
+    await Future.delayed(delay);
+    if (!mounted) return;
+
     if (sessionOver) {
+      state = state?.copyWith(
+        roundIndex: nextRoundIndex,
+        correctCount: nextCorrectCount,
+        isSessionOver: true,
+      );
       await _finishSession(xpEarned: nextXp);
     } else {
+      final nextRound = _pickNextRound(current.currentRound);
+      state = state?.copyWith(
+        roundIndex: nextRoundIndex,
+        correctCount: nextCorrectCount,
+        feedback: RoundFeedback.none,
+        lastPressedNote: null,
+        currentRound: nextRound,
+      );
       _roundStartedAt = DateTime.now();
+      _isTransitioning = false;
+      // Auto-play interval untuk ronde berikutnya
+      playSequence();
     }
   }
 

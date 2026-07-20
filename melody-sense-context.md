@@ -263,10 +263,10 @@ Implementasi konkret (DAO, domain entities, repository, Riverpod providers) suda
 | 7 | Statistik & grafik progres + refactor navbar arsitektur | ✅ Selesai |
 | 8 | Progression path UI (peta level) + polish Explorer Mode | ✅ Selesai |
 | 9 | Halaman Dashboard (baru ditambahkan Sesi 5 — belum ada detail konten/desain, lihat catatan) | ✅ Selesai |
-| 10 | Brainstorming (Fitur Peningkatan UX & Edukasi Latihan) | ⏸️ Dijeda sementara — brainstorming Note Recognition sudah menghasilkan rencana konkret (lihat Sesi 11.1), lanjut brainstorming mode latihan lain (Interval Training, Melody Echo, Rhythm Match) setelah Sesi 11.1 selesai dites |
+| 10 | Brainstorming (Fitur Peningkatan UX & Edukasi Latihan) | ⏸️ Dijeda sementara — brainstorming Note Recognition & Interval Training menghasilkan rencana konkret (lihat 11.1 & 11.2), lanjut brainstorming mode latihan lain (Melody Echo, Rhythm Match) setelah 11.2 selesai |
 | 11 | Implementasi dari Rencana Pembaruan (UX & Edukasi Latihan) | ⏳ Belum mulai |
 | 11.1 | Update Note Recognition (Mekanik & Visual Tambahan) — sub-sesi dari Sesi 11, dikerjakan lebih dulu sebagai test case | ✅ Selesai |
-| 11.2 | Update Interval Training (Mekanik & Visual Tambahan) — sub-sesi dari Sesi 11, lanjutan pola 11.1 | ⏳ Siap dieksekusi — lihat "Rencana Sesi 11.2" |
+| 11.2 | Update Interval Training (Mekanik & Visual Tambahan) — sub-sesi dari Sesi 11, lanjutan pola 11.1 | ✅ Selesai |
 | 12 | Persiapan Maestro Mode (WebSocket client) + **Melody Echo** (ditunda dari Sesi 6) | ⏳ Belum mulai |
 | 13 | Testing & persiapan submission tahap 2 | ⏳ Belum mulai |
 | 14 | Fitur Kustomisasi & Reward Peti Rahasia (Piano Skins / Themes) | ⏳ Belum mulai |
@@ -520,7 +520,7 @@ Fokus: **Fitur Note Recognition end-to-end** — jadi pola template untuk fitur 
 - Refactor `PracticeScreen` menjadi `ConsumerStatefulWidget` agar bisa mengakses provider Riverpod.
 - Menghubungkan banner Daily Streak di tab Practice ke provider `streakProvider` database asli, menghilangkan nilai mock hardcoded (`_mockStreakDays = 5`).
 
-**Kalau chat baru melanjutkan:** **Sesi 11.2 (Update Interval Training — Mekanik & Visual Tambahan)**, lihat bagian "Rencana Sesi 11.2" untuk detail lengkap scope, file yang tersentuh, dan keputusan teknis — sudah siap langsung dieksekusi (bukan brainstorming lagi). Sesi 10 (brainstorming lanjutan untuk Melody Echo, Rhythm Match) **masih dijeda**, dilanjutkan setelah Sesi 11.2 selesai dites.
+**Kalau chat baru melanjutkan:** **Sesi 10 (Brainstorming Peningkatan UX & Edukasi Latihan)** untuk mode latihan lainnya yang tersisa (Melody Echo, Rhythm Match) — sesi 10 dilanjutkan setelah Sesi 11.1 & 11.2 selesai.
 
 ---
 
@@ -544,9 +544,42 @@ Fokus: **Fitur Note Recognition end-to-end** — jadi pola template untuk fitur 
 
 ---
 
+## Ringkasan Sesi 11.1 (SELESAI)
+
+**1. Mekanik Baru Note Recognition:**
+- **Ronde Misteri**: 1 ronde acak per sesi dengan hadiah double XP (+20 XP). Ditandai dengan glow & shimmer emas halus pada area prompt nada target.
+- **Compare Playback**: Memutar ulang nada target diikuti nada salah yang ditekan user dengan jeda waktu singkat jika jawaban salah.
+- **Kunci Input**: Lock gesture piano saat masa transisi ronde (mencegah spamming) dan auto play nada target di awal setiap ronde.
+
+**2. Animasi & Visual (`flutter_animate`):**
+- Pop-up feedback badge "Correct!" (bounce) / "Wrong!" (shake) yang memudar setelah 800ms.
+- Efek denyut pulsating glow pada prompt card ketika audio diputar (`isPlaying == true`).
+- Teks "Round X of Y" bertransisi slide/fade-in dari kiri ketika ronde berganti.
+- Tuts piano mengecil (`scale: 0.95` via `AnimatedScale`) saat ditekan untuk efek tactility.
+- Animasi entrance di `SessionResultScreen` dan count-up XP menggunakan `TweenAnimationBuilder`.
+
+**3. Pembersihan Hutang Teknis:**
+- Pemindahan `kAvailableNotes` dan `RoundFeedback` ke `practice_entities.dart` untuk menghilangkan import silang antar-fitur.
+- Perbaikan `widget_test.dart` boilerplate agar test suite `flutter test` berjalan 100% lulus.
+
+---
+
+## Ringkasan Sesi 11.2 (SELESAI)
+
+**1. Mekanik Baru Interval Training:**
+- **Ronde Misteri**: 1 ronde acak per sesi dengan hadiah double XP (+20 XP).
+- **Compare Playback Adaptif**: Memutar interval target asli, lalu interval buatan user (`rootNote` -> nada salah yang ditekan) untuk melatih telinga.
+- **Kunci Input & Autoplay**: Lock tuts piano selama transisi ronde dan autoplay interval di awal setiap ronde.
+
+**2. Visual & Animasi Tambahan:**
+- **Visual Jembatan Jarak (Distance Bridge)**: Menggambar garis lengkung (*arch*) dinamis yang menghubungkan tuts `rootNote` dan tuts `lastPressedNote` (jawaban user) di atas piano virtual lengkap dengan label jarak semitone (misalnya "5 semitones") di tengah lengkungan.
+- Membawa seluruh polesan visual dari 11.1 (popup feedback, tuts scale press-down, dan progress ronde slide/fade).
+
+---
+
 ## Rencana Sesi 11.1: Update Note Recognition (Mekanik & Visual Tambahan)
 
-> Status: ⏳ **Siap dieksekusi.** Hasil brainstorming Sesi 10 (yang dijeda) khusus untuk Note Recognition, disepakati untuk langsung diimplementasi sebagai sub-sesi test case sebelum lanjut brainstorming mode latihan lain. **Desain layout Note Recognition TIDAK berubah** — semua di bawah ini adalah lapisan tambahan (mekanik + animasi) di atas struktur yang sudah ada.
+> Status: ✅ **Selesai.** Hasil brainstorming Sesi 10 (yang dijeda) khusus untuk Note Recognition, disepakati untuk langsung diimplementasi sebagai sub-sesi test case sebelum lanjut brainstorming mode latihan lain. **Desain layout Note Recognition TIDAK berubah** — semua di bawah ini adalah lapisan tambahan (mekanik + animasi) di atas struktur yang sudah ada.
 
 ### A. Mekanik Tambahan (nempel ke mekanik inti: dengar satu nada → tekan tombol sesuai)
 
@@ -586,7 +619,7 @@ Fokus: **Fitur Note Recognition end-to-end** — jadi pola template untuk fitur 
 
 ## Rencana Sesi 11.2: Update Interval Training (Mekanik & Visual Tambahan)
 
-> Status: ⏳ **Siap dieksekusi.** Lanjutan pola dari Sesi 11.1 — brainstorming khusus Interval Training dari Sesi 10 (yang masih dijeda untuk Melody Echo & Rhythm Match) langsung diimplementasi sebagai sub-sesi Sesi 11 berikutnya. **Desain layout Interval Training TIDAK berubah** — semua di bawah ini lapisan tambahan (mekanik + animasi) di atas struktur yang sudah ada.
+> Status: ✅ **Selesai.** Lanjutan pola dari Sesi 11.1 — brainstorming khusus Interval Training dari Sesi 10 (yang masih dijeda untuk Melody Echo & Rhythm Match) langsung diimplementasi sebagai sub-sesi Sesi 11 berikutnya. **Desain layout Interval Training TIDAK berubah** — semua di bawah ini lapisan tambahan (mekanik + animasi) di atas struktur yang sudah ada.
 
 ### A. Mekanik Tambahan (nempel ke mekanik inti: dengar dua nada berurutan → tentukan jarak interval)
 
