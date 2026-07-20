@@ -7,10 +7,9 @@ import 'package:melody_sense/core/audio/audio_service.dart';
 import 'package:melody_sense/core/domain/entities/practice_entities.dart';
 import 'package:melody_sense/core/domain/repositories/practice_repository.dart';
 import 'package:melody_sense/core/domain/repositories/progression_repository.dart';
-import 'package:melody_sense/features/note_recognition/presentation/state/note_recognition_state.dart'
-    show kAvailableNotes, RoundFeedback;
 import 'package:melody_sense/core/providers/audio_providers.dart';
 import 'package:melody_sense/core/providers/database_providers.dart';
+
 
 import '../state/rhythm_match_state.dart';
 

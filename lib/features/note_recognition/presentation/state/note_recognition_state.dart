@@ -1,32 +1,16 @@
 import 'package:flutter/foundation.dart';
 
+import 'package:melody_sense/core/domain/entities/practice_entities.dart';
 import 'package:melody_sense/core/domain/entities/progression_entities.dart';
-
-/// 9 nada yang tersedia, sesuai file audio di assets/audio/notes/
-/// (Sesi 3): B3.mp3, C4.mp3, D4.mp3, E4.mp3, F4.mp3, G4.mp3, A4.mp3,
-/// B4.mp3, C5.mp3.
-const kAvailableNotes = [
-  'B3',
-  'C4',
-  'D4',
-  'E4',
-  'F4',
-  'G4',
-  'A4',
-  'B4',
-  'C5',
-];
-
-/// Hasil ronde terakhir, dipakai UI kalau nanti mau menampilkan
-/// feedback visual (mis. flash hijau/merah). Belum dipakai di
-/// ExplorerGameplayScreen versi Sesi 3, disiapkan untuk sesi polish.
-enum RoundFeedback { none, correct, wrong }
 
 @immutable
 class NoteRecognitionState {
   const NoteRecognitionState({
     required this.targetNote,
     required this.sessionId,
+    required this.mysteryRoundIndex,
+    this.lastPressedNote,
+    this.isPlaying = false,
     this.xp = 0,
     this.livesTotal = 3,
     this.livesRemaining = 3,
@@ -40,6 +24,9 @@ class NoteRecognitionState {
 
   final String targetNote;
   final int sessionId;
+  final int mysteryRoundIndex;
+  final String? lastPressedNote;
+  final bool isPlaying;
   final int xp;
   final int livesTotal;
   final int livesRemaining;
@@ -78,6 +65,9 @@ class NoteRecognitionState {
   NoteRecognitionState copyWith({
     String? targetNote,
     int? sessionId,
+    int? mysteryRoundIndex,
+    String? lastPressedNote,
+    bool? isPlaying,
     int? xp,
     int? livesTotal,
     int? livesRemaining,
@@ -91,6 +81,9 @@ class NoteRecognitionState {
     return NoteRecognitionState(
       targetNote: targetNote ?? this.targetNote,
       sessionId: sessionId ?? this.sessionId,
+      mysteryRoundIndex: mysteryRoundIndex ?? this.mysteryRoundIndex,
+      lastPressedNote: lastPressedNote ?? this.lastPressedNote,
+      isPlaying: isPlaying ?? this.isPlaying,
       xp: xp ?? this.xp,
       livesTotal: livesTotal ?? this.livesTotal,
       livesRemaining: livesRemaining ?? this.livesRemaining,
@@ -103,3 +96,4 @@ class NoteRecognitionState {
     );
   }
 }
+

@@ -31,6 +31,7 @@ class NoteRecognitionController extends StateNotifier<NoteRecognitionState?> {
   final Ref _ref;
   final _random = Random();
   DateTime? _roundStartedAt;
+  bool _isTransitioning = false;
 
   PracticeRepository get _practiceRepo =>
       _ref.read(practiceRepositoryProvider);
@@ -49,11 +50,19 @@ class NoteRecognitionController extends StateNotifier<NoteRecognitionState?> {
     final sessionId = await _practiceRepo.startSession(
       TrainingMode.noteRecognition,
     );
+    final target = _pickNextNote();
     state = NoteRecognitionState(
-      targetNote: _pickNextNote(),
+      targetNote: target,
       sessionId: sessionId,
+      mysteryRoundIndex: _random.nextInt(10), // Ronde acak 0-9
     );
     _roundStartedAt = DateTime.now();
+    _isTransitioning = false;
+
+    // Putar nada target pertama setelah inisialisasi selesai & audio siap
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _playNoteWithStatus(target);
+    });
   }
 
   /// Pilih nada acak, hindari sama persis dengan [avoid] (nada ronde
@@ -66,12 +75,21 @@ class NoteRecognitionController extends StateNotifier<NoteRecognitionState?> {
     return note;
   }
 
+  Future<void> _playNoteWithStatus(String note) async {
+    if (!mounted) return;
+    state = state?.copyWith(isPlaying: true);
+    await _audio.playNote(note);
+    await Future.delayed(const Duration(milliseconds: 800));
+    if (!mounted) return;
+    state = state?.copyWith(isPlaying: false);
+  }
+
   /// Dipanggil dari tombol Auto Play / kartu prompt — memutar ulang
   /// nada target tanpa dihitung sebagai jawaban.
-  void playTarget() {
+  Future<void> playTarget() async {
     final current = state;
-    if (current == null) return;
-    _audio.playNote(current.targetNote);
+    if (current == null || _isTransitioning) return;
+    await _playNoteWithStatus(current.targetNote);
   }
 
   /// Dipanggil setiap kali user menekan tuts piano. Ini yang dianggap
@@ -79,8 +97,9 @@ class NoteRecognitionController extends StateNotifier<NoteRecognitionState?> {
   /// Note Recognition di mana setiap tuts yang ditekan langsung dinilai.
   Future<void> submitAnswer(String note) async {
     final current = state;
-    if (current == null || current.isSessionOver) return;
+    if (current == null || current.isSessionOver || _isTransitioning) return;
 
+    _isTransitioning = true;
     _audio.playNote(note);
 
     final isCorrect = note == current.targetNote;
@@ -95,34 +114,53 @@ class NoteRecognitionController extends StateNotifier<NoteRecognitionState?> {
       responseTimeMs: responseTimeMs,
     );
 
-    final nextLives =
-        isCorrect ? current.livesRemaining : current.livesRemaining - 1;
-    final nextXp = isCorrect ? current.xp + _xpPerCorrect : current.xp;
-    final nextRoundIndex = current.roundIndex + 1;
-    final nextCorrectCount =
-        isCorrect ? current.correctCount + 1 : current.correctCount;
-    final sessionOver =
-        nextLives <= 0 || nextRoundIndex >= current.totalRounds;
+    final isMystery = current.roundIndex == current.mysteryRoundIndex;
+    final addedXp = isCorrect ? (isMystery ? _xpPerCorrect * 2 : _xpPerCorrect) : 0;
+    final nextXp = current.xp + addedXp;
+    final nextLives = isCorrect ? current.livesRemaining : current.livesRemaining - 1;
+    final nextCorrectCount = isCorrect ? current.correctCount + 1 : current.correctCount;
+    final sessionOver = nextLives <= 0 || (current.roundIndex + 1) >= current.totalRounds;
 
+    // Update state dengan feedback dan detail input
     state = current.copyWith(
       xp: nextXp,
       livesRemaining: nextLives,
-      roundIndex: nextRoundIndex,
       correctCount: nextCorrectCount,
       feedback: isCorrect ? RoundFeedback.correct : RoundFeedback.wrong,
-      isSessionOver: sessionOver,
-      // Kalau sesi berakhir, target nada TIDAK diganti — biar layar
-      // (sesaat sebelum ditutup) masih menampilkan nada terakhir yang
-      // relevan, bukan tiba-tiba berubah.
-      targetNote: sessionOver
-          ? current.targetNote
-          : _pickNextNote(current.targetNote),
+      lastPressedNote: note,
     );
 
+    if (!isCorrect) {
+      // Compare playback: nada target -> jeda singkat -> nada salah yang ditekan user
+      Future.delayed(const Duration(milliseconds: 600), () {
+        if (!mounted) return;
+        _audio.playSequence([current.targetNote, note], gap: const Duration(milliseconds: 500));
+      });
+    }
+
+    // Tunggu durasi transisi (lebih lama jika salah agar compare playback selesai)
+    final delayMs = isCorrect ? 1200 : 2000;
+    await Future.delayed(Duration(milliseconds: delayMs));
+
+    if (!mounted) return;
+
     if (sessionOver) {
+      state = state?.copyWith(isSessionOver: true);
       await _finishSession(xpEarned: nextXp);
     } else {
+      final nextRoundIndex = current.roundIndex + 1;
+      final nextNote = _pickNextNote(current.targetNote);
+      state = state?.copyWith(
+        roundIndex: nextRoundIndex,
+        targetNote: nextNote,
+        feedback: RoundFeedback.none,
+        lastPressedNote: null,
+      );
       _roundStartedAt = DateTime.now();
+      _isTransitioning = false;
+
+      // Putar nada target ronde baru secara otomatis
+      _playNoteWithStatus(nextNote);
     }
   }
 
@@ -154,6 +192,7 @@ class NoteRecognitionController extends StateNotifier<NoteRecognitionState?> {
 
     // Pakai `state` (bukan `current`) supaya merge di atas nilai terbaru,
     // berjaga-jaga kalau ada perubahan state lain selama await di atas.
+    if (!mounted) return;
     state = state?.copyWith(completion: completion);
   }
 
@@ -161,6 +200,7 @@ class NoteRecognitionController extends StateNotifier<NoteRecognitionState?> {
   /// tombol "Main Lagi" di UI Sesi 3-4, tapi controller sudah siap
   /// dipanggil begitu tombolnya ada.
   Future<void> restart() => _start();
+
 }
 
 final noteRecognitionControllerProvider = StateNotifierProvider.autoDispose<

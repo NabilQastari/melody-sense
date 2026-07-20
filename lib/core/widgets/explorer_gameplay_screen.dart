@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:melody_sense/core/domain/entities/practice_entities.dart' show RoundFeedback;
 import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/virtual_piano.dart';
 
@@ -24,6 +26,13 @@ class ExplorerGameplayScreen extends StatefulWidget {
     this.livesRemaining,
     this.progress = 0.0,
     this.sequenceNotes = const [],
+    this.correctNote,
+    this.wrongNote,
+    this.isMysteryRound = false,
+    this.feedback = RoundFeedback.none,
+    this.roundIndex = 0,
+    this.totalRounds = 0,
+    this.isPlaying = false,
     this.onNotePressed,
     this.onAutoPlay,
     this.onHint,
@@ -50,6 +59,14 @@ class ExplorerGameplayScreen extends StatefulWidget {
   /// Nada-nada yang sudah dimainkan sebagai bagian sequence saat ini.
   /// Kosong = tidak tampilkan sequence row (mis. Note Recognition).
   final List<String> sequenceNotes;
+
+  final String? correctNote;
+  final String? wrongNote;
+  final bool isMysteryRound;
+  final RoundFeedback feedback;
+  final int roundIndex;
+  final int totalRounds;
+  final bool isPlaying;
 
   final ValueChanged<String>? onNotePressed;
   final VoidCallback? onAutoPlay;
@@ -130,6 +147,39 @@ class _ExplorerGameplayScreenState extends State<ExplorerGameplayScreen> {
             ],
           ),
           const SizedBox(height: 16),
+          if (widget.totalRounds > 0) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Round ${widget.roundIndex + 1} of ${widget.totalRounds}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primaryDark,
+                  ),
+                ).animate(key: ValueKey(widget.roundIndex)).fadeIn().slideX(begin: -0.2, end: 0),
+                if (widget.isMysteryRound)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.stars_rounded, color: Colors.amber, size: 16),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'Mystery Round!',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.amber,
+                        ),
+                      ).animate(onPlay: (controller) => controller.repeat(reverse: true))
+                       .shimmer(color: Colors.amber.shade200, duration: 1.seconds),
+                    ],
+                  ),
+              ],
+            ),
+            const SizedBox(height: 6),
+          ],
           _ProgressBar(progress: widget.progress),
           const SizedBox(height: 32),
           Text(
@@ -155,7 +205,59 @@ class _ExplorerGameplayScreenState extends State<ExplorerGameplayScreen> {
           Expanded(
             flex: 3,
             child: Center(
-              child: _NotePromptCard(onTap: widget.onAutoPlay),
+              child: Stack(
+                alignment: Alignment.center,
+                clipBehavior: Clip.none,
+                children: [
+                  _NotePromptCard(
+                    onTap: widget.onAutoPlay,
+                    isMystery: widget.isMysteryRound,
+                    isPlaying: widget.isPlaying,
+                  ),
+                  if (widget.feedback != RoundFeedback.none)
+                    Positioned(
+                      bottom: -24,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: widget.feedback == RoundFeedback.correct
+                              ? Colors.green.shade50
+                              : Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: widget.feedback == RoundFeedback.correct
+                                ? Colors.green
+                                : Colors.red,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Text(
+                          widget.feedback == RoundFeedback.correct ? 'Correct!' : 'Wrong!',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: widget.feedback == RoundFeedback.correct
+                                ? Colors.green.shade700
+                                : Colors.red.shade700,
+                          ),
+                        ),
+                      )
+                      .animate(key: ValueKey('${widget.roundIndex}_${widget.feedback}'))
+                      .scaleXY(
+                        begin: widget.feedback == RoundFeedback.correct ? 0.6 : 1.0,
+                        end: 1.0,
+                        duration: 400.ms,
+                        curve: Curves.elasticOut,
+                      )
+                      .shake(
+                        hz: widget.feedback == RoundFeedback.wrong ? 6 : 0,
+                        duration: 400.ms,
+                      )
+                      .then(delay: 800.ms)
+                      .fadeOut(duration: 300.ms),
+                    ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 20),
@@ -164,6 +266,8 @@ class _ExplorerGameplayScreenState extends State<ExplorerGameplayScreen> {
             child: _CappedPiano(
               maxHeight: 220,
               activeNote: _activeNote,
+              correctNote: widget.correctNote,
+              wrongNote: widget.wrongNote,
               onNotePressed: _handleNotePressed,
             ),
           ),
@@ -224,7 +328,41 @@ class _ExplorerGameplayScreenState extends State<ExplorerGameplayScreen> {
               _XpCounter(xp: widget.xp),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
+          if (widget.totalRounds > 0)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Round ${widget.roundIndex + 1} of ${widget.totalRounds}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primaryDark,
+                  ),
+                ).animate(key: ValueKey(widget.roundIndex)).fadeIn().slideX(begin: -0.2, end: 0),
+                if (widget.isMysteryRound) ...[
+                  const SizedBox(width: 12),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.stars_rounded, color: Colors.amber, size: 14),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'Mystery Round!',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.amber,
+                        ),
+                      ).animate(onPlay: (controller) => controller.repeat(reverse: true))
+                       .shimmer(color: Colors.amber.shade200, duration: 1.seconds),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          const SizedBox(height: 10),
           if (widget.sequenceNotes.isNotEmpty)
             Column(
               children: [
@@ -251,11 +389,55 @@ class _ExplorerGameplayScreenState extends State<ExplorerGameplayScreen> {
                 ),
               ],
             ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
+          if (widget.feedback != RoundFeedback.none && widget.sequenceNotes.isEmpty)
+            Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: widget.feedback == RoundFeedback.correct
+                      ? Colors.green.shade50
+                      : Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: widget.feedback == RoundFeedback.correct
+                        ? Colors.green
+                        : Colors.red,
+                    width: 1.5,
+                  ),
+                ),
+                child: Text(
+                  widget.feedback == RoundFeedback.correct ? 'Correct!' : 'Wrong!',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: widget.feedback == RoundFeedback.correct
+                        ? Colors.green.shade700
+                        : Colors.red.shade700,
+                  ),
+                ),
+              )
+              .animate(key: ValueKey('${widget.roundIndex}_${widget.feedback}'))
+              .scaleXY(
+                begin: widget.feedback == RoundFeedback.correct ? 0.6 : 1.0,
+                end: 1.0,
+                duration: 400.ms,
+                curve: Curves.elasticOut,
+              )
+              .shake(
+                hz: widget.feedback == RoundFeedback.wrong ? 6 : 0,
+                duration: 400.ms,
+              )
+              .then(delay: 800.ms)
+              .fadeOut(duration: 300.ms),
+            ),
+          const SizedBox(height: 8),
           Expanded(
             child: _CappedPiano(
               maxHeight: 260,
               activeNote: _activeNote,
+              correctNote: widget.correctNote,
+              wrongNote: widget.wrongNote,
               onNotePressed: _handleNotePressed,
             ),
           ),
@@ -271,11 +453,15 @@ class _CappedPiano extends StatelessWidget {
   const _CappedPiano({
     required this.maxHeight,
     required this.activeNote,
+    this.correctNote,
+    this.wrongNote,
     required this.onNotePressed,
   });
 
   final double maxHeight;
   final String? activeNote;
+  final String? correctNote;
+  final String? wrongNote;
   final ValueChanged<String> onNotePressed;
 
   @override
@@ -288,6 +474,8 @@ class _CappedPiano extends StatelessWidget {
           child: VirtualPiano(
             height: height,
             activeNote: activeNote,
+            correctNote: correctNote,
+            wrongNote: wrongNote,
             onNotePressed: onNotePressed,
           ),
         );
@@ -295,6 +483,7 @@ class _CappedPiano extends StatelessWidget {
     );
   }
 }
+
 
 class _CloseButton extends StatelessWidget {
   const _CloseButton({this.onTap});
@@ -439,36 +628,71 @@ class _ProgressBar extends StatelessWidget {
 }
 
 class _NotePromptCard extends StatelessWidget {
-  const _NotePromptCard({this.onTap});
+  const _NotePromptCard({
+    this.onTap,
+    this.isMystery = false,
+    this.isPlaying = false,
+  });
   final VoidCallback? onTap;
+  final bool isMystery;
+  final bool isPlaying;
 
   @override
   Widget build(BuildContext context) {
+    Widget card = Container(
+      width: 140,
+      height: 140,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceWhite,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: isMystery
+                ? Colors.amber.withValues(alpha: 0.3)
+                : AppColors.primaryDark.withValues(alpha: 0.10),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+        border: isMystery
+            ? Border.all(color: Colors.amber, width: 2)
+            : null,
+      ),
+      child: Icon(
+        isMystery ? Icons.stars_rounded : Icons.music_note_rounded,
+        size: 48,
+        color: isMystery ? Colors.amber : AppColors.accent,
+      ),
+    );
+
+    if (isPlaying) {
+      card = card
+          .animate(onPlay: (controller) => controller.repeat(reverse: true))
+          .scaleXY(begin: 1.0, end: 1.06, duration: 400.ms, curve: Curves.easeInOut)
+          .boxShadow(
+            begin: BoxShadow(color: AppColors.accent.withValues(alpha: 0), blurRadius: 0),
+            end: BoxShadow(color: AppColors.accent.withValues(alpha: 0.4), blurRadius: 15, spreadRadius: 2),
+            duration: 400.ms,
+          );
+    } else if (isMystery) {
+      card = card
+          .animate(onPlay: (controller) => controller.repeat())
+          .shimmer(color: Colors.amber.withValues(alpha: 0.4), duration: 1500.ms)
+          .animate(onPlay: (controller) => controller.repeat(reverse: true))
+          .boxShadow(
+            begin: BoxShadow(color: Colors.amber.withValues(alpha: 0.1), blurRadius: 8),
+            end: BoxShadow(color: Colors.amber.withValues(alpha: 0.4), blurRadius: 20, spreadRadius: 1),
+            duration: 1.seconds,
+          );
+    }
+
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: 140,
-        height: 140,
-        decoration: BoxDecoration(
-          color: AppColors.surfaceWhite,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primaryDark.withValues(alpha: 0.10),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: const Icon(
-          Icons.music_note_rounded,
-          size: 48,
-          color: AppColors.accent,
-        ),
-      ),
+      child: card,
     );
   }
 }
+
 
 class _NoteChip extends StatelessWidget {
   const _NoteChip({required this.note});

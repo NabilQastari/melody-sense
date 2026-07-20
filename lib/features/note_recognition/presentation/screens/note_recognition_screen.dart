@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:melody_sense/core/domain/entities/practice_entities.dart';
 import 'package:melody_sense/core/providers/audio_providers.dart';
 import 'package:melody_sense/core/widgets/explorer_gameplay_screen.dart';
 import 'package:melody_sense/core/widgets/session_result_screen.dart';
@@ -8,7 +9,7 @@ import '../controllers/note_recognition_controller.dart';
 
 /// Note Recognition — Explorer Mode.
 ///
-/// Sesi 4: wrapper ini disambungkan penuh ke [NoteRecognitionController]
+/// Sesi 4: wrapper wrapper ini disambungkan penuh ke [NoteRecognitionController]
 /// — target nada, xp, hearts, dan progress semuanya berasal dari domain
 /// logic + database lewat PracticeRepository.
 ///
@@ -29,9 +30,9 @@ class NoteRecognitionScreen extends ConsumerWidget {
 
     if (state == null || audioReady.isLoading) {
       // Dua hal yang mesti kelar dulu sebelum piano boleh disentuh:
-      // sesi sudah dibuat di database (state != null) DAN semua
-      // sample nada sudah ter-load (audioReady). Belum ada desain
-      // loading khusus, jadi sementara pakai spinner polos.
+      // Sesi sudah dibuat di database (state != null) DAN semua
+      // Sample nada sudah ter-load (audioReady). Belum ada desain
+      // Loading khusus, jadi sementara pakai spinner polos.
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
@@ -39,9 +40,9 @@ class NoteRecognitionScreen extends ConsumerWidget {
 
     if (state.isSessionOver && state.completion == null) {
       // Sesi sudah berakhir tapi orkestrasi progression (personal
-      // best/level/streak/achievement) masih berjalan di background —
-      // tahan dulu di spinner supaya SessionResultScreen tidak sempat
-      // menampilkan streakDays/leveledUp yang belum final.
+      // Best/level/streak/achievement) masih berjalan di background —
+      // Tahan dulu di spinner supaya SessionResultScreen tidak sempat
+      // Menampilkan streakDays/leveledUp yang belum final.
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
@@ -49,8 +50,8 @@ class NoteRecognitionScreen extends ConsumerWidget {
 
     if (state.isSessionOver) {
       final completion = state.completion!;
-      // pushReplacement dijadwalkan lewat post-frame callback supaya
-      // tidak memanggil Navigator di tengah proses build.
+      // PushReplacement dijadwalkan lewat post-frame callback supaya
+      // Tidak memanggil Navigator di tengah proses build.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!context.mounted) return;
         Navigator.of(context).pushReplacement(
@@ -68,6 +69,15 @@ class NoteRecognitionScreen extends ConsumerWidget {
       });
     }
 
+    String? correctNote;
+    String? wrongNote;
+    if (state.feedback == RoundFeedback.correct) {
+      correctNote = state.lastPressedNote;
+    } else if (state.feedback == RoundFeedback.wrong) {
+      correctNote = state.targetNote;
+      wrongNote = state.lastPressedNote;
+    }
+
     return ExplorerGameplayScreen(
       targetLabel: 'Play the note',
       targetValue: state.targetNote,
@@ -75,9 +85,17 @@ class NoteRecognitionScreen extends ConsumerWidget {
       livesTotal: state.livesTotal,
       livesRemaining: state.livesRemaining,
       progress: state.progress,
+      correctNote: correctNote,
+      wrongNote: wrongNote,
+      isMysteryRound: state.roundIndex == state.mysteryRoundIndex,
+      feedback: state.feedback,
+      roundIndex: state.roundIndex,
+      totalRounds: state.totalRounds,
+      isPlaying: state.isPlaying,
       onClose: () => Navigator.of(context).maybePop(),
       onAutoPlay: controller.playTarget,
       onNotePressed: controller.submitAnswer,
     );
   }
 }
+

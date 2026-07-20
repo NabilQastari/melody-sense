@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
+
 
 /// Shell UI untuk layar hasil sesi (desain "06 - Session Results"),
 /// dipakai SEMUA mode latihan (Note Recognition, Interval Training,
@@ -90,7 +92,7 @@ class SessionResultScreen extends StatelessWidget {
                             : Icons.favorite_border_rounded,
                         color: accentColor,
                         size: 22,
-                      ),
+                      ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
                       const SizedBox(height: 8),
                       Text(
                         _headline,
@@ -100,7 +102,7 @@ class SessionResultScreen extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                           color: AppColors.primaryDark,
                         ),
-                      ),
+                      ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.2, end: 0),
                       const SizedBox(height: 6),
                       Text(
                         _subtitle,
@@ -109,12 +111,14 @@ class SessionResultScreen extends StatelessWidget {
                           fontSize: 13,
                           color: Colors.grey.shade600,
                         ),
-                      ),
+                      ).animate().fadeIn(delay: 150.ms, duration: 400.ms).slideY(begin: 0.2, end: 0),
                       const SizedBox(height: 28),
-                      _AccuracyRing(accuracy: accuracy, color: accentColor),
+                      _AccuracyRing(accuracy: accuracy, color: accentColor)
+                          .animate().scale(delay: 300.ms, duration: 500.ms, curve: Curves.easeOutCubic),
                       if (isWin && leveledUp) ...[
                         const SizedBox(height: 12),
-                        _LevelUpPill(),
+                        _LevelUpPill()
+                            .animate().scaleXY(begin: 0.8, end: 1.0, delay: 500.ms, duration: 600.ms, curve: Curves.bounceOut),
                       ],
                       const SizedBox(height: 28),
                       Row(
@@ -125,7 +129,7 @@ class SessionResultScreen extends StatelessWidget {
                               iconColor: Colors.amber,
                               value: '+$xpEarned',
                               label: 'XP Earned',
-                            ),
+                            ).animate().fadeIn(delay: 450.ms, duration: 400.ms).slideX(begin: -0.1, end: 0),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -134,7 +138,7 @@ class SessionResultScreen extends StatelessWidget {
                               iconColor: Colors.deepOrange,
                               value: '$streakDays-Day',
                               label: 'Streak',
-                            ),
+                            ).animate().fadeIn(delay: 450.ms, duration: 400.ms).slideX(begin: 0.1, end: 0),
                           ),
                         ],
                       ),
@@ -271,14 +275,34 @@ class _StatCard extends StatelessWidget {
         children: [
           Icon(icon, color: iconColor, size: 22),
           const SizedBox(height: 6),
-          Text(
-            value,
-            style: const TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 15,
-              color: AppColors.primaryDark,
-            ),
-          ),
+          () {
+            if (value.startsWith('+')) {
+              final numValue = int.tryParse(value.substring(1)) ?? 0;
+              return TweenAnimationBuilder<double>(
+                tween: Tween<double>(begin: 0, end: numValue.toDouble()),
+                duration: const Duration(milliseconds: 1500),
+                curve: Curves.easeOutCubic,
+                builder: (context, val, child) {
+                  return Text(
+                    '+${val.toInt()}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      color: AppColors.primaryDark,
+                    ),
+                  );
+                },
+              );
+            }
+            return Text(
+              value,
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+                color: AppColors.primaryDark,
+              ),
+            );
+          }(),
           Text(
             label,
             style: TextStyle(fontSize: 11, color: Colors.grey.shade500),

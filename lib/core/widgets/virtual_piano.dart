@@ -36,6 +36,8 @@ class VirtualPiano extends StatefulWidget {
     super.key,
     this.notes = kDefaultPianoNotes,
     this.activeNote,
+    this.correctNote,
+    this.wrongNote,
     this.onNotePressed,
     this.showLabels = true,
     this.height,
@@ -47,6 +49,12 @@ class VirtualPiano extends StatefulWidget {
   /// Nada yang sedang di-highlight (misal: sedang dimainkan sistem,
   /// atau baru saja ditekan user). Null = tidak ada yang aktif.
   final String? activeNote;
+
+  /// Nada yang benar untuk ronde ini, akan di-highlight hijau.
+  final String? correctNote;
+
+  /// Nada yang salah yang ditekan user, akan di-highlight merah.
+  final String? wrongNote;
 
   /// Dipanggil saat user menyentuh/menggeser jari ke atas salah satu
   /// tuts. Bisa terpanggil beberapa kali dalam satu sentuhan kalau
@@ -111,6 +119,8 @@ class _VirtualPianoState extends State<VirtualPiano> {
                 child: _PianoKey(
                   note: note,
                   isActive: note == widget.activeNote,
+                  isCorrect: note == widget.correctNote,
+                  isWrong: note == widget.wrongNote,
                   showLabel: widget.showLabels,
                 ),
               ),
@@ -149,46 +159,63 @@ class _PianoKey extends StatelessWidget {
     required this.note,
     required this.isActive,
     required this.showLabel,
+    this.isCorrect = false,
+    this.isWrong = false,
   });
 
   final String note;
   final bool isActive;
   final bool showLabel;
+  final bool isCorrect;
+  final bool isWrong;
 
   @override
   Widget build(BuildContext context) {
-    // Catatan: tidak lagi pakai Material/InkWell di sini — deteksi
-    // sentuhan sekarang ditangani satu GestureDetector di level
-    // VirtualPiano (lihat _VirtualPianoState), supaya swipe lintas
-    // tuts bisa terdeteksi. Widget ini murni visual.
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 120),
+    Color keyColor = AppColors.surfaceWhite;
+    Color textColor = AppColors.primaryDarkFaded;
+
+    if (isCorrect) {
+      keyColor = Colors.green;
+      textColor = Colors.white;
+    } else if (isWrong) {
+      keyColor = Colors.red;
+      textColor = Colors.white;
+    } else if (isActive) {
+      keyColor = AppColors.accent;
+      textColor = AppColors.surfaceWhite;
+    }
+
+    return AnimatedScale(
+      scale: isActive ? 0.95 : 1.0,
+      duration: const Duration(milliseconds: 100),
       curve: Curves.easeOut,
-      decoration: BoxDecoration(
-        color: isActive ? AppColors.accent : AppColors.surfaceWhite,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primaryDark.withValues(alpha: 0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        decoration: BoxDecoration(
+          color: keyColor,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primaryDark.withValues(alpha: 0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        alignment: Alignment.bottomCenter,
+        padding: const EdgeInsets.only(bottom: 12),
+        child: showLabel
+            ? Text(
+                note,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
+                ),
+              )
+            : null,
       ),
-      alignment: Alignment.bottomCenter,
-      padding: const EdgeInsets.only(bottom: 12),
-      child: showLabel
-          ? Text(
-              note,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isActive
-                    ? AppColors.surfaceWhite
-                    : AppColors.primaryDarkFaded,
-              ),
-            )
-          : null,
     );
   }
-}
+}

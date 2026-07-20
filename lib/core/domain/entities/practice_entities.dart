@@ -76,3 +76,23 @@ class NoteAccuracyStat {
     required this.accuracy,
   });
 }
+
+/// 9 nada yang tersedia, sesuai file audio di assets/audio/notes/
+/// (Sesi 3): B3.mp3, C4.mp3, D4.mp3, E4.mp3, F4.mp3, G4.mp3, A4.mp3,
+/// B4.mp3, C5.mp3.
+const kAvailableNotes = [
+  'B3',
+  'C4',
+  'D4',
+  'E4',
+  'F4',
+  'G4',
+  'A4',
+  'B4',
+  'C5',
+];
+
+/// Hasil ronde terakhir, dipakai UI kalau nanti mau menampilkan
+/// feedback visual (mis. flash hijau/merah).
+enum RoundFeedback { none, correct, wrong }
+

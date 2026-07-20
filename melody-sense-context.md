@@ -71,6 +71,7 @@ Pengembangan hardware fisik **awalnya** direncanakan dilanjutkan setelah lolos t
 | Local storage (settings ringan) | **shared_preferences** | Key-value sederhana (volume, preferensi) |
 | WebSocket (nanti, Maestro Mode) | **web_socket_channel** | Package resmi Dart |
 | Navigasi | **go_router** | Navigasi antar mode/layar |
+| Animasi UI | **flutter_animate** *(baru, direncanakan Sesi 11.1)* | Package animasi deklaratif (`.animate().scale()`, `.shake()`, `.fadeIn()`, dst) — dipilih daripada menulis manual `AnimatedContainer`/`TweenAnimationBuilder` satu-satu, supaya animasi feedback teks & tombol di Note Recognition lebih ringkas ditulis dan konsisten dipakai ulang di mode latihan lain nanti |
 | Arsitektur | **Clean Architecture, feature-first** | Presentation → Domain → Data per fitur, modular & scalable |
 
 **Struktur folder (gabungan Sesi 1–7, kondisi aktual):**
@@ -262,11 +263,15 @@ Implementasi konkret (DAO, domain entities, repository, Riverpod providers) suda
 | 7 | Statistik & grafik progres + refactor navbar arsitektur | ✅ Selesai |
 | 8 | Progression path UI (peta level) + polish Explorer Mode | ✅ Selesai |
 | 9 | Halaman Dashboard (baru ditambahkan Sesi 5 — belum ada detail konten/desain, lihat catatan) | ✅ Selesai |
-| 10 | Persiapan Maestro Mode (WebSocket client) + **Melody Echo** (ditunda dari Sesi 6) | ⏳ Belum mulai |
-| 11 | Testing & persiapan submission tahap 2 | ⏳ Belum mulai |
-| 12 | Fitur Kustomisasi & Reward Peti Rahasia (Piano Skins / Themes) | ⏳ Belum mulai |
+| 10 | Brainstorming (Fitur Peningkatan UX & Edukasi Latihan) | ⏸️ Dijeda sementara — brainstorming Note Recognition sudah menghasilkan rencana konkret (lihat Sesi 11.1), lanjut brainstorming mode latihan lain (Interval Training, Melody Echo, Rhythm Match) setelah Sesi 11.1 selesai dites |
+| 11 | Implementasi dari Rencana Pembaruan (UX & Edukasi Latihan) | ⏳ Belum mulai |
+| 11.1 | Update Note Recognition (Mekanik & Visual Tambahan) — sub-sesi dari Sesi 11, dikerjakan lebih dulu sebagai test case | ✅ Selesai |
+| 11.2 | Update Interval Training (Mekanik & Visual Tambahan) — sub-sesi dari Sesi 11, lanjutan pola 11.1 | ⏳ Siap dieksekusi — lihat "Rencana Sesi 11.2" |
+| 12 | Persiapan Maestro Mode (WebSocket client) + **Melody Echo** (ditunda dari Sesi 6) | ⏳ Belum mulai |
+| 13 | Testing & persiapan submission tahap 2 | ⏳ Belum mulai |
+| 14 | Fitur Kustomisasi & Reward Peti Rahasia (Piano Skins / Themes) | ⏳ Belum mulai |
 
-*(Rencana ini bisa disesuaikan/dipecah lebih lanjut sesuai kebutuhan saat pengembangan berjalan. Sesi 9 "Dashboard" disisipkan saat Sesi 5 — sebelumnya roadmap cuma sampai 10 sesi, Maestro Mode & Testing yang tadinya Sesi 9/10 jadi geser ke Sesi 10/11. Sesi 12 ditambahkan di Sesi 8 atas permintaan user untuk membahas benefit peti rahasia).*
+*(Rencana ini bisa disesuaikan/dipecah lebih lanjut sesuai kebutuhan saat pengembangan berjalan. Sesi 9 "Dashboard" disisipkan saat Sesi 5. Sesi 10 & 11 ditambahkan di akhir Sesi 9 atas permintaan user untuk memprioritaskan peningkatan UX, kesenangan, dan nilai edukatif mode latihan).*
 
 > ⚠️ **Catatan Sesi 6:** Sebelum masuk kerjaan inti Sesi 6, user minta dibuatkan **Practice tab** (`features/practice/`) di luar rencana sesi manapun — supaya mode latihan bisa dipilih dari dalam app, bukan ganti `home:` di `main.dart` manual. Dikerjakan duluan di sesi yang sama.
 
@@ -502,9 +507,6 @@ Fokus: **Fitur Note Recognition end-to-end** — jadi pola template untuk fitur 
 - **Rhythm Match** — screen sudah dibuat, card sudah enabled, tapi **belum pernah di-run/dites** oleh user. Perlu ditest kelancarannya.
 - **`kAvailableNotes`/`RoundFeedback`** belum dipindah ke `practice_entities.dart`.
 - **`placeholder_screens.dart`** — orphan file, bisa dihapus.
-
----
-
 ## Ringkasan Sesi 8 (SELESAI)
 
 **1. Progression Path UI:**
@@ -518,18 +520,106 @@ Fokus: **Fitur Note Recognition end-to-end** — jadi pola template untuk fitur 
 - Refactor `PracticeScreen` menjadi `ConsumerStatefulWidget` agar bisa mengakses provider Riverpod.
 - Menghubungkan banner Daily Streak di tab Practice ke provider `streakProvider` database asli, menghilangkan nilai mock hardcoded (`_mockStreakDays = 5`).
 
-**Kalau chat baru melanjutkan:** Sesi 10 (Maestro Mode & Melody Echo) — integrasi WebSocket client + menghubungkan Smart Piano fisik.
+**Kalau chat baru melanjutkan:** **Sesi 11.2 (Update Interval Training — Mekanik & Visual Tambahan)**, lihat bagian "Rencana Sesi 11.2" untuk detail lengkap scope, file yang tersentuh, dan keputusan teknis — sudah siap langsung dieksekusi (bukan brainstorming lagi). Sesi 10 (brainstorming lanjutan untuk Melody Echo, Rhythm Match) **masih dijeda**, dilanjutkan setelah Sesi 11.2 selesai dites.
 
 ---
 
 ## Ringkasan Sesi 9 (SELESAI)
 
-**1. Dashboard Screen:**
-- `dashboard_screen.dart` diimplementasikan secara penuh menggantikan placeholder lama di HomeScreen.
-- **Level & XP Header**: Menampilkan nama "Hello, Maestro!", level pill badge (e.g. Level 5) dan total XP dari database via Riverpod.
-- **Smart Piano Status Card**: Menunjukkan status koneksi "Not Connected" dengan tombol "Connect" interaktif yang menampilkan status integrasi WebSocket Sesi 10.
-- **2x2 Challenges Grid**: Menyediakan akses cepat ke 4 mode utama (Note Recognition, Interval Training, Melody Echo, Rhythm Match) yang langsung membuka screen masing-masing saat di-tap.
-- **Personal Best Banner**: Menampilkan ringkasan pencapaian terbaik (skor tertinggi) yang dikemas dengan visual linear progress bar.
+**1. Halaman Dashboard (`dashboard_screen.dart`):**
+- Diimplementasikan penuh menggantikan placeholder lama di `HomeScreen`.
+- **Level & XP Header**: Menampilkan nama "Hello, Maestro!", level pill badge (diambil dinamis dari Drift via `levelInfoProvider`), dan total XP.
+- **Smart Piano Status Card**: Menunjukkan status koneksi piano fisik (*Not Connected*) dan tombol **"Connect"** interaktif yang memunculkan dialog persiapan integrasi WebSocket Sesi 12.
+- **2x2 Challenges Grid**: Menyediakan akses cepat ke 4 mode utama (*Note Recognition*, *Interval Training*, *Melody Echo*, dan *Rhythm Match*) yang langsung membuka screen masing-masing saat di-tap.
+- **Personal Best Banner**: Card besar di bagian bawah yang menampilkan pencapaian skor tertinggi dan visual linear progress bar.
+
+**2. Halaman Settings (`settings_screen.dart`):**
+- Dibuat untuk melengkapi pengaturan volume piano virtual (menggunakan `shared_preferences` untuk simpan dan disetel ke `SoLoud.instance.setGlobalVolume`), toggle Sense Mode (Aksesibilitas), serta opsi *Danger Zone* untuk mereset seluruh database progres dan seeding ulang default achievements.
+- Menghubungkan ikon gerigi settings (`Icons.settings_outlined`) di **seluruh tab** (Dashboard, Practice, Progression, Stats) menggunakan `GestureDetector` ke `SettingsScreen`.
+
+**3. Perbaikan & Polish Suara:**
+- Meningkatkan volume suara piano virtual ke **1.8x** agar bunyi nada terdengar lebih keras dan mantap.
+- Mengatur index halaman utama `HomeScreen` default ke `0` (sehingga langsung membuka Dashboard saat aplikasi dibuka).
+- Menghilangkan sisa warning analisis (unused import) agar status proyek tetap 100% bersih.
+
+---
+
+## Rencana Sesi 11.1: Update Note Recognition (Mekanik & Visual Tambahan)
+
+> Status: ⏳ **Siap dieksekusi.** Hasil brainstorming Sesi 10 (yang dijeda) khusus untuk Note Recognition, disepakati untuk langsung diimplementasi sebagai sub-sesi test case sebelum lanjut brainstorming mode latihan lain. **Desain layout Note Recognition TIDAK berubah** — semua di bawah ini adalah lapisan tambahan (mekanik + animasi) di atas struktur yang sudah ada.
+
+### A. Mekanik Tambahan (nempel ke mekanik inti: dengar satu nada → tekan tombol sesuai)
+
+**1. Nada Misteri per sesi**
+- 1 ronde acak per sesi ditandai sebagai "ronde misteri" (index ronde dipilih random saat sesi dimulai, bukan diketahui user sebelumnya)
+- Ronde misteri dikasih indikator visual halus (glow/sparkle di area nada, bukan di tombol jawaban — supaya tidak membocorkan jawaban)
+- Kalau user jawab **benar** di ronde misteri → dapat bonus (XP ekstra untuk ronde itu)
+- Perlu tambahan state: index ronde misteri (ditentukan di awal sesi, disimpan di `NoteRecognitionState`)
+
+**2. Compare Playback saat salah**
+- Begitu user menekan tombol yang salah, otomatis mainkan ulang: nada target → jeda singkat → nada yang user tekan
+- Tujuan: memperkuat kalibrasi telinga user langsung di momen salah, tanpa perlu teks penjelasan
+- Cukup panggil `AudioService` dua kali berurutan dari controller, tidak butuh state baru
+
+### B. Visual/Animasi Tambahan (layout tetap sama, cuma ditambah animasi di atas widget existing)
+
+1. **Teks feedback "Benar!"/"Salah!"** — bounce scale (benar) / shake horizontal (salah), fade-out otomatis
+2. **Tombol nada saat diputar** — glow/kedip halus mengikuti timing audio nada target
+3. **Tombol nada saat ditekan** — efek ripple/press-down (scale kecil ke dalam)
+4. **Tombol nada setelah dijawab** — kedip hijau (benar) / kedip merah (tombol salah yang ditekan), lalu balik normal
+5. **Progress ronde** ("Ronde 3/10") — transisi slide/fade saat angka berganti
+6. **Transisi antar ronde** — fade/slide halus, delay singkat sebelum nada ronde berikutnya diputar
+7. **Indikator ronde misteri** — glow/sparkle halus (lihat poin A.1)
+8. **XP akhir sesi** — angka dianimasikan count-up dari 0 ke nilai akhir, bukan langsung muncul
+
+### C. Keputusan Teknis
+- **Package animasi:** `flutter_animate` (lihat tabel Tech Stack) — dipilih sebagai opsi "terbaik" dibanding widget animasi manual bawaan Flutter, karena sintaks deklaratif lebih ringkas dan reusable ke mode latihan lain nanti.
+- **Tidak ada perubahan desain/layout** — hanya penambahan state (index ronde misteri) dan lapisan animasi di widget yang sudah ada di `note_recognition_screen.dart` & shell `ExplorerGameplayScreen`.
+
+### D. File yang kemungkinan tersentuh
+- `pubspec.yaml` — tambah dependency `flutter_animate`
+- `note_recognition_state.dart` — tambah field index ronde misteri (dan flag `isMysteryRound` per state kalau perlu)
+- `note_recognition_controller.dart` — logic pilih ronde misteri random saat `_start()`, logic compare playback saat jawaban salah, logic bonus XP kalau ronde misteri dijawab benar
+- `note_recognition_screen.dart` — pasang animasi di teks feedback, tombol nada, progress ronde, indikator ronde misteri
+
+---
+
+## Rencana Sesi 11.2: Update Interval Training (Mekanik & Visual Tambahan)
+
+> Status: ⏳ **Siap dieksekusi.** Lanjutan pola dari Sesi 11.1 — brainstorming khusus Interval Training dari Sesi 10 (yang masih dijeda untuk Melody Echo & Rhythm Match) langsung diimplementasi sebagai sub-sesi Sesi 11 berikutnya. **Desain layout Interval Training TIDAK berubah** — semua di bawah ini lapisan tambahan (mekanik + animasi) di atas struktur yang sudah ada.
+
+### A. Mekanik Tambahan (nempel ke mekanik inti: dengar dua nada berurutan → tentukan jarak interval)
+
+**1. Interval Misteri per sesi**
+- Pola identik dengan "Nada Misteri" di 11.1: 1 ronde acak per sesi ditandai indikator visual halus, jawab benar → bonus XP (+20 XP)
+- Reuse logic penuh dari `note_recognition_controller.dart` (pemilihan index ronde random saat sesi mulai), tinggal diterapkan ke `interval_training_controller.dart`
+
+**2. Compare Playback saat salah (versi adaptasi)**
+- Beda dari Note Recognition: bukan cuma replay 2 nada target, tapi mainkan **interval target** (2 nada asli berurutan) → jeda → **ilustrasi interval jawaban user** (2 nada baru dimainkan dari root note yang sama, jaraknya sesuai semitone yang user jawab)
+- Tujuannya user dengar langsung *bunyi* interval yang salah dia pilih, bukan cuma tahu angkanya meleset
+- Butuh helper kecil di controller: fungsi generate nada kedua dari root + jarak semitone (kemungkinan sudah ada polanya di `IntervalDefinition`/`kValidIntervalRounds`)
+
+### B. Visual Tambahan (layout tetap sama, animasi di atas widget existing)
+
+**Reuse penuh dari 11.1** (semua sudah pakai `flutter_animate`, tinggal pasang ulang di `interval_training_screen.dart`):
+1. Teks feedback "Benar!"/"Salah!" — bounce/shake, fade-out otomatis
+2. Tuts piano mengecil (`AnimatedScale`) saat ditekan
+3. Progress ronde ("Ronde 3/10") — transisi slide/fade
+4. Transisi antar ronde — fade/slide halus + delay singkat
+5. Indikator ronde misteri — glow/sparkle halus
+6. XP akhir sesi — count-up dari 0 (di `SessionResultScreen`, sudah reusable di semua mode)
+
+**Baru, spesifik ke Interval Training:**
+7. **Visual "jembatan jarak"** — setelah user jawab, animasikan garis/jembatan menghubungkan 2 tuts yang dimainkan di piano, dengan label jarak (misal "5 semitone") muncul di tengah jembatan. Interval yang abstrak jadi terasa *spasial*, bukan cuma angka.
+
+### C. Keputusan Teknis
+- Package animasi tetap `flutter_animate` (sudah ada di tech stack sejak 11.1), tidak ada dependency baru.
+- Tidak ada perubahan desain/layout Interval Training.
+
+### D. File yang kemungkinan tersentuh
+- `interval_training_state.dart` — tambah field index ronde misteri (pola sama seperti `note_recognition_state.dart` di 11.1)
+- `interval_training_controller.dart` — logic pilih ronde misteri random, logic compare playback (generate + mainkan interval versi jawaban user), logic bonus XP ronde misteri
+- `interval_training_screen.dart` — pasang ulang animasi dari 11.1 + widget baru untuk visual jembatan jarak (kemungkinan custom `CustomPainter` atau `AnimatedContainer` garis penghubung antar posisi tuts)
 
 ---
 

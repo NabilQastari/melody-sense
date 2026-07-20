@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:melody_sense/core/domain/entities/progression_entities.dart';
-import 'package:melody_sense/features/note_recognition/presentation/state/note_recognition_state.dart'
+import 'package:melody_sense/core/domain/entities/practice_entities.dart'
     show RoundFeedback;
+import 'package:melody_sense/core/domain/entities/progression_entities.dart';
+
+
 
 /// Tempo tetap untuk MVP ini — 90 BPM. Belum ada UI metronome/visual
 /// beat, jadi nilai ini baru dipakai buat hitung jendela waktu di

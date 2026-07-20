@@ -10,10 +10,11 @@ import 'package:melody_sense/core/domain/entities/progression_entities.dart';
 // supaya file lain yang meng-import interval_training_state.dart (mis.
 // controller) ikut kebagian kedua nama ini — import biasa tidak
 // diteruskan secara transitif, cuma berlaku di file ini sendiri.
-import 'package:melody_sense/features/note_recognition/presentation/state/note_recognition_state.dart'
+import 'package:melody_sense/core/domain/entities/practice_entities.dart'
     show kAvailableNotes, RoundFeedback;
-export 'package:melody_sense/features/note_recognition/presentation/state/note_recognition_state.dart'
+export 'package:melody_sense/core/domain/entities/practice_entities.dart'
     show kAvailableNotes, RoundFeedback;
+
 
 /// Definisi satu interval musik: nama tampilan + jarak semitone (naik).
 class IntervalDefinition {
