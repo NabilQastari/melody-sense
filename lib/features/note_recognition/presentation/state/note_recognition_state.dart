@@ -9,6 +9,7 @@ class NoteRecognitionState {
     required this.targetNote,
     required this.sessionId,
     required this.mysteryRoundIndex,
+    this.submode = PracticeSubmode.practice,
     this.lastPressedNote,
     this.isPlaying = false,
     this.xp = 0,
@@ -25,11 +26,12 @@ class NoteRecognitionState {
   final String targetNote;
   final int sessionId;
   final int mysteryRoundIndex;
+  final PracticeSubmode submode;
   final String? lastPressedNote;
   final bool isPlaying;
   final int xp;
-  final int livesTotal;
-  final int livesRemaining;
+  final int? livesTotal;
+  final int? livesRemaining;
 
   /// Jumlah ronde yang SUDAH diselesaikan (benar maupun salah).
   final int roundIndex;
@@ -60,12 +62,13 @@ class NoteRecognitionState {
 
   /// Menang = sesi berakhir karena semua ronde selesai dengan hearts
   /// masih tersisa (bukan karena hearts habis).
-  bool get isWin => livesRemaining > 0;
+  bool get isWin => livesRemaining == null || livesRemaining! > 0;
 
   NoteRecognitionState copyWith({
     String? targetNote,
     int? sessionId,
     int? mysteryRoundIndex,
+    PracticeSubmode? submode,
     String? lastPressedNote,
     bool? isPlaying,
     int? xp,
@@ -82,6 +85,7 @@ class NoteRecognitionState {
       targetNote: targetNote ?? this.targetNote,
       sessionId: sessionId ?? this.sessionId,
       mysteryRoundIndex: mysteryRoundIndex ?? this.mysteryRoundIndex,
+      submode: submode ?? this.submode,
       lastPressedNote: lastPressedNote ?? this.lastPressedNote,
       isPlaying: isPlaying ?? this.isPlaying,
       xp: xp ?? this.xp,
@@ -96,4 +100,3 @@ class NoteRecognitionState {
     );
   }
 }
-

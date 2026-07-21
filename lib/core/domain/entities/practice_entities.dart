@@ -96,3 +96,10 @@ const kAvailableNotes = [
 /// feedback visual (mis. flash hijau/merah).
 enum RoundFeedback { none, correct, wrong }
 
+/// Submode untuk setiap jenis mode latihan.
+enum PracticeSubmode {
+  practice,
+  guided,
+}
+
+

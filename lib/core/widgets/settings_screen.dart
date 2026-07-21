@@ -5,6 +5,7 @@ import 'package:flutter_soloud/flutter_soloud.dart';
 
 import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/providers/database_providers.dart';
+import 'package:melody_sense/core/providers/education_progress_provider.dart';
 
 /// Settings Screen - Sesi 9 (Pengaturan Aplikasi)
 ///
@@ -68,6 +69,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
       // Seeding ulang default achievements agar data kembali bersih tapi siap pakai
       await repo.seedDefaultAchievementsIfEmpty();
+
+      // Reset status kelulusan submode Introduce
+      await ref.read(educationProgressProvider.notifier).resetAll();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

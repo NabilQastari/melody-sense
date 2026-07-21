@@ -7,7 +7,7 @@ import '../../../stats/presentation/providers/stats_providers.dart';
 import '../../../free_play/presentation/screens/free_play_screen.dart';
 import '../../../interval_training/presentation/screens/interval_training_screen.dart';
 import '../../../melody_echo/presentation/screens/melody_echo_screen.dart';
-import '../../../note_recognition/presentation/screens/note_recognition_screen.dart';
+import '../../../note_recognition/presentation/screens/note_recognition_submode_picker_screen.dart';
 import '../../../rhythm_match/presentation/screens/rhythm_match_screen.dart';
 import '../models/challenge_info.dart';
 import '../widgets/challenge_card.dart';
@@ -34,7 +34,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         icon: Icons.radio_button_checked_rounded,
         difficulty: ChallengeDifficulty.beginner,
         enabled: true,
-        builder: (_) => const NoteRecognitionScreen(),
+        builder: (_) => const NoteRecognitionSubmodePickerScreen(),
       ),
       ChallengeInfo(
         title: 'Interval Training',

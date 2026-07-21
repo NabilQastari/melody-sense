@@ -5,7 +5,7 @@ import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/settings_screen.dart';
 import 'package:melody_sense/features/interval_training/presentation/screens/interval_training_screen.dart';
 import 'package:melody_sense/features/melody_echo/presentation/screens/melody_echo_screen.dart';
-import 'package:melody_sense/features/note_recognition/presentation/screens/note_recognition_screen.dart';
+import 'package:melody_sense/features/note_recognition/presentation/screens/note_recognition_submode_picker_screen.dart';
 import 'package:melody_sense/features/rhythm_match/presentation/screens/rhythm_match_screen.dart';
 import 'package:melody_sense/features/stats/presentation/providers/stats_providers.dart';
 
@@ -150,7 +150,7 @@ class DashboardScreen extends ConsumerWidget {
                       subtitle: 'Identify keys visually',
                       icon: Icons.music_note_rounded,
                       onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const NoteRecognitionScreen()),
+                        MaterialPageRoute(builder: (_) => const NoteRecognitionSubmodePickerScreen()),
                       ),
                     ),
                     _ChallengeGridCard(

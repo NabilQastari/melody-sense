@@ -669,3 +669,109 @@ Diskusi perencanaan (belum coding) yang menghasilkan dua keputusan besar:
 - Rencana user testing dengan pengguna tunanetra/low vision asli
 
 **Untuk kebutuhan desain (Stitch):** Bagian "Mode Disabilitas (Sense Mode)" di atas berisi daftar fitur lengkap (TTS, Braille, earcon, haptic, Semantics/TalkBack, kontrol kecepatan narasi, high-contrast/font besar) yang bisa dipakai sebagai acuan brief desain layar Sense Mode.
+
+---
+
+## Brainstorming Sesi 10: Sistem Submode untuk Semua Mode Practice
+
+> Status: 💡 **Brainstorming aktif.** Konsep utama berasal dari user — setiap mode latihan (kecuali Free Play) memiliki **submode** yang harus dilalui/dipilih sebelum mulai berlatih. Tujuannya: user tidak langsung "dilempar" ke latihan tanpa konteks, terutama pemula yang belum paham teori musik dasar.
+
+### Konsep Inti
+
+Setiap mode practice (Note Recognition, Interval Training, Melody Echo, Rhythm Match) memiliki **layar pemilihan submode** sebelum masuk ke gameplay. Free Play **tidak termasuk** — sifatnya sandbox bebas tanpa struktur sesi.
+
+---
+
+### Submode 1: Introduce (Perkenalan)
+
+**Tujuan**: Edukasi teori dasar yang relevan dengan mode tersebut. User memahami *apa* yang akan dilatih sebelum mulai berlatih.
+
+**Konten per mode:**
+
+#### Note Recognition — Introduce
+- Apa itu **nada** (note)?
+- Penjelasan notasi: C4, D4, E4, ... (nama nada + angka oktaf)
+- Apa itu **oktaf**? Kenapa C4 dan C5 "terasa sama tapi beda ketinggian"?
+- Demonstrasi interaktif: tombol "Dengarkan" di samping setiap nada, user bisa tekan untuk dengar perbedaan bunyinya
+- Peta visual: hubungan antara posisi tuts piano fisik dan nama nada
+
+#### Interval Training — Introduce
+- Apa itu **interval** (jarak antar dua nada)?
+- Apa itu **semitone** (satuan jarak terkecil)?
+- Daftar interval yang dipakai di mode ini, lengkap dengan:
+  - Nama (Minor 2nd, Major 3rd, Perfect 5th, dst.)
+  - Jarak dalam semitones
+  - Contoh: "C4 → E4 = Major 3rd (4 semitones)"
+  - Tombol "Dengarkan" untuk tiap interval — mainkan pasangan nada contohnya
+- Analogi sederhana: interval seperti "jarak langkah" di tangga nada
+
+#### Melody Echo — Introduce
+- Apa itu **melodi**? (urutan nada yang membentuk pola/lagu)
+- Perbedaan melodi vs nada tunggal vs interval
+- Contoh melodi pendek yang bisa didengarkan
+- Penjelasan cara kerja mode: "dengarkan → ulangi urutan yang sama"
+
+#### Rhythm Match — Introduce
+- Apa itu **ritme**? (pola ketukan dalam waktu)
+- Perbedaan ritme vs melodi
+- Contoh pola ritme sederhana yang bisa didengarkan
+- Penjelasan cara kerja mode: "dengarkan pola ketukan → tiru ketukannya"
+
+**Karakteristik Introduce:**
+- Bersifat **satu kali baca** — setelah user menyelesaikan introduce, tandai sebagai "sudah dibaca" (persist ke database/shared_preferences)
+- Bisa **diakses ulang** kapan saja dari layar submode (tidak dikunci setelah selesai)
+- **Tidak ada skor/XP** — murni edukatif
+- Interaktif: bukan hanya teks statis, tapi ada tombol-tombol "Dengarkan" untuk contoh audio
+
+---
+
+### Submode 2: Start Practice / Training
+
+**Tujuan**: Mode latihan utama yang sudah ada sekarang (gameplay loop dengan skor, XP, lives, ronde).
+
+- Ini adalah **gameplay yang sudah diimplementasikan** di Sesi 4-11
+- Note Recognition: dengar 1 nada → tebak nama nada
+- Interval Training: dengar 2 nada berurutan → tebak nada kedua
+- Melody Echo: dengar urutan nada → ulangi urutan (belum diimplementasi gameplay-nya)
+- Rhythm Match: dengar pola ketukan → tiru ketukannya (belum diimplementasi gameplay-nya)
+
+---
+
+### Submode 3: Guided Practice / Latihan Terbimbing
+
+**Tujuan**: Mode "setengah jalan" antara Introduce (pasif) dan Practice (aktif penuh) — latihan dengan bantuan/hint dinamis.
+
+- **Hint otomatis aktif**: Setelah 3 detik tanpa jawaban, sistem memberikan petunjuk visual (menyorot tuts target yang benar berwarna hijau).
+- **Tanpa penalti nyawa** — latihan berjalan 10 ronde tanpa hearts agar pemula tidak merasa tertekan.
+- Cocok untuk pemula yang sudah membaca Introduce tapi belum percaya diri masuk Practice langsung.
+
+---
+
+### Alur UX yang Diusulkan
+
+```
+Practice Screen → Tap kartu mode (misal "Note Recognition")
+  └── Layar Submode Picker
+        ├── 📖 Introduce          — "Pelajari dasar-dasar nada"
+        ├── 🎮 Start Training     — "Mulai sesi latihan standar"
+        └── 🎯 Guided Practice    — "Latihan terbimbing dengan petunjuk"
+```
+
+---
+
+### Keputusan & Rencana Aksi Sesi 10
+
+Berdasarkan keputusan final user:
+
+1. **Introduce bersifat WAJIB**:
+   - Submode Training/Practice dan Guided Practice akan **terkunci/abu-abu (disabled)** jika user belum pernah menyelesaikan/membaca submode "Introduce" untuk mode tersebut.
+   - Status kelulusan/membaca Introduce ini disimpan secara persisten di SharedPreferences lewat `educationProgressProvider`.
+2. **Submode yang Digunakan**:
+   - Terdiri dari 3 submode utama: **Introduce**, **Start Training**, dan **Guided Practice** (Quick Quiz dihapus sesuai permintaan user).
+3. **Desain Layar Submode Picker**:
+   - Menggunakan layout kartu tantangan bergaya grid/list vertikal mirip dengan tampilan Challenge Cards di menu Practice utama.
+4. **Urutan Implementasi**:
+   - Dikerjakan secara **inkremental per satu mode lengkap**:
+     - Pertama: Selesaikan seluruh submode untuk mode **Note Recognition**.
+     - Setelah Note Recognition selesai penuh dan stabil, pola tersebut akan direplikasi ke **Interval Training**, **Melody Echo**, dan **Rhythm Match**.
+

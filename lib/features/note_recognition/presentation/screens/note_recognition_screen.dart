@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:melody_sense/core/domain/entities/practice_entities.dart';
@@ -6,43 +8,62 @@ import 'package:melody_sense/core/widgets/explorer_gameplay_screen.dart';
 import 'package:melody_sense/core/widgets/session_result_screen.dart';
 
 import '../controllers/note_recognition_controller.dart';
+import '../state/note_recognition_state.dart';
 
-/// Note Recognition — Explorer Mode.
-///
-/// Sesi 4: wrapper wrapper ini disambungkan penuh ke [NoteRecognitionController]
-/// — target nada, xp, hearts, dan progress semuanya berasal dari domain
-/// logic + database lewat PracticeRepository.
-///
-/// Sesi 5: [SessionResultScreen] sekarang diisi streakDays & leveledUp
-/// dari [NoteRecognitionController.completeSession] (lewat
-/// `state.completion`), bukan placeholder 0/false lagi. Karena
-/// completeSession() berjalan async setelah sesi ditandai selesai,
-/// layar menunggu `state.completion` terisi dulu sebelum berpindah,
-/// supaya data yang ditampilkan sudah final.
-class NoteRecognitionScreen extends ConsumerWidget {
-  const NoteRecognitionScreen({super.key});
+/// Note Recognition — Explorer Mode (Mendukung Multi-Submode).
+class NoteRecognitionScreen extends ConsumerStatefulWidget {
+  const NoteRecognitionScreen({
+    super.key,
+    this.submode = PracticeSubmode.practice,
+  });
+
+  final PracticeSubmode submode;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NoteRecognitionScreen> createState() => _NoteRecognitionScreenState();
+}
+
+class _NoteRecognitionScreenState extends ConsumerState<NoteRecognitionScreen> {
+  Timer? _hintTimer;
+  String? _guidedHintNote;
+  int _lastRoundIndex = -1;
+
+  @override
+  void dispose() {
+    _hintTimer?.cancel();
+    super.dispose();
+  }
+
+  void _resetHintTimer(NoteRecognitionState state) {
+    _hintTimer?.cancel();
+    _guidedHintNote = null;
+
+    if (widget.submode == PracticeSubmode.guided &&
+        state.feedback == RoundFeedback.none &&
+        !state.isSessionOver) {
+      _hintTimer = Timer(const Duration(seconds: 3), () {
+        if (mounted) {
+          setState(() {
+            _guidedHintNote = state.targetNote;
+          });
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final audioReady = ref.watch(audioReadyProvider);
-    final state = ref.watch(noteRecognitionControllerProvider);
-    final controller = ref.read(noteRecognitionControllerProvider.notifier);
+    final state = ref.watch(noteRecognitionControllerProvider(widget.submode));
+    final controller = ref.read(noteRecognitionControllerProvider(widget.submode).notifier);
 
     if (state == null || audioReady.isLoading) {
-      // Dua hal yang mesti kelar dulu sebelum piano boleh disentuh:
-      // Sesi sudah dibuat di database (state != null) DAN semua
-      // Sample nada sudah ter-load (audioReady). Belum ada desain
-      // Loading khusus, jadi sementara pakai spinner polos.
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (state.isSessionOver && state.completion == null) {
-      // Sesi sudah berakhir tapi orkestrasi progression (personal
-      // Best/level/streak/achievement) masih berjalan di background —
-      // Tahan dulu di spinner supaya SessionResultScreen tidak sempat
-      // Menampilkan streakDays/leveledUp yang belum final.
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
@@ -50,8 +71,6 @@ class NoteRecognitionScreen extends ConsumerWidget {
 
     if (state.isSessionOver) {
       final completion = state.completion!;
-      // PushReplacement dijadwalkan lewat post-frame callback supaya
-      // Tidak memanggil Navigator di tengah proses build.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!context.mounted) return;
         Navigator.of(context).pushReplacement(
@@ -62,24 +81,42 @@ class NoteRecognitionScreen extends ConsumerWidget {
               xpEarned: state.xp,
               streakDays: completion.streakDays,
               leveledUp: completion.leveledUp,
-              retryScreenBuilder: (_) => const NoteRecognitionScreen(),
+              retryScreenBuilder: (_) => NoteRecognitionScreen(submode: widget.submode),
             ),
           ),
         );
       });
     }
 
+    // Lacak pergantian ronde untuk mereset timer petunjuk (hint)
+    if (state.roundIndex != _lastRoundIndex) {
+      _lastRoundIndex = state.roundIndex;
+      _resetHintTimer(state);
+    }
+
+    // Jika user sudah menekan jawaban, hilangkan hint
+    if (state.feedback != RoundFeedback.none) {
+      _hintTimer?.cancel();
+      _guidedHintNote = null;
+    }
+
     String? correctNote;
     String? wrongNote;
+
     if (state.feedback == RoundFeedback.correct) {
       correctNote = state.lastPressedNote;
     } else if (state.feedback == RoundFeedback.wrong) {
       correctNote = state.targetNote;
       wrongNote = state.lastPressedNote;
+    } else if (_guidedHintNote != null) {
+      // Tampilkan hint dengan menyalakan tuts target berwarna hijau
+      correctNote = _guidedHintNote;
     }
 
     return ExplorerGameplayScreen(
-      targetLabel: 'Play the note',
+      targetLabel: widget.submode == PracticeSubmode.guided 
+          ? 'Guided Practice (Tebak Nada)' 
+          : 'Play the note',
       targetValue: state.targetNote,
       xp: state.xp,
       livesTotal: state.livesTotal,
@@ -98,4 +135,3 @@ class NoteRecognitionScreen extends ConsumerWidget {
     );
   }
 }
-
