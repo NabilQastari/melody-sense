@@ -5,7 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/settings_screen.dart';
 import '../../../stats/presentation/providers/stats_providers.dart';
 import '../../../free_play/presentation/screens/free_play_screen.dart';
-import '../../../interval_training/presentation/screens/interval_training_screen.dart';
+import '../../../interval_training/presentation/screens/interval_training_submode_picker_screen.dart';
 import '../../../melody_echo/presentation/screens/melody_echo_screen.dart';
 import '../../../note_recognition/presentation/screens/note_recognition_submode_picker_screen.dart';
 import '../../../rhythm_match/presentation/screens/rhythm_match_screen.dart';
@@ -42,7 +42,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         icon: Icons.headphones_rounded,
         difficulty: ChallengeDifficulty.intermediate,
         enabled: true,
-        builder: (_) => const IntervalTrainingScreen(),
+        builder: (_) => const IntervalTrainingSubmodePickerScreen(),
       ),
       ChallengeInfo(
         title: 'Melody Echo',

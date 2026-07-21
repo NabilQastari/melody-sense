@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/settings_screen.dart';
-import 'package:melody_sense/features/interval_training/presentation/screens/interval_training_screen.dart';
+import 'package:melody_sense/features/interval_training/presentation/screens/interval_training_submode_picker_screen.dart';
 import 'package:melody_sense/features/melody_echo/presentation/screens/melody_echo_screen.dart';
 import 'package:melody_sense/features/note_recognition/presentation/screens/note_recognition_submode_picker_screen.dart';
 import 'package:melody_sense/features/rhythm_match/presentation/screens/rhythm_match_screen.dart';
@@ -158,7 +158,7 @@ class DashboardScreen extends ConsumerWidget {
                       subtitle: 'Distance between notes',
                       icon: Icons.graphic_eq_rounded,
                       onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const IntervalTrainingScreen()),
+                        MaterialPageRoute(builder: (_) => const IntervalTrainingSubmodePickerScreen()),
                       ),
                     ),
                     _ChallengeGridCard(

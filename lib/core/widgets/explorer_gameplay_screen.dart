@@ -28,6 +28,7 @@ class ExplorerGameplayScreen extends StatefulWidget {
     this.sequenceNotes = const [],
     this.correctNote,
     this.wrongNote,
+    this.activeNote,
     this.bridgeStartNote,
     this.bridgeEndNote,
     this.bridgeLabel,
@@ -65,6 +66,7 @@ class ExplorerGameplayScreen extends StatefulWidget {
 
   final String? correctNote;
   final String? wrongNote;
+  final String? activeNote;
   final String? bridgeStartNote;
   final String? bridgeEndNote;
   final String? bridgeLabel;
@@ -271,7 +273,7 @@ class _ExplorerGameplayScreenState extends State<ExplorerGameplayScreen> {
             flex: 2,
             child: _CappedPiano(
               maxHeight: 220,
-              activeNote: _activeNote,
+              activeNote: _activeNote ?? widget.activeNote,
               correctNote: widget.correctNote,
               wrongNote: widget.wrongNote,
               bridgeStartNote: widget.bridgeStartNote,
@@ -444,7 +446,7 @@ class _ExplorerGameplayScreenState extends State<ExplorerGameplayScreen> {
           Expanded(
             child: _CappedPiano(
               maxHeight: 260,
-              activeNote: _activeNote,
+              activeNote: _activeNote ?? widget.activeNote,
               correctNote: widget.correctNote,
               wrongNote: widget.wrongNote,
               bridgeStartNote: widget.bridgeStartNote,

@@ -11,9 +11,9 @@ import 'package:melody_sense/core/domain/entities/progression_entities.dart';
 // controller) ikut kebagian kedua nama ini — import biasa tidak
 // diteruskan secara transitif, cuma berlaku di file ini sendiri.
 import 'package:melody_sense/core/domain/entities/practice_entities.dart'
-    show kAvailableNotes, RoundFeedback;
+    show kAvailableNotes, RoundFeedback, PracticeSubmode;
 export 'package:melody_sense/core/domain/entities/practice_entities.dart'
-    show kAvailableNotes, RoundFeedback;
+    show kAvailableNotes, RoundFeedback, PracticeSubmode;
 
 
 /// Definisi satu interval musik: nama tampilan + jarak semitone (naik).
@@ -106,6 +106,7 @@ class IntervalTrainingState {
   const IntervalTrainingState({
     required this.currentRound,
     required this.sessionId,
+    this.submode = PracticeSubmode.practice,
     this.xp = 0,
     this.livesTotal = 3,
     this.livesRemaining = 3,
@@ -122,9 +123,10 @@ class IntervalTrainingState {
 
   final IntervalRoundOption currentRound;
   final int sessionId;
+  final PracticeSubmode submode;
   final int xp;
-  final int livesTotal;
-  final int livesRemaining;
+  final int? livesTotal;
+  final int? livesRemaining;
 
   /// Jumlah ronde yang SUDAH diselesaikan (benar maupun salah).
   final int roundIndex;
@@ -163,11 +165,12 @@ class IntervalTrainingState {
 
   /// Menang = sesi berakhir karena semua ronde selesai dengan hearts
   /// masih tersisa (bukan karena hearts habis).
-  bool get isWin => livesRemaining > 0;
+  bool get isWin => livesRemaining == null || livesRemaining! > 0;
 
   IntervalTrainingState copyWith({
     IntervalRoundOption? currentRound,
     int? sessionId,
+    PracticeSubmode? submode,
     int? xp,
     int? livesTotal,
     int? livesRemaining,
@@ -184,6 +187,7 @@ class IntervalTrainingState {
     return IntervalTrainingState(
       currentRound: currentRound ?? this.currentRound,
       sessionId: sessionId ?? this.sessionId,
+      submode: submode ?? this.submode,
       xp: xp ?? this.xp,
       livesTotal: livesTotal ?? this.livesTotal,
       livesRemaining: livesRemaining ?? this.livesRemaining,

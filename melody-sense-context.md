@@ -672,9 +672,9 @@ Diskusi perencanaan (belum coding) yang menghasilkan dua keputusan besar:
 
 ---
 
-## Brainstorming Sesi 10: Sistem Submode untuk Semua Mode Practice
+## Brainstorming & Implementasi Sesi 10: Sistem Submode untuk Semua Mode Practice
 
-> Status: 💡 **Brainstorming aktif.** Konsep utama berasal dari user — setiap mode latihan (kecuali Free Play) memiliki **submode** yang harus dilalui/dipilih sebelum mulai berlatih. Tujuannya: user tidak langsung "dilempar" ke latihan tanpa konteks, terutama pemula yang belum paham teori musik dasar.
+> Status: 🚧 **Implementasi Bertahap.** Note Recognition & Interval Training **selesai 100%**. Rhythm Match dalam tahap brainstorming. Melody Echo belum dimulai.
 
 ### Konsep Inti
 
@@ -686,54 +686,57 @@ Setiap mode practice (Note Recognition, Interval Training, Melody Echo, Rhythm M
 
 **Tujuan**: Edukasi teori dasar yang relevan dengan mode tersebut. User memahami *apa* yang akan dilatih sebelum mulai berlatih.
 
+> ⚠️ **KETENTUAN WAJIB FORMAT LAYAR INTRODUCE**:
+> Layar Introduce untuk **seluruh mode latihan (Note Recognition, Interval Training, Melody Echo, Rhythm Match)** WAJIB menggunakan format **Slide Carousel (`PageView`)** bertahap, bukan 1 halaman scroll panjang sekaligus.
+>
+> Setiap layar Introduce terdiri dari:
+> 1. **Slide Teori 1 & 2**: Penjelasan materi per bagian secara visual & ringkas.
+> 2. **Slide Modul Audio Interaktif**: Grid tombol nada/contoh yang dapat diputar suaranya secara aktif.
+> 3. **Indikator Titik (Dot Indicator)** & Navigasi tombol Lanjut/Lewati/Selesai di bagian bawah.
+
 **Konten per mode:**
 
-#### Note Recognition — Introduce
-- Apa itu **nada** (note)?
-- Penjelasan notasi: C4, D4, E4, ... (nama nada + angka oktaf)
-- Apa itu **oktaf**? Kenapa C4 dan C5 "terasa sama tapi beda ketinggian"?
-- Demonstrasi interaktif: tombol "Dengarkan" di samping setiap nada, user bisa tekan untuk dengar perbedaan bunyinya
-- Peta visual: hubungan antara posisi tuts piano fisik dan nama nada
+#### Note Recognition — Introduce ✅ Selesai Diimplementasikan
+- Format: Carousel **3 Slide**
+  - **Slide 1**: Apa itu Nada (Note) & Notasi Ilmiah
+  - **Slide 2**: Mengenal Oktaf (C4 vs C5)
+  - **Slide 3**: Modul Interaktif 9 Tombol Nada (B3-C5) dengan Audio Playback
+- Tombol "Selesai & Mulai Latihan" menyimpan status baca ke `SharedPreferences` (`introduced_note_recognition`).
 
-#### Interval Training — Introduce
-- Apa itu **interval** (jarak antar dua nada)?
-- Apa itu **semitone** (satuan jarak terkecil)?
-- Daftar interval yang dipakai di mode ini, lengkap dengan:
-  - Nama (Minor 2nd, Major 3rd, Perfect 5th, dst.)
-  - Jarak dalam semitones
-  - Contoh: "C4 → E4 = Major 3rd (4 semitones)"
-  - Tombol "Dengarkan" untuk tiap interval — mainkan pasangan nada contohnya
-- Analogi sederhana: interval seperti "jarak langkah" di tangga nada
+#### Interval Training — Introduce ✅ Selesai Diimplementasikan
+- Format: Carousel **4 Slide** (ditambah slide baru tentang kualitas interval)
+  - **Slide 1**: Apa itu Interval & Semitone? (Penjelasan jarak lompatan nada & semitone sebagai satuan terkecil).
+  - **Slide 2**: Kualitas Interval — Major, Minor & Perfect (Penjelasan karakter suara tiap kualitas beserta contoh nada).
+    - 🟡 **Major** — Cerah, optimis (C→E, C→A)
+    - 🔵 **Minor** — Gelap, melankolis (D→F, C→C#)
+    - 🟢 **Perfect** — Stabil, murni (C→G, C→F, Octave)
+  - **Slide 3**: Daftar Interval Musik (Tabel jarak semitone dengan badge warna sesuai kualitas: Major/Minor/Perfect).
+  - **Slide 4**: Modul Interaktif "Sentuh & Dengarkan Jarak Interval" (Chip pilihan interval, putar audio sampel saat dipilih).
+- Tombol "Selesai & Mulai Latihan" menyimpan status baca ke `SharedPreferences` (`introduced_interval_training`).
 
-#### Melody Echo — Introduce
-- Apa itu **melodi**? (urutan nada yang membentuk pola/lagu)
-- Perbedaan melodi vs nada tunggal vs interval
-- Contoh melodi pendek yang bisa didengarkan
-- Penjelasan cara kerja mode: "dengarkan → ulangi urutan yang sama"
+#### Melody Echo — Introduce (Belum Dimulai)
+- Format: Carousel Slide
+- Penjelasan Melodi vs Nada Tunggal + Modul Dengarkan Contoh Frase Melodi Pendek.
 
-#### Rhythm Match — Introduce
-- Apa itu **ritme**? (pola ketukan dalam waktu)
-- Perbedaan ritme vs melodi
-- Contoh pola ritme sederhana yang bisa didengarkan
-- Penjelasan cara kerja mode: "dengarkan pola ketukan → tiru ketukannya"
+#### Rhythm Match — Introduce (Desain Disetujui, Implementasi Belum Dimulai)
+- Format: Carousel **3 Slide**
+  - **Slide 1**: Apa itu Ritme & Tempo? (Visual ilustrasi detak ketukan & satuan BPM)
+  - **Slide 2**: Aturan Main Rhythm Match (Metronom 90 BPM, toleransi hit ±300ms)
+  - **Slide 3**: Modul Interaktif "Coba Ketukan" (Metronom mini + tombol Tap besar + feedback langsung Hit/Miss)
 
 **Karakteristik Introduce:**
-- Bersifat **satu kali baca** — setelah user menyelesaikan introduce, tandai sebagai "sudah dibaca" (persist ke database/shared_preferences)
-- Bisa **diakses ulang** kapan saja dari layar submode (tidak dikunci setelah selesai)
-- **Tidak ada skor/XP** — murni edukatif
-- Interaktif: bukan hanya teks statis, tapi ada tombol-tombol "Dengarkan" untuk contoh audio
+- Bersifat **satu kali baca** — setelah user menyelesaikan introduce, tandai sebagai "sudah dibaca" (persist ke `SharedPreferences`).
+- Bisa **diakses ulang** kapan saja dari layar submode (tidak dikunci setelah selesai).
+- **Tidak ada skor/XP** — murni edukatif.
 
 ---
 
 ### Submode 2: Start Practice / Training
 
-**Tujuan**: Mode latihan utama yang sudah ada sekarang (gameplay loop dengan skor, XP, lives, ronde).
+**Tujuan**: Mode latihan utama (gameplay loop dengan skor, XP, lives, ronde).
 
-- Ini adalah **gameplay yang sudah diimplementasikan** di Sesi 4-11
-- Note Recognition: dengar 1 nada → tebak nama nada
-- Interval Training: dengar 2 nada berurutan → tebak nada kedua
-- Melody Echo: dengar urutan nada → ulangi urutan (belum diimplementasi gameplay-nya)
-- Rhythm Match: dengar pola ketukan → tiru ketukannya (belum diimplementasi gameplay-nya)
+- **Note Recognition** ✅: 10 ronde, 3 nyawa, XP +10 / +20 (Mystery Round), compare playback saat salah.
+- **Interval Training** ✅: 10 ronde, 3 nyawa, XP +10 / +20 (Mystery Round), compare playback adaptif + visual jembatan semitone saat salah. Tombol **Next Round (Lanjut Ronde)** melayang saat fase feedback untuk melewati delay transisi.
 
 ---
 
@@ -741,37 +744,59 @@ Setiap mode practice (Note Recognition, Interval Training, Melody Echo, Rhythm M
 
 **Tujuan**: Mode "setengah jalan" antara Introduce (pasif) dan Practice (aktif penuh) — latihan dengan bantuan/hint dinamis.
 
-- **Hint otomatis aktif**: Setelah 3 detik tanpa jawaban, sistem memberikan petunjuk visual (menyorot tuts target yang benar berwarna hijau).
 - **Tanpa penalti nyawa** — latihan berjalan 10 ronde tanpa hearts agar pemula tidak merasa tertekan.
-- Cocok untuk pemula yang sudah membaca Introduce tapi belum percaya diri masuk Practice langsung.
+
+#### Note Recognition — Guided Practice ✅ Selesai
+- **Hint 1 tahap**: Setelah 3 detik tanpa jawaban, tuts **target note** menyala hijau terang di piano.
+
+#### Interval Training — Guided Practice ✅ Selesai
+- **Hint 2 tahap**:
+  - Detik ke-3: Tuts **root note** disorot (jangkar awal interval).
+  - Detik ke-6: Tuts **target note** yang benar disorot hijau terang.
+
+#### Rhythm Match — Guided Practice (Desain Disetujui, Implementasi Belum Dimulai)
+- **Indikator Visual Ketukan (Visual Beat Helper)**: Animasi lingkaran berdenyut atau bilah visual yang bergerak mengikuti tempo metronom, membantu pengguna "melihat" kapan harus menekan tuts.
 
 ---
 
-### Alur UX yang Diusulkan
+### Alur UX yang Sudah Berlaku
 
 ```
 Practice Screen → Tap kartu mode (misal "Note Recognition")
   └── Layar Submode Picker
-        ├── 📖 Introduce          — "Pelajari dasar-dasar nada"
-        ├── 🎮 Start Training     — "Mulai sesi latihan standar"
-        └── 🎯 Guided Practice    — "Latihan terbimbing dengan petunjuk"
+        ├── 📖 Introduce (Slide Format) — Wajib dibaca sebelum submode lain terbuka
+        ├── 🎮 Start Training          — Latihan standar 10 ronde dengan nyawa
+        └── 🎯 Guided Practice         — Latihan terbimbing dengan petunjuk otomatis
 ```
+
+---
+
+### Status Implementasi Sesi 10
+
+| Mode | Submode Picker | Introduce | Start Training | Guided Practice |
+|------|:--------------:|:---------:|:--------------:|:---------------:|
+| **Note Recognition** | ✅ | ✅ 3 Slide | ✅ | ✅ Hint 1 tahap |
+| **Interval Training** | ✅ | ✅ 4 Slide | ✅ + Next Round | ✅ Hint 2 tahap |
+| **Rhythm Match** | ⏳ Belum | ⏳ Desain OK | ⏳ Belum | ⏳ Desain OK |
+| **Melody Echo** | ❌ | ❌ | ❌ | ❌ |
 
 ---
 
 ### Keputusan & Rencana Aksi Sesi 10
 
-Berdasarkan keputusan final user:
-
-1. **Introduce bersifat WAJIB**:
+1. **Introduce bersifat WAJIB & Berformat Slide**:
    - Submode Training/Practice dan Guided Practice akan **terkunci/abu-abu (disabled)** jika user belum pernah menyelesaikan/membaca submode "Introduce" untuk mode tersebut.
+   - Layar Introduce di semua mode **wajib berformat Slide Carousel (`PageView`)**.
    - Status kelulusan/membaca Introduce ini disimpan secara persisten di SharedPreferences lewat `educationProgressProvider`.
 2. **Submode yang Digunakan**:
    - Terdiri dari 3 submode utama: **Introduce**, **Start Training**, dan **Guided Practice** (Quick Quiz dihapus sesuai permintaan user).
-3. **Desain Layar Submode Picker**:
-   - Menggunakan layout kartu tantangan bergaya grid/list vertikal mirip dengan tampilan Challenge Cards di menu Practice utama.
+3. **Fitur Tambahan Interval Training (Sudah Diterapkan)**:
+   - **Tombol Next Round (Lanjut Ronde)**: Melayang di atas piano saat fase feedback. Memanggil `triggerNextRound()` di controller untuk melewati delay transisi otomatis (1.2s/3.2s) secara instan.
 4. **Urutan Implementasi**:
-   - Dikerjakan secara **inkremental per satu mode lengkap**:
-     - Pertama: Selesaikan seluruh submode untuk mode **Note Recognition**.
-     - Setelah Note Recognition selesai penuh dan stabil, pola tersebut akan direplikasi ke **Interval Training**, **Melody Echo**, dan **Rhythm Match**.
+   - ✅ Mode **Note Recognition** selesai 100%.
+   - ✅ Mode **Interval Training** selesai 100%.
+   - ⏳ Mode **Rhythm Match** — tahap brainstorming. Submode Introduce perlu modul interaktif ketukan (tap timing). Guided Practice perlu indikator visual beat.
+   - ❌ Mode **Melody Echo** — belum dimulai sama sekali.
+
+
 
