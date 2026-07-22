@@ -220,7 +220,7 @@ class _NoteAccuracyChart extends StatelessWidget {
   /// Urutan nada sesuai piano (B3–C5), supaya bar chart selalu
   /// konsisten meskipun database mengembalikan urutan berbeda.
   static const _noteOrder = [
-    'B3', 'C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5',
+    'B3', 'C4', 'C#4', 'D4', 'D#4', 'E4', 'F4', 'F#4', 'G4', 'G#4', 'A4', 'A#4', 'B4', 'C5',
   ];
 
   @override

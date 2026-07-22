@@ -2,15 +2,20 @@ import 'dart:async';
 
 import 'package:flutter_soloud/flutter_soloud.dart';
 
-/// 9 nada dasar sesuai hardware Smart Piano (prototipe Arduino Mega).
+/// 14 nada (B3 + 13 nada kromatik C4–C5) sesuai hardware Smart Piano ESP32 & Virtual Piano.
 const List<String> kSupportedNotes = [
   'B3',
   'C4',
+  'C#4',
   'D4',
+  'D#4',
   'E4',
   'F4',
+  'F#4',
   'G4',
+  'G#4',
   'A4',
+  'A#4',
   'B4',
   'C5',
 ];
@@ -72,8 +77,15 @@ class AudioService {
 
     for (final note in kSupportedNotes) {
       try {
-        final source =
-            await SoLoud.instance.loadAsset('assets/audio/notes/$note.mp3');
+        AudioSource? source;
+        try {
+          source =
+              await SoLoud.instance.loadAsset('assets/audio/notes/$note.mp3');
+        } catch (_) {
+          final safeName = note.replaceAll('#', 's');
+          source = await SoLoud.instance
+              .loadAsset('assets/audio/notes/$safeName.mp3');
+        }
         _sources[note] = source;
       } catch (_) {
         // Asset belum ada — aman diabaikan saat masih tahap UI-only.

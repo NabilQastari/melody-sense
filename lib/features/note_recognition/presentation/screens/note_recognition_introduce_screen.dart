@@ -22,11 +22,16 @@ class _NoteRecognitionIntroduceScreenState
   final List<Map<String, String>> _notesInfo = [
     {'note': 'B3', 'solfege': 'Si (Oktaf 3)', 'desc': 'Nada terendah di mode ini.'},
     {'note': 'C4', 'solfege': 'Do (Middle C)', 'desc': 'Do tengah, standar musik dasar.'},
+    {'note': 'C#4', 'solfege': 'Do# / Reb', 'desc': 'Nada kromatik (tuts hitam) antara C4 & D4.'},
     {'note': 'D4', 'solfege': 'Re', 'desc': 'Satu langkah di atas C4.'},
+    {'note': 'D#4', 'solfege': 'Re# / Mib', 'desc': 'Nada kromatik antara D4 & E4.'},
     {'note': 'E4', 'solfege': 'Mi', 'desc': 'Nada Mi dalam tangga nada mayor.'},
     {'note': 'F4', 'solfege': 'Fa', 'desc': 'Nada Fa, berjarak dekat dengan E4.'},
+    {'note': 'F#4', 'solfege': 'Fa# / Solb', 'desc': 'Nada kromatik antara F4 & G4.'},
     {'note': 'G4', 'solfege': 'Sol', 'desc': 'Nada Sol, salah satu nada pilar.'},
+    {'note': 'G#4', 'solfege': 'Sol# / Lab', 'desc': 'Nada kromatik antara G4 & A4.'},
     {'note': 'A4', 'solfege': 'La (440 Hz)', 'desc': 'Standar tuning instrumen musik.'},
+    {'note': 'A#4', 'solfege': 'La# / Sib', 'desc': 'Nada kromatik antara A4 & B4.'},
     {'note': 'B4', 'solfege': 'Si', 'desc': 'Nada terakhir sebelum oktaf baru.'},
     {'note': 'C5', 'solfege': 'Do (Oktaf 5)', 'desc': 'Do tinggi, frekuensi 2x lipat C4.'},
   ];

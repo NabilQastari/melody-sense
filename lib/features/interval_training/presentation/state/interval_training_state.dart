@@ -41,17 +41,20 @@ const kIntervalDefinitions = [
 ];
 
 /// Posisi semitone tiap nada di [kAvailableNotes], C4 = 0 sebagai acuan.
-/// Dipakai untuk menghitung nada target dari root note + interval.
-/// NOTE: nada-nada ini diatonis (bukan kromatis penuh), jadi jaraknya
-/// tidak selalu 1 semitone antar nada bertetangga di daftar.
+/// 14 nada (B3 hingga C5 kromatik).
 const kSemitoneByNote = {
   'B3': -1,
   'C4': 0,
+  'C#4': 1,
   'D4': 2,
+  'D#4': 3,
   'E4': 4,
   'F4': 5,
+  'F#4': 6,
   'G4': 7,
+  'G#4': 8,
   'A4': 9,
+  'A#4': 10,
   'B4': 11,
   'C5': 12,
 };

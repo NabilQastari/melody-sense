@@ -1,9 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
 
-/// 9 nada dasar sesuai hardware Smart Piano (prototipe Arduino Mega).
+/// 14 nada (B3 + 13 nada kromatik C4–C5) sesuai hardware Smart Piano ESP32.
 /// Urutan ini adalah urutan tampil default dari kiri ke kanan.
 const List<String> kDefaultPianoNotes = [
+  'B3',
+  'C4',
+  'C#4',
+  'D4',
+  'D#4',
+  'E4',
+  'F4',
+  'F#4',
+  'G4',
+  'G#4',
+  'A4',
+  'A#4',
+  'B4',
+  'C5',
+];
+
+/// 9 nada natural (tuts putih)
+const List<String> _kWhiteNotes = [
   'B3',
   'C4',
   'D4',
@@ -15,22 +33,24 @@ const List<String> kDefaultPianoNotes = [
   'C5',
 ];
 
-/// Jarak antar tuts (harus sinkron dengan spacer di _buildKeys).
-const double _kKeyGap = 6.0;
+/// Pemetaan tuts hitam (sharp) ke indeks tuts putih di sebelahnya (kiri)
+const Map<String, int> _kBlackKeyAfterWhiteIndex = {
+  'C#4': 1, // setelah C4 (indeks 1)
+  'D#4': 2, // setelah D4 (indeks 2)
+  'F#4': 4, // setelah F4 (indeks 4)
+  'G#4': 5, // setelah G4 (indeks 5)
+  'A#4': 6, // setelah A4 (indeks 6)
+};
 
-/// Virtual piano reusable — dipakai di Explorer Mode (semua mode latihan).
+/// Jarak antar tuts putih.
+const double _kKeyGap = 4.0;
+
+/// Virtual piano reusable (13 tuts kromatik) — dipakai di Explorer Mode & semua mode latihan.
 ///
-/// Menangani tampilan saja (presentation). Pemanggil bertanggung jawab
-/// memutar audio & mencatat attempt lewat callback [onNotePressed],
-/// sesuai prinsip Clean Architecture (widget ini tidak tahu soal
-/// domain/data layer).
+/// Menangani tampilan tuts putih (natural) & tuts hitam (sharp/accidental)
+/// dengan perbandingan proporsional piano fisik sungguhan.
 ///
-/// Mendukung GLISSANDO: satu sentuhan yang digeser (swipe) lintas
-/// beberapa tuts akan memicu [onNotePressed] untuk tiap tuts yang
-/// dilewati, bukan cuma tuts yang pertama disentuh. Deteksi posisi
-/// jari dihitung manual dari koordinat X terhadap lebar tiap tuts
-/// (bukan pakai gesture detector per-tuts individual), supaya gesture
-/// tunggal bisa "membaca" perpindahan lintas widget.
+/// Mendukung GLISSANDO lintas nada putih & hitam secara real-time.
 class VirtualPiano extends StatefulWidget {
   const VirtualPiano({
     super.key,
@@ -49,8 +69,7 @@ class VirtualPiano extends StatefulWidget {
   /// Daftar nada yang ditampilkan, kiri ke kanan.
   final List<String> notes;
 
-  /// Nada yang sedang di-highlight (misal: sedang dimainkan sistem,
-  /// atau baru saja ditekan user). Null = tidak ada yang aktif.
+  /// Nada yang sedang di-highlight (misal: sedang dimainkan sistem/user).
   final String? activeNote;
 
   /// Nada yang benar untuk ronde ini, akan di-highlight hijau.
@@ -62,25 +81,19 @@ class VirtualPiano extends StatefulWidget {
   /// Nada awal jembatan visual (mis. rootNote).
   final String? bridgeStartNote;
 
-  /// Nada akhir jembatan visual (mis. lastPressedNote).
+  /// Nada akhir jembatan visual (mis. lastPressedNote/targetNote).
   final String? bridgeEndNote;
 
   /// Label yang ditampilkan di atas jembatan (mis. "5 semitones").
   final String? bridgeLabel;
 
-  /// Dipanggil saat user menyentuh/menggeser jari ke atas salah satu
-  /// tuts. Bisa terpanggil beberapa kali dalam satu sentuhan kalau
-  /// jari digeser lintas tuts (glissando). Null = piano nonaktif
-  /// (misal saat menampilkan status hardware read-only).
+  /// Dipanggil saat user menyentuh/menggeser jari ke atas tuts.
   final ValueChanged<String>? onNotePressed;
 
   /// Tampilkan label nama nada di bawah tiap tuts.
   final bool showLabels;
 
-  /// Tinggi total area piano. Kalau null (default), piano akan mengisi
-  /// ruang vertikal yang tersedia dari parent — WAJIB dibungkus
-  /// [Expanded] atau [Flexible] oleh pemanggil dalam kasus ini, supaya
-  /// tidak overflow di layar pendek (mis. landscape).
+  /// Tinggi total area piano.
   final double? height;
 
   bool get _isInteractive => onNotePressed != null;
@@ -90,93 +103,179 @@ class VirtualPiano extends StatefulWidget {
 }
 
 class _VirtualPianoState extends State<VirtualPiano> {
-  /// Index tuts terakhir yang sudah dipicu dalam gesture yang sedang
-  /// berjalan. Dipakai supaya jari yang diam di satu tuts tidak
-  /// memicu onNotePressed berulang-ulang tiap frame — hanya berpindah
-  /// tuts yang memicu panggilan baru.
-  int? _lastTriggeredIndex;
+  /// String nada terakhir yang dipicu dalam gesture aktif.
+  String? _lastTriggeredNote;
 
-  void _handleTouch(Offset localPosition, double totalWidth) {
-    if (!widget._isInteractive) return;
+  List<String> get _whiteNotesPresent =>
+      _kWhiteNotes.where((n) => widget.notes.contains(n)).toList();
 
-    final count = widget.notes.length;
-    if (count == 0 || totalWidth <= 0) return;
+  List<String> get _blackNotesPresent =>
+      _kBlackKeyAfterWhiteIndex.keys.where((n) => widget.notes.contains(n)).toList();
 
-    final keyWidth = (totalWidth - _kKeyGap * (count - 1)) / count;
-    if (keyWidth <= 0) return;
+  void _handleTouch(Offset localPosition, Size size) {
+    if (!widget._isInteractive || size.width <= 0 || size.height <= 0) return;
 
-    final stride = keyWidth + _kKeyGap;
-    final dx = localPosition.dx.clamp(0.0, totalWidth);
-    final index = (dx / stride).floor().clamp(0, count - 1);
+    final whiteNotes = _whiteNotesPresent;
+    if (whiteNotes.isEmpty) return;
 
-    if (index != _lastTriggeredIndex) {
-      _lastTriggeredIndex = index;
-      widget.onNotePressed!(widget.notes[index]);
+    final numWhite = whiteNotes.length;
+    final whiteKeyWidth = (size.width - _kKeyGap * (numWhite - 1)) / numWhite;
+    if (whiteKeyWidth <= 0) return;
+
+    final whiteKeyStride = whiteKeyWidth + _kKeyGap;
+    final blackKeyWidth = whiteKeyWidth * 0.60;
+    final blackKeyHeight = size.height * 0.58;
+
+    String? hitNote;
+
+    // 1. Cek hit pada tuts hitam dulu jika sentuhan di area atas
+    if (localPosition.dy <= blackKeyHeight) {
+      for (final blackNote in _blackNotesPresent) {
+        final afterIdx = _kBlackKeyAfterWhiteIndex[blackNote];
+        if (afterIdx == null) continue;
+
+        final actualWhiteIdx = whiteNotes.indexOf(_kWhiteNotes[afterIdx]);
+        if (actualWhiteIdx == -1) continue;
+
+        final seamX = (actualWhiteIdx + 1) * whiteKeyStride - _kKeyGap / 2;
+        final leftX = seamX - blackKeyWidth / 2;
+        final rightX = seamX + blackKeyWidth / 2;
+
+        if (localPosition.dx >= leftX && localPosition.dx <= rightX) {
+          hitNote = blackNote;
+          break;
+        }
+      }
+    }
+
+    // 2. Jika tidak mengenai tuts hitam, cek tuts putih
+    if (hitNote == null) {
+      final dx = localPosition.dx.clamp(0.0, size.width - 0.1);
+      final idx = (dx / whiteKeyStride).floor().clamp(0, numWhite - 1);
+      hitNote = whiteNotes[idx];
+    }
+
+    if (hitNote != _lastTriggeredNote) {
+      _lastTriggeredNote = hitNote;
+      widget.onNotePressed!(hitNote);
     }
   }
 
   void _resetGesture() {
-    _lastTriggeredIndex = null;
+    _lastTriggeredNote = null;
   }
 
   @override
   Widget build(BuildContext context) {
+    final whiteNotes = _whiteNotesPresent;
+    final blackNotes = _blackNotesPresent;
+
     final content = LayoutBuilder(
       builder: (context, constraints) {
-        final keys = Row(
+        final totalWidth = constraints.maxWidth;
+        final totalHeight = constraints.maxHeight;
+        final numWhite = whiteNotes.length;
+
+        if (totalWidth <= 0 || numWhite == 0) return const SizedBox.shrink();
+
+        final whiteKeyWidth = (totalWidth - _kKeyGap * (numWhite - 1)) / numWhite;
+        final whiteKeyStride = whiteKeyWidth + _kKeyGap;
+        final blackKeyWidth = whiteKeyWidth * 0.60;
+        final blackKeyHeight = totalHeight * 0.58;
+
+        // Barisan tuts putih
+        final whiteKeysRow = Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            for (final note in widget.notes) ...[
+            for (final note in whiteNotes) ...[
               Expanded(
                 child: _PianoKey(
                   note: note,
+                  isBlack: false,
                   isActive: note == widget.activeNote,
                   isCorrect: note == widget.correctNote,
                   isWrong: note == widget.wrongNote,
                   showLabel: widget.showLabels,
                 ),
               ),
-              if (note != widget.notes.last) const SizedBox(width: _kKeyGap),
+              if (note != whiteNotes.last) const SizedBox(width: _kKeyGap),
             ],
           ],
         );
 
-        Widget pianoLayout = keys;
-        if (widget._isInteractive) {
-          pianoLayout = GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            // onPanDown fires langsung saat pertama disentuh (bukan
-            // menunggu gerakan/pelepasan) — jadi tuts pertama tetap
-            // responsif instan seperti tap biasa.
-            onPanDown: (details) =>
-                _handleTouch(details.localPosition, constraints.maxWidth),
-            // onPanUpdate menangani jari yang bergeser lintas tuts —
-            // inilah yang mewujudkan glissando.
-            onPanUpdate: (details) =>
-                _handleTouch(details.localPosition, constraints.maxWidth),
-            onPanEnd: (_) => _resetGesture(),
-            onPanCancel: _resetGesture,
-            child: keys,
+        // Positioned tuts hitam
+        final blackKeyWidgets = <Widget>[];
+        for (final blackNote in blackNotes) {
+          final afterIdx = _kBlackKeyAfterWhiteIndex[blackNote];
+          if (afterIdx == null) continue;
+
+          final actualWhiteIdx = whiteNotes.indexOf(_kWhiteNotes[afterIdx]);
+          if (actualWhiteIdx == -1) continue;
+
+          final seamX = (actualWhiteIdx + 1) * whiteKeyStride - _kKeyGap / 2;
+          final leftX = seamX - blackKeyWidth / 2;
+
+          blackKeyWidgets.add(
+            Positioned(
+              left: leftX,
+              top: 0,
+              width: blackKeyWidth,
+              height: blackKeyHeight,
+              child: IgnorePointer(
+                child: _PianoKey(
+                  note: blackNote,
+                  isBlack: true,
+                  isActive: blackNote == widget.activeNote,
+                  isCorrect: blackNote == widget.correctNote,
+                  isWrong: blackNote == widget.wrongNote,
+                  showLabel: widget.showLabels,
+                ),
+              ),
+            ),
           );
         }
 
-        // Overlay visual jembatan jarak jika parameter terpenuhi
+        Widget pianoStack = Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned.fill(child: whiteKeysRow),
+            ...blackKeyWidgets,
+          ],
+        );
+
+        if (widget._isInteractive) {
+          pianoStack = GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onPanDown: (details) => _handleTouch(
+              details.localPosition,
+              Size(totalWidth, totalHeight),
+            ),
+            onPanUpdate: (details) => _handleTouch(
+              details.localPosition,
+              Size(totalWidth, totalHeight),
+            ),
+            onPanEnd: (_) => _resetGesture(),
+            onPanCancel: _resetGesture,
+            child: pianoStack,
+          );
+        }
+
+        // Overlay visual jembatan jarak (Bridge) jika ada
         if (widget.bridgeStartNote != null && widget.bridgeEndNote != null) {
-          final count = widget.notes.length;
-          final keyWidth = (constraints.maxWidth - _kKeyGap * (count - 1)) / count;
-          pianoLayout = Stack(
+          pianoStack = Stack(
             clipBehavior: Clip.none,
             children: [
-              pianoLayout,
+              pianoStack,
               Positioned.fill(
                 child: IgnorePointer(
                   child: CustomPaint(
                     painter: _PianoBridgePainter(
                       notes: widget.notes,
+                      whiteNotes: whiteNotes,
                       startNote: widget.bridgeStartNote!,
                       endNote: widget.bridgeEndNote!,
                       label: widget.bridgeLabel ?? '',
-                      keyWidth: keyWidth,
+                      whiteKeyWidth: whiteKeyWidth,
                       keyGap: _kKeyGap,
                     ),
                   ),
@@ -186,7 +285,7 @@ class _VirtualPianoState extends State<VirtualPiano> {
           );
         }
 
-        return pianoLayout;
+        return pianoStack;
       },
     );
 
@@ -198,6 +297,7 @@ class _VirtualPianoState extends State<VirtualPiano> {
 class _PianoKey extends StatelessWidget {
   const _PianoKey({
     required this.note,
+    required this.isBlack,
     required this.isActive,
     required this.showLabel,
     this.isCorrect = false,
@@ -205,6 +305,7 @@ class _PianoKey extends StatelessWidget {
   });
 
   final String note;
+  final bool isBlack;
   final bool isActive;
   final bool showLabel;
   final bool isCorrect;
@@ -212,8 +313,34 @@ class _PianoKey extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color keyColor = AppColors.surfaceWhite;
-    Color textColor = AppColors.primaryDarkFaded;
+    final int octave = int.tryParse(note.replaceAll(RegExp(r'[^0-9]'), '')) ?? 4;
+
+    Color keyColor;
+    Color textColor;
+
+    if (isBlack) {
+      if (octave == 3) {
+        keyColor = const Color(0xFF141722); // Oktaf 3: nada bass (lebih gelap)
+        textColor = AppColors.surfaceWhite.withValues(alpha: 0.9);
+      } else if (octave == 5) {
+        keyColor = const Color(0xFF2C2A4A); // Oktaf 5: nada tinggi (tinted indigo)
+        textColor = AppColors.surfaceWhite;
+      } else {
+        keyColor = const Color(0xFF1E222D); // Oktaf 4: normal piano black
+        textColor = AppColors.surfaceWhite;
+      }
+    } else {
+      if (octave == 3) {
+        keyColor = const Color(0xFFE0E4F5); // Oktaf 3: nada bass (shade lebih gelap)
+        textColor = AppColors.primaryDark;
+      } else if (octave == 5) {
+        keyColor = const Color(0xFFEFF2FF); // Oktaf 5: nada tinggi (soft bright tint)
+        textColor = AppColors.primaryDark;
+      } else {
+        keyColor = AppColors.surfaceWhite; // Oktaf 4: normal piano white
+        textColor = AppColors.primaryDarkFaded;
+      }
+    }
 
     if (isCorrect) {
       keyColor = Colors.green;
@@ -226,32 +353,39 @@ class _PianoKey extends StatelessWidget {
       textColor = AppColors.surfaceWhite;
     }
 
+    final String displayLabel =
+        isBlack ? note.replaceAll(RegExp(r'[0-9]'), '') : note;
+
     return AnimatedScale(
-      scale: isActive ? 0.95 : 1.0,
-      duration: const Duration(milliseconds: 100),
+      scale: isActive ? 0.94 : 1.0,
+      duration: const Duration(milliseconds: 90),
       curve: Curves.easeOut,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
+        duration: const Duration(milliseconds: 100),
         curve: Curves.easeOut,
         decoration: BoxDecoration(
           color: keyColor,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: isBlack
+              ? const BorderRadius.vertical(bottom: Radius.circular(8))
+              : BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primaryDark.withValues(alpha: 0.08),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
+              color: isBlack
+                  ? Colors.black.withValues(alpha: 0.35)
+                  : AppColors.primaryDark.withValues(alpha: 0.08),
+              blurRadius: isBlack ? 6 : 8,
+              offset: Offset(0, isBlack ? 4 : 3),
             ),
           ],
         ),
         alignment: Alignment.bottomCenter,
-        padding: const EdgeInsets.only(bottom: 12),
+        padding: EdgeInsets.only(bottom: isBlack ? 6 : 10),
         child: showLabel
             ? Text(
-                note,
+                displayLabel,
                 style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+                  fontSize: isBlack ? 10 : 11,
+                  fontWeight: FontWeight.w700,
                   color: textColor,
                 ),
               )
@@ -264,30 +398,46 @@ class _PianoKey extends StatelessWidget {
 class _PianoBridgePainter extends CustomPainter {
   _PianoBridgePainter({
     required this.notes,
+    required this.whiteNotes,
     required this.startNote,
     required this.endNote,
     required this.label,
-    required this.keyWidth,
+    required this.whiteKeyWidth,
     required this.keyGap,
   });
 
   final List<String> notes;
+  final List<String> whiteNotes;
   final String startNote;
   final String endNote;
   final String label;
-  final double keyWidth;
+  final double whiteKeyWidth;
   final double keyGap;
+
+  double _getNoteCenterX(String note) {
+    final whiteStride = whiteKeyWidth + keyGap;
+    if (_kBlackKeyAfterWhiteIndex.containsKey(note)) {
+      final afterIdx = _kBlackKeyAfterWhiteIndex[note]!;
+      final actualWhiteIdx = whiteNotes.indexOf(_kWhiteNotes[afterIdx]);
+      if (actualWhiteIdx != -1) {
+        return (actualWhiteIdx + 1) * whiteStride - keyGap / 2;
+      }
+    }
+
+    final wIdx = whiteNotes.indexOf(note);
+    if (wIdx != -1) {
+      return wIdx * whiteStride + whiteKeyWidth / 2;
+    }
+    return 0.0;
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
-    final i1 = notes.indexOf(startNote);
-    final i2 = notes.indexOf(endNote);
-    if (i1 == -1 || i2 == -1) return;
+    final x1 = _getNoteCenterX(startNote);
+    final x2 = _getNoteCenterX(endNote);
+    if (x1 == 0.0 && x2 == 0.0) return;
 
-    final x1 = i1 * (keyWidth + keyGap) + keyWidth / 2;
-    final x2 = i2 * (keyWidth + keyGap) + keyWidth / 2;
-    // Draw the bridge at 45% height of the keys
-    final y = size.height * 0.45;
+    final y = size.height * 0.35;
 
     final paint = Paint()
       ..color = AppColors.primaryDark
@@ -297,19 +447,24 @@ class _PianoBridgePainter extends CustomPainter {
 
     final path = Path();
     path.moveTo(x1, y);
-    // Control point for a nice curved arch
+
     final controlX = (x1 + x2) / 2;
     final controlY = y - 45;
     path.quadraticBezierTo(controlX, controlY, x2, y);
 
-    // Draw connection dots at start/end
-    canvas.drawCircle(Offset(x1, y), 5.0, Paint()..color = AppColors.primaryDark..style = PaintingStyle.fill);
-    canvas.drawCircle(Offset(x2, y), 5.0, Paint()..color = AppColors.primaryDark..style = PaintingStyle.fill);
+    canvas.drawCircle(
+      Offset(x1, y),
+      5.0,
+      Paint()..color = AppColors.primaryDark..style = PaintingStyle.fill,
+    );
+    canvas.drawCircle(
+      Offset(x2, y),
+      5.0,
+      Paint()..color = AppColors.primaryDark..style = PaintingStyle.fill,
+    );
 
-    // Draw the main curve
     canvas.drawPath(path, paint);
 
-    // Draw the label pill at the peak of the curve
     final bx = 0.25 * x1 + 0.5 * controlX + 0.25 * x2;
     final by = 0.25 * y + 0.5 * controlY + 0.25 * y;
 
@@ -332,12 +487,10 @@ class _PianoBridgePainter extends CustomPainter {
       height: textPainter.height + 6,
     );
 
-    // Fill white background for readability
     canvas.drawRRect(
       RRect.fromRectAndRadius(pillRect, const Radius.circular(8)),
       Paint()..color = Colors.white..style = PaintingStyle.fill,
     );
-    // Draw outline
     canvas.drawRRect(
       RRect.fromRectAndRadius(pillRect, const Radius.circular(8)),
       Paint()
@@ -346,8 +499,10 @@ class _PianoBridgePainter extends CustomPainter {
         ..strokeWidth = 1.2,
     );
 
-    // Paint text
-    textPainter.paint(canvas, Offset(bx - textPainter.width / 2, by - 5 - textPainter.height / 2));
+    textPainter.paint(
+      canvas,
+      Offset(bx - textPainter.width / 2, by - 5 - textPainter.height / 2),
+    );
   }
 
   @override
@@ -355,8 +510,7 @@ class _PianoBridgePainter extends CustomPainter {
     return oldDelegate.startNote != startNote ||
         oldDelegate.endNote != endNote ||
         oldDelegate.label != label ||
-        oldDelegate.keyWidth != keyWidth ||
+        oldDelegate.whiteKeyWidth != whiteKeyWidth ||
         oldDelegate.keyGap != keyGap;
   }
 }
-

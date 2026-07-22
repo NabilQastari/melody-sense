@@ -53,6 +53,10 @@ Pengembangan hardware fisik **awalnya** direncanakan dilanjutkan setelah lolos t
 > - Kode Braille di tombol fisik (untuk Sense Mode) direncanakan menyusul di iterasi breadboard berikutnya, setelah validasi dasar WebSocket berhasil.
 > - Belum diputuskan: siapa di tim yang pegang firmware ESP32, dan detail lengkap kontrak JSON note event (field selain note/velocity, misal timestamp/button_id) — masih open question, belum disentuh di Sesi 4.
 
+> ⚠️ **Revisi keputusan lanjutan (paska Sesi 10):** Spek breadboard ESP32 di atas (8 tombol/1 oktaf natural) direvisi jadi **13 tombol (1 oktaf kromatik penuh)** — lihat detail lengkap & dampaknya ke piano virtual di bagian "Diskusi & Keputusan Baru (Paska Sesi 10): Piano Kromatik 13 Tuts + Update Komponen Hardware ESP32" di akhir dokumen ini.
+> - **Komponen tambahan dikonfirmasi:** 5× push button baru (untuk 5 tuts sharp/flat) + 1× ESP32.
+> - **Komponen suara:** tetap pakai 2 buzzer pasif yang sudah ada (dipindah dari prototipe Mega) — mini speaker dipertimbangkan tapi **tidak dipilih** (butuh modul amplifier tambahan, dianggap belum perlu).
+
 ---
 
 ## Keputusan Arsitektur & Tech Stack (Sesi 1, direvisi Sesi 3)
@@ -270,6 +274,7 @@ Implementasi konkret (DAO, domain entities, repository, Riverpod providers) suda
 | 12 | Persiapan Maestro Mode (WebSocket client) + **Melody Echo** (ditunda dari Sesi 6) | ⏳ Belum mulai |
 | 13 | Testing & persiapan submission tahap 2 | ⏳ Belum mulai |
 | 14 | Fitur Kustomisasi & Reward Peti Rahasia (Piano Skins / Themes) | ⏳ Belum mulai |
+| 15 | Update Piano Virtual jadi Kromatik (13 tuts: natural + sharp/flat) + penyesuaian di semua mode latihan (Note Recognition, Interval Training, Rhythm Match, Melody Echo) | ⏳ Belum mulai — baru tahap keputusan, lihat "Diskusi & Keputusan Baru (Paska Sesi 10)" |
 
 *(Rencana ini bisa disesuaikan/dipecah lebih lanjut sesuai kebutuhan saat pengembangan berjalan. Sesi 9 "Dashboard" disisipkan saat Sesi 5. Sesi 10 & 11 ditambahkan di akhir Sesi 9 atas permintaan user untuk memprioritaskan peningkatan UX, kesenangan, dan nilai edukatif mode latihan).*
 
@@ -797,6 +802,54 @@ Practice Screen → Tap kartu mode (misal "Note Recognition")
    - ✅ Mode **Interval Training** selesai 100%.
    - ⏳ Mode **Rhythm Match** — tahap brainstorming. Submode Introduce perlu modul interaktif ketukan (tap timing). Guided Practice perlu indikator visual beat.
    - ❌ Mode **Melody Echo** — belum dimulai sama sekali.
+
+---
+
+## Diskusi & Keputusan Baru (Paska Sesi 10): Piano Kromatik 13 Tuts + Update Komponen Hardware ESP32
+
+> Ditambahkan setelah "Status Implementasi Sesi 10" di atas. Bagian ini murni **diskusi & keputusan baru** — belum ada implementasi kode untuk apa pun yang disebutkan di sini.
+
+### 1. Update Komponen Hardware (Breadboard Prototype ESP32)
+
+Melanjutkan rencana breadboard prototype ESP32 (lihat "Progres Hardware Saat Ini"), diputuskan piano fisik dibuat **kromatik penuh 1 oktaf** (bukan cuma nada natural). Spek breadboard direvisi:
+
+**Komponen tambahan yang dikonfirmasi:**
+- **5× push button baru** — untuk 5 tuts sharp/flat (C#/Db, D#/Eb, F#/Gb, G#/Ab, A#/Bb), melengkapi 8 tombol natural yang sudah direncanakan sebelumnya → total **13 tombol** (1 oktaf kromatik penuh)
+- **1× ESP32** — sesuai rencana revisi paska Sesi 3
+
+**Keputusan komponen suara:** Tetap pakai **2 buzzer pasif** yang sudah ada dari prototipe Arduino Mega (dipindah ke breadboard ESP32), **bukan** mini speaker. Mini speaker dipertimbangkan tapi tidak dipilih karena butuh modul amplifier tambahan (mis. PAM8403) yang menambah kompleksitas tanpa kebutuhan mendesak saat ini.
+
+**Referensi pemetaan pin (didiskusikan untuk Arduino Mega, sebagai pola acuan — bukan final untuk ESP32):**
+
+| Rentang Pin | Fungsi (versi Mega) |
+|---|---|
+| 2–10 | 9 tombol nada natural |
+| 11–13 | 2 buzzer + 2 tombol (Auto Play, Cheat Note) |
+| 22–26 (usulan) | 5 tombol sharp/flat tambahan |
+
+⚠️ **Catatan penting:** Pemetaan di atas untuk Arduino Mega (54 GPIO, longgar). Untuk breadboard **ESP32** (target sebenarnya, ~34 GPIO usable), pemetaan pin **belum final** dan perlu disusun ulang hati-hati karena ESP32 punya pin terlarang/khusus:
+- GPIO 6–11 → dipakai flash internal, **jangan dipakai**
+- GPIO 34–39 → input-only (aman untuk tombol, tidak bisa untuk output/buzzer)
+- GPIO 0, 2, 15 → strapping pins, ada efek saat boot, sebaiknya dihindari
+
+**Belum diputuskan (baru, menyusul open question lama):**
+- Pemetaan pin final 13 tombol + 2 buzzer khusus di ESP32
+- Notasi nada sharp/flat di kontrak JSON note event — `"C#4"` vs `"Db4"` vs nomor MIDI (makin mendesak karena hardware & software sekarang sama-sama kromatik)
+- Siapa di tim yang pegang firmware ESP32 (masih belum dijawab sejak sebelum Sesi 4)
+
+### 2. Update Besar: Piano Virtual Jadi 14 Tuts (B3 + 13 Tuts Kromatik C4–C5)
+
+Supaya Explorer Mode (virtual) mencakup nada bass awal `B3` serta 1 oktaf kromatik penuh (`C4–C5`), piano virtual di aplikasi diperbarui dari **9 tuts natural saja** menjadi **14 tuts total** (9 tuts natural `B3–C5` + 5 tuts hitam `C#4, D#4, F#4, G#4, A#4`).
+
+**Status: ✅ Selesai Diimplementasikan (Sesi 11)**
+
+**Implementasi yang telah diselesaikan:**
+- `core/widgets/virtual_piano.dart`: Render tuts hitam (`C#4, D#4, F#4, G#4, A#4`) secara terpresisi di atas 9 tuts putih (`B3–C5`), mendukung gesture touch & glissando.
+- `kAvailableNotes` (`practice_entities.dart`) & `kSupportedNotes` (`audio_service.dart`): Diperluas menjadi 14 nada (`['B3', 'C4', 'C#4', 'D4', 'D#4', 'E4', 'F4', 'F#4', 'G4', 'G#4', 'A4', 'A#4', 'B4', 'C5']`).
+- **Interval Training**: `kSemitoneByNote` diperbarui mencakup 14 nada (`B3` = -1, `C4` = 0 s/d `C5` = 12), `_buildValidRounds()` otomatis menghasilkan kombinasi interval valid.
+- **Note Recognition Introduce**: Modul interaktif diperbarui mencakup 14 nada.
+- **Stats Screen**: Bar chart akurasi nada diperluas mencakup 14 nada.
+- **Free Play**: Deskripsi nada diperbarui mencakup 14 nada (termasuk B3 & nada sharp/flat).
 
 
 

@@ -77,17 +77,21 @@ class NoteAccuracyStat {
   });
 }
 
-/// 9 nada yang tersedia, sesuai file audio di assets/audio/notes/
-/// (Sesi 3): B3.mp3, C4.mp3, D4.mp3, E4.mp3, F4.mp3, G4.mp3, A4.mp3,
-/// B4.mp3, C5.mp3.
+/// 14 nada (B3 + 13 nada kromatik C4–C5)
+/// Sesuai hardware Smart Piano ESP32 & Piano Virtual.
 const kAvailableNotes = [
   'B3',
   'C4',
+  'C#4',
   'D4',
+  'D#4',
   'E4',
   'F4',
+  'F#4',
   'G4',
+  'G#4',
   'A4',
+  'A#4',
   'B4',
   'C5',
 ];

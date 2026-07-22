@@ -122,29 +122,19 @@ class _FreePlayScreenState extends ConsumerState<FreePlayScreen> {
                 data: (_) => Column(
                   children: [
                     // ── Note display ──
-                    Expanded(
-                      child: Center(
+                    if (isLandscape)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              'Tekan tuts untuk bermain',
-                              style: TextStyle(
-                                fontSize: isLandscape ? 11 : 13,
-                                color: AppColors.primaryDark
-                                    .withValues(alpha: 0.5),
-                              ),
-                            ),
-                            SizedBox(height: isLandscape ? 6 : 16),
                             AnimatedSwitcher(
                               duration: const Duration(milliseconds: 200),
                               child: Text(
                                 _lastPlayedNote ?? '♪',
                                 key: ValueKey(_lastPlayedNote),
                                 style: TextStyle(
-                                  fontSize: _lastPlayedNote != null
-                                      ? (isLandscape ? 40 : 64)
-                                      : (isLandscape ? 30 : 48),
+                                  fontSize: _lastPlayedNote != null ? 36 : 26,
                                   fontWeight: FontWeight.w900,
                                   color: _lastPlayedNote != null
                                       ? AppColors.primaryDark
@@ -153,29 +143,83 @@ class _FreePlayScreenState extends ConsumerState<FreePlayScreen> {
                                 ),
                               ),
                             ),
-                            if (_lastPlayedNote != null) ...[
-                              SizedBox(height: isLandscape ? 2 : 8),
+                            if (_lastPlayedNote != null)
                               Text(
                                 _getNoteDescription(_lastPlayedNote!),
-                                style: TextStyle(
-                                  fontSize: isLandscape ? 12 : 14,
+                                style: const TextStyle(
+                                  fontSize: 12,
                                   color: AppColors.accent,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                            ],
                           ],
                         ),
+                      )
+                    else
+                      Expanded(
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Tekan tuts untuk bermain',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.primaryDark
+                                      .withValues(alpha: 0.5),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 200),
+                                child: Text(
+                                  _lastPlayedNote ?? '♪',
+                                  key: ValueKey(_lastPlayedNote),
+                                  style: TextStyle(
+                                    fontSize: _lastPlayedNote != null ? 64 : 48,
+                                    fontWeight: FontWeight.w900,
+                                    color: _lastPlayedNote != null
+                                        ? AppColors.primaryDark
+                                        : AppColors.primaryDark
+                                            .withValues(alpha: 0.15),
+                                  ),
+                                ),
+                              ),
+                              if (_lastPlayedNote != null) ...[
+                                const SizedBox(height: 8),
+                                Text(
+                                  _getNoteDescription(_lastPlayedNote!),
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: AppColors.accent,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
 
-                    // ── Piano ──
-                    Padding(
-                      padding: EdgeInsets.fromLTRB(12, 0, 12, isLandscape ? 8 : 16),
-                      child: VirtualPiano(
-                        activeNote: _activeNote,
-                        onNotePressed: _onNotePressed,
-                        height: isLandscape ? 110 : 180,
+                    // ── Piano (Adaptive Height) ──
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(12, 0, 12, isLandscape ? 6 : 16),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final pianoHeight = isLandscape
+                                ? constraints.maxHeight.clamp(80.0, 200.0)
+                                : constraints.maxHeight.clamp(80.0, 180.0);
+                            return Align(
+                              alignment: Alignment.bottomCenter,
+                              child: VirtualPiano(
+                                activeNote: _activeNote,
+                                onNotePressed: _onNotePressed,
+                                height: pianoHeight,
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ],
@@ -192,11 +236,16 @@ class _FreePlayScreenState extends ConsumerState<FreePlayScreen> {
     const descriptions = {
       'B3': 'Si (oktaf 3)',
       'C4': 'Do (Middle C)',
+      'C#4': 'Do# / Reb',
       'D4': 'Re',
+      'D#4': 'Re# / Mib',
       'E4': 'Mi',
       'F4': 'Fa',
+      'F#4': 'Fa# / Solb',
       'G4': 'Sol',
+      'G#4': 'Sol# / Lab',
       'A4': 'La (440 Hz)',
+      'A#4': 'La# / Sib',
       'B4': 'Si',
       'C5': 'Do (oktaf 5)',
     };
