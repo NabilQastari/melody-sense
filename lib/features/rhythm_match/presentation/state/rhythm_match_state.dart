@@ -1,100 +1,109 @@
 import 'package:flutter/foundation.dart';
 
 import 'package:melody_sense/core/domain/entities/practice_entities.dart'
-    show RoundFeedback;
+    show RoundFeedback, PracticeSubmode;
 import 'package:melody_sense/core/domain/entities/progression_entities.dart';
 
-
-
-/// Tempo tetap untuk MVP ini — 90 BPM. Belum ada UI metronome/visual
-/// beat, jadi nilai ini baru dipakai buat hitung jendela waktu di
-/// controller. Kalau nanti mau tempo bervariasi per ronde (mis. makin
-/// cepat makin sulit), tinggal ganti dari const jadi field di state.
-const kRhythmMatchBpm = 90;
-
-/// Interval antar beat dalam milidetik, diturunkan dari [kRhythmMatchBpm].
-/// 90 BPM = 60000/90 ≈ 667ms per ketukan.
-const kBeatIntervalMs = 60000 ~/ kRhythmMatchBpm;
-
-/// Toleransi ketepatan tap terhadap waktu beat (±300ms dari beat target
-/// dihitung Hit, di luar itu Miss). Biner — belum ada tier
-/// Perfect/Good/Miss, bisa dikembangkan nanti.
-const kHitWindowMs = 300;
+import '../../domain/entities/song_entity.dart';
 
 @immutable
 class RhythmMatchState {
   const RhythmMatchState({
-    required this.targetNote,
+    required this.selectedSong,
     required this.sessionId,
-    this.xp = 0,
-    this.livesTotal = 3,
-    this.livesRemaining = 3,
-    this.roundIndex = 0,
+    this.submode = PracticeSubmode.practice,
+    this.currentNoteIndex = 0,
     this.correctCount = 0,
-    this.totalRounds = 10,
+    this.totalAttempts = 0,
+    this.xp = 0,
+    this.startedAt,
+    this.completedMs,
+    this.stars = 0,
     this.feedback = RoundFeedback.none,
+    this.lastPressedNote,
     this.isSessionOver = false,
     this.completion,
   });
 
-  final String targetNote;
+  final RhythmSong selectedSong;
   final int sessionId;
-  final int xp;
-  final int livesTotal;
-  final int livesRemaining;
+  final PracticeSubmode submode;
 
-  /// Jumlah ronde yang SUDAH diselesaikan (kena maupun meleset/miss).
-  final int roundIndex;
+  /// Indeks nada aktif dalam melodi lagu (0 s/d `selectedSong.totalNotes - 1`).
+  final int currentNoteIndex;
 
-  /// Jumlah ronde yang kena (nada benar DAN tepat waktu) — dipisah dari
-  /// roundIndex, sama seperti mode lain, supaya akurasi sesi tidak
-  /// perlu ditebak dari xp.
+  /// Jumlah tuts yang ditekan BENAR sejauh ini.
   final int correctCount;
-  final int totalRounds;
-  final RoundFeedback feedback;
-  final bool isSessionOver;
 
-  /// Hasil ProgressionRepository.completeSession() — null selama sesi
-  /// masih berjalan ATAU sudah berakhir tapi orkestrasi progression
-  /// belum selesai diawait. Pola sama seperti Note Recognition &
-  /// Interval Training.
+  /// Total penekanan tuts yang dilakukan user.
+  final int totalAttempts;
+
+  final int xp;
+  final DateTime? startedAt;
+
+  /// Waktu penyelesaian total lagu dalam milidetik (null selama lagu masih dimainkan).
+  final int? completedMs;
+
+  /// Jumlah bintang rekor (1-3 bintang ⭐⭐⭐).
+  final int stars;
+
+  final RoundFeedback feedback;
+  final String? lastPressedNote;
+  final bool isSessionOver;
   final SessionCompletionResult? completion;
 
-  /// 0.0 - 1.0, dikonsumsi langsung oleh ExplorerGameplayScreen.progress.
-  double get progress =>
-      totalRounds == 0 ? 0.0 : (roundIndex / totalRounds).clamp(0.0, 1.0);
+  /// Nada yang HARUS ditekan user saat ini.
+  String get targetNote =>
+      currentNoteIndex < selectedSong.notes.length
+          ? selectedSong.notes[currentNoteIndex]
+          : selectedSong.notes.last;
 
-  /// 0.0 - 1.0, dikonsumsi SessionResultScreen (ring akurasi).
-  double get accuracy =>
-      roundIndex == 0 ? 0.0 : (correctCount / roundIndex).clamp(0.0, 1.0);
+  /// Progres lagu (0.0 - 1.0).
+  double get progress => selectedSong.totalNotes == 0
+      ? 0.0
+      : (currentNoteIndex / selectedSong.totalNotes).clamp(0.0, 1.0);
 
-  /// Menang = sesi berakhir karena semua ronde selesai dengan hearts
-  /// masih tersisa (bukan karena hearts habis).
-  bool get isWin => livesRemaining > 0;
+  /// Akurasi nada (0.0 - 1.0).
+  double get accuracy => totalAttempts == 0
+      ? 1.0
+      : (correctCount / totalAttempts).clamp(0.0, 1.0);
+
+  /// Waktu berlalu dalam milidetik sejauh ini.
+  int get currentElapsedMs {
+    if (completedMs != null) return completedMs!;
+    if (startedAt == null) return 0;
+    return DateTime.now().difference(startedAt!).inMilliseconds;
+  }
 
   RhythmMatchState copyWith({
-    String? targetNote,
+    RhythmSong? selectedSong,
     int? sessionId,
-    int? xp,
-    int? livesTotal,
-    int? livesRemaining,
-    int? roundIndex,
+    PracticeSubmode? submode,
+    int? currentNoteIndex,
     int? correctCount,
-    int? totalRounds,
+    int? totalAttempts,
+    int? xp,
+    DateTime? startedAt,
+    int? completedMs,
+    int? stars,
     RoundFeedback? feedback,
+    String? lastPressedNote,
     bool? isSessionOver,
     SessionCompletionResult? completion,
   }) {
     return RhythmMatchState(
-      targetNote: targetNote ?? this.targetNote,
+      selectedSong: selectedSong ?? this.selectedSong,
       sessionId: sessionId ?? this.sessionId,
-      xp: xp ?? this.xp,
-      livesTotal: livesTotal ?? this.livesTotal,
-      livesRemaining: livesRemaining ?? this.livesRemaining,
-      roundIndex: roundIndex ?? this.roundIndex,
+      submode: submode ?? this.submode,
+      currentNoteIndex: currentNoteIndex ?? this.currentNoteIndex,
       correctCount: correctCount ?? this.correctCount,
-      totalRounds: totalRounds ?? this.totalRounds,
+      totalAttempts: totalAttempts ?? this.totalAttempts,
+      xp: xp ?? this.xp,
+      startedAt: startedAt ?? this.startedAt,
+      completedMs: completedMs ?? this.completedMs,
+      stars: stars ?? this.stars,
       feedback: feedback ?? this.feedback,
+      lastPressedNote: lastPressedNote ?? this.lastPressedNote,
       isSessionOver: isSessionOver ?? this.isSessionOver,
       completion: completion ?? this.completion,
     );

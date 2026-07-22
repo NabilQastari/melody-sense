@@ -851,5 +851,23 @@ Supaya Explorer Mode (virtual) mencakup nada bass awal `B3` serta 1 oktaf kromat
 - **Stats Screen**: Bar chart akurasi nada diperluas mencakup 14 nada.
 - **Free Play**: Deskripsi nada diperbarui mencakup 14 nada (termasuk B3 & nada sharp/flat).
 
+---
+
+## Implementasi Sesi 12: Mode Rhythm Match (Berbasis Permainan Lagu)
+
+Mode **Rhythm Match** resmi selesai diimplementasikan dengan konsep permainan lagu (*Song-Based Playback*) dari awal sampai akhir tanpa timer paksaan yang melompat sendiri:
+
+### Features & Architecture (Sesi 12):
+1. **Lagu Bawaan ([song_entity.dart](file:///e:/Semester%205/KMIPN/melody_sense/lib/features/rhythm_match/domain/entities/song_entity.dart))**:
+   - 🟢 **Easy**: *Mary Had a Little Lamb* (26 nada diatonis C4–G4).
+   - 🟡 **Medium**: *Happy Birthday* (25 nada, menyertakan tuts hitam `A#4` & oktaf `C5`).
+   - 🔴 **Hard**: *Ode to Joy (Beethoven — Tema Utama)* (47 nada simfoni Beethoven B3–G4).
+2. **Visual Key & Prompt Format**: Tuts sharp/flat dan kartu prompt menampilkan simbol `#` langsung (misal `C#`, `D#`, `F#`, `G#`, `A#`) tanpa akhiran angka oktaf `#4`.
+2. **Tanpa Timeout Auto-Advance**: Pengguna menekan tuts nada demi nada hingga lagu selesai. Sistem mengukur **Waktu Penyelesaian (detik)**, **Akurasi (%)**, dan **Rating Bintang (1–3 ⭐)**.
+3. **Submodes**:
+   - **Introduce ([rhythm_match_introduce_screen.dart](file:///e:/Semester%205/KMIPN/melody_sense/lib/features/rhythm_match/presentation/screens/rhythm_match_introduce_screen.dart))**: Carousel 3 Slide + Modul Interaktif 4 Ketukan Twinkle Star.
+   - **Start Practice ([rhythm_match_song_select_screen.dart](file:///e:/Semester%205/KMIPN/melody_sense/lib/features/rhythm_match/presentation/screens/rhythm_match_song_select_screen.dart))**: Layar pilih lagu dengan rekor waktu/bintang.
+   - **Guided Practice ([rhythm_match_gameplay_screen.dart](file:///e:/Semester%205/KMIPN/melody_sense/lib/features/rhythm_match/presentation/screens/rhythm_match_gameplay_screen.dart))**: Latihan terbimbing dengan petunjuk tuts target menyala hijau terang di piano.
+
 
 
