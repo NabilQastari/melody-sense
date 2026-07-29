@@ -20,6 +20,9 @@ class SessionResultScreen extends StatelessWidget {
     required this.xpEarned,
     this.streakDays = 0,
     this.leveledUp = false,
+    this.timeSpentMs,
+    this.stars,
+    this.customSubtitle,
     this.retryScreenBuilder,
   });
 
@@ -32,6 +35,9 @@ class SessionResultScreen extends StatelessWidget {
 
   final int streakDays;
   final bool leveledUp;
+  final int? timeSpentMs;
+  final int? stars;
+  final String? customSubtitle;
 
   /// Builder untuk layar yang dibuka saat user tap Retry. Null = tombol
   /// Retry tidak muncul. Continue selalu pop() kembali ke layar
@@ -49,8 +55,19 @@ class SessionResultScreen extends StatelessWidget {
   }
 
   String get _subtitle {
+    if (customSubtitle != null) return customSubtitle!;
     if (!isWin) return 'Out of hearts — every miss is a step closer.';
     return "You're mastering the 9-key piano!";
+  }
+
+  String _formatDuration(int ms) {
+    final seconds = ms / 1000;
+    if (seconds < 60) {
+      return '${seconds.toStringAsFixed(1)}s';
+    }
+    final mins = ms ~/ 60000;
+    final remSecs = ((ms % 60000) / 1000).toStringAsFixed(0);
+    return '${mins}m ${remSecs}s';
   }
 
   @override
@@ -86,14 +103,42 @@ class SessionResultScreen extends StatelessWidget {
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      Icon(
-                        isWin
-                            ? Icons.emoji_events_rounded
-                            : Icons.favorite_border_rounded,
-                        color: accentColor,
-                        size: 22,
-                      ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
-                      const SizedBox(height: 8),
+                      if (stars != null && stars! > 0) ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(3, (index) {
+                            final isFilled = index < stars!;
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 4),
+                              child: Icon(
+                                isFilled
+                                    ? Icons.star_rounded
+                                    : Icons.star_outline_rounded,
+                                color:
+                                    isFilled ? Colors.amber : Colors.grey.shade300,
+                                size: 32,
+                              ),
+                            );
+                          }),
+                        ).animate().scale(
+                              duration: 400.ms,
+                              curve: Curves.elasticOut,
+                            ),
+                        const SizedBox(height: 8),
+                      ] else ...[
+                        Icon(
+                          isWin
+                              ? Icons.emoji_events_rounded
+                              : Icons.favorite_border_rounded,
+                          color: accentColor,
+                          size: 22,
+                        ).animate().scale(
+                              duration: 400.ms,
+                              curve: Curves.elasticOut,
+                            ),
+                        const SizedBox(height: 8),
+                      ],
                       Text(
                         _headline,
                         textAlign: TextAlign.center,
@@ -131,7 +176,18 @@ class SessionResultScreen extends StatelessWidget {
                               label: 'XP Earned',
                             ).animate().fadeIn(delay: 450.ms, duration: 400.ms).slideX(begin: -0.1, end: 0),
                           ),
-                          const SizedBox(width: 12),
+                          if (timeSpentMs != null) ...[
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _StatCard(
+                                icon: Icons.timer_outlined,
+                                iconColor: Colors.blue,
+                                value: _formatDuration(timeSpentMs!),
+                                label: 'Waktu',
+                              ).animate().fadeIn(delay: 450.ms, duration: 400.ms).slideY(begin: 0.1, end: 0),
+                            ),
+                          ],
+                          const SizedBox(width: 8),
                           Expanded(
                             child: _StatCard(
                               icon: Icons.local_fire_department_rounded,

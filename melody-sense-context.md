@@ -78,7 +78,7 @@ Pengembangan hardware fisik **awalnya** direncanakan dilanjutkan setelah lolos t
 | Animasi UI | **flutter_animate** *(baru, direncanakan Sesi 11.1)* | Package animasi deklaratif (`.animate().scale()`, `.shake()`, `.fadeIn()`, dst) — dipilih daripada menulis manual `AnimatedContainer`/`TweenAnimationBuilder` satu-satu, supaya animasi feedback teks & tombol di Note Recognition lebih ringkas ditulis dan konsisten dipakai ulang di mode latihan lain nanti |
 | Arsitektur | **Clean Architecture, feature-first** | Presentation → Domain → Data per fitur, modular & scalable |
 
-**Struktur folder (gabungan Sesi 1–7, kondisi aktual):**
+**Struktur folder (gabungan Sesi 1–12, kondisi aktual):**
 ```
 melody_sense/
 ├── lib/
@@ -90,66 +90,85 @@ melody_sense/
 │   │   ├── audio/
 │   │   │   └── audio_service.dart     # AudioService (flutter_soloud) + Completer `ready` (Sesi 4, fix bug nada senyap)
 │   │   ├── providers/
-│   │   │   ├── database_providers.dart    # appDatabaseProvider, dst. (Sesi 2)
-│   │   │   └── audio_providers.dart       # audioServiceProvider + audioReadyProvider (baru, Sesi 4)
+│   │   │   ├── database_providers.dart          # appDatabaseProvider, dst. (Sesi 2)
+│   │   │   ├── audio_providers.dart             # audioServiceProvider + audioReadyProvider (Sesi 4)
+│   │   │   └── education_progress_provider.dart # status penyelesaian submode Introduce (Sesi 10)
 │   │   ├── widgets/
-│   │   │   ├── virtual_piano.dart             # komponen piano dasar (tap + swipe/glissando)
+│   │   │   ├── virtual_piano.dart             # piano virtual 14 tuts (B3-C5 kromatik, tap + swipe/glissando) (Sesi 11)
 │   │   │   ├── explorer_gameplay_screen.dart  # SHELL Explorer Mode, responsif portrait/landscape
 │   │   │   ├── maestro_gameplay_screen.dart   # SHELL Maestro Mode, responsif portrait/landscape
-│   │   │   ├── session_result_screen.dart     # SHELL hasil sesi, reusable semua mode latihan (Sesi 4); `_StaticBottomNav` DIHAPUS (Sesi 7), `onContinue`/`onRetry` VoidCallback diganti `retryScreenBuilder` WidgetBuilder (fix bug dead context)
-│   │   │   ├── app_bottom_nav.dart            # (Sesi 6→redesign Sesi 7) — bottom nav 4 tab, desain ikon+teks+underline indicator (bukan circle), dipakai HANYA di HomeScreen
-│   │   │   └── home_screen.dart               # BARU (Sesi 7) — shell utama app: Scaffold + IndexedStack (4 tab) + AppBottomNav. Satu navbar untuk seluruh app, hilang otomatis saat gameplay di-push di atasnya.
+│   │   │   ├── session_result_screen.dart     # SHELL hasil sesi reusable, dukung timer & rating 3 bintang (Sesi 12)
+│   │   │   ├── app_bottom_nav.dart            # bottom nav 4 tab (Dashboard, Practice, Progression, Stats)
+│   │   │   ├── home_screen.dart               # shell utama app: Scaffold + IndexedStack (4 tab) + AppBottomNav
+│   │   │   └── settings_screen.dart           # pengaturan volume, Sense Mode toggle, reset DB (Sesi 9)
 │   │   ├── data/
 │   │   │   ├── local/
 │   │   │   │   ├── app_database.dart          # DriftDatabase utama
 │   │   │   │   ├── connection/connection.dart
-│   │   │   │   ├── daos/          # achievement, attempt, personal_best, session
-│   │   │   │   └── tables/        # achievements, attempts, personal_bests, sessions
-│   │   │   └── repositories/      # practice_repository_impl, progression_repository_impl
+│   │   │   │   ├── daos/                      # achievement, attempt, personal_best, session
+│   │   │   │   └── tables/                    # achievements, attempts, personal_bests, sessions
+│   │   │   └── repositories/                  # practice_repository_impl, progression_repository_impl
 │   │   └── domain/
 │   │       ├── entities/
-│   │       │   ├── practice_entities.dart     # TrainingMode, PracticeSession, NoteAttempt, NoteAccuracyStat + (catatan: kAvailableNotes & RoundFeedback BELUM dipindah ke sini meskipun direncanakan Sesi 6 — masih di note_recognition_state.dart, diimport lintas fitur pakai `show`)
-│   │       │   └── progression_entities.dart
-│   │       └── repositories/      # practice_repository, progression_repository (interface)
+│   │       │   ├── achievement_definitions.dart# 6 entitas achievement resmi (Sesi 7)
+│   │       │   ├── practice_entities.dart     # TrainingMode, PracticeSession, NoteAttempt, kAvailableNotes (14 nada)
+│   │       │   └── progression_entities.dart  # LevelInfo, SessionCompletionResult
+│   │       └── repositories/                  # practice_repository, progression_repository (interface)
 │   │
 │   └── features/
-│       ├── practice/              # (Sesi 6) — tab "Pick a Challenge", konten tab di HomeScreen
+│       ├── dashboard/                         # BARU (Sesi 9) — tab Home/Dashboard utama
+│       │   └── presentation/screens/dashboard_screen.dart
+│       ├── practice/                          # tab "Pick a Challenge" (Sesi 6)
 │       │   └── presentation/
-│       │       ├── models/challenge_info.dart          # data challenge (presentation layer)
-│       │       ├── widgets/challenge_card.dart          # card per challenge
-│       │       ├── widgets/difficulty_badge.dart        # badge BEGINNER/INTERMEDIATE/ADVANCE
-│       │       └── screens/practice_screen.dart         # konten tab (bukan Scaffold mandiri, Sesi 7 refactor)
-│       ├── note_recognition/
+│       │       ├── models/challenge_info.dart # data challenge
+│       │       ├── widgets/challenge_card.dart# card per challenge
+│       │       ├── widgets/difficulty_badge.dart
+│       │       └── screens/practice_screen.dart
+│       ├── progression/                       # BARU (Sesi 8) — tab Progression Path berliku
+│       │   └── presentation/screens/progression_screen.dart
+│       ├── stats/                             # tab Stats "Your Progress" (Sesi 7)
 │       │   └── presentation/
-│       │       ├── state/note_recognition_state.dart              # state immutable (Sesi 4); masih berisi kAvailableNotes & RoundFeedback (belum dipindah)
-│       │       ├── controllers/note_recognition_controller.dart   # StateNotifier.autoDispose (Sesi 4)
-│       │       └── screens/note_recognition_screen.dart           # wrapper → ExplorerGameplayScreen, gate audioReadyProvider (Sesi 4)
-│       ├── interval_training/     # full domain logic Sesi 6
+│       │       ├── providers/stats_providers.dart
+│       │       └── screens/stats_screen.dart
+│       ├── free_play/                         # Free Play Mode (piano bebas 14 tuts)
+│       │   └── presentation/screens/free_play_screen.dart
+│       ├── note_recognition/                  # Note Recognition (Sesi 4, 10, 11)
 │       │   └── presentation/
-│       │       ├── state/interval_training_state.dart             # state + IntervalDefinition + kValidIntervalRounds
-│       │       ├── controllers/interval_training_controller.dart  # StateNotifier.autoDispose
-│       │       └── screens/interval_training_screen.dart          # tersambung penuh ke controller (Sesi 6)
-│       ├── melody_echo/
-│       │   └── presentation/screens/melody_echo_screen.dart        # wrapper tipis → MaestroGameplayScreen, DITUNDA ke Sesi 10 (keputusan user)
-│       ├── maestro_mode/
-│       │   └── presentation/screens/maestro_challenge_screen.dart  # wrapper tipis → MaestroGameplayScreen
-│       ├── rhythm_match/          # domain logic Sesi 6, screen Sesi 7 (BELUM DITES — build error import)
+│       │       ├── state/note_recognition_state.dart
+│       │       ├── controllers/note_recognition_controller.dart
+│       │       └── screens/
+│       │           ├── note_recognition_screen.dart
+│       │           ├── note_recognition_submode_picker_screen.dart
+│       │           └── note_recognition_introduce_screen.dart
+│       ├── interval_training/                 # Interval Training (Sesi 6, 10, 11)
 │       │   └── presentation/
-│       │       ├── state/rhythm_match_state.dart                  # state + konstanta BPM/hit window
-│       │       ├── controllers/rhythm_match_controller.dart       # StateNotifier.autoDispose + Timer
-│       │       └── screens/rhythm_match_screen.dart               # BARU (Sesi 7) — wrapper → ExplorerGameplayScreen
-│       ├── stats/                 # BARU (Sesi 7) — tab Stats "Your Progress"
+│       │       ├── state/interval_training_state.dart
+│       │       ├── controllers/interval_training_controller.dart
+│       │       └── screens/
+│       │           ├── interval_training_screen.dart
+│       │           ├── interval_training_submode_picker_screen.dart
+│       │           └── interval_training_introduce_screen.dart
+│       ├── rhythm_match/                      # Rhythm Match (Song-Based, Sesi 12)
+│       │   ├── domain/entities/song_entity.dart
 │       │   └── presentation/
-│       │       ├── providers/stats_providers.dart                 # Riverpod providers (FutureProvider/StreamProvider)
-│       │       └── screens/stats_screen.dart                     # konten tab: Level card, Note Accuracy bar chart, Badges grid, Practice History
-│       ├── placeholder/           # BARU (Sesi 7) — placeholder screens, TIDAK LAGI DIPAKAI (digantikan inline di HomeScreen)
-│       │   └── presentation/screens/placeholder_screens.dart     # ⚠️ orphan file, bisa dihapus
-│       └── progression/           # direncanakan, belum dikerjakan
+│       │       ├── state/rhythm_match_state.dart
+│       │       ├── controllers/rhythm_match_controller.dart
+│       │       └── screens/
+│       │           ├── rhythm_match_screen.dart
+│       │           ├── rhythm_match_submode_screen.dart
+│       │           ├── rhythm_match_introduce_screen.dart
+│       │           ├── rhythm_match_song_select_screen.dart
+│       │           └── rhythm_match_gameplay_screen.dart
+│       ├── melody_echo/                       # Melody Echo (wrapper Maestro)
+│       │   └── presentation/screens/melody_echo_screen.dart
+│       ├── maestro_mode/                      # Maestro Mode (perangkat ESP32 WebSocket)
+│       │   └── presentation/screens/maestro_challenge_screen.dart
+│       └── placeholder/                       # placeholder screen (orphan file)
+│           └── presentation/screens/placeholder_screens.dart
 │
-├── test/
-│   └── app_database_test.dart     # 14 unit test (semua DAO) — Sesi 2
-│
-└── README_SESI2.md                # dokumentasi cara pakai skema database — Sesi 2
+└── test/
+    ├── app_database_test.dart                 # 14 unit test DAO (Sesi 2)
+    └── widget_test.dart                       # test runner (Sesi 11.1)
 ```
 
 **Catatan penting soal struktur:**
@@ -258,23 +277,23 @@ Implementasi konkret (DAO, domain entities, repository, Riverpod providers) suda
 
 | Sesi | Fokus | Status |
 |---|---|---|
-| 1 | Brainstorming arsitektur (stack, no game engine, skema DB) + setup awal project (install tools, scaffold, folder structure) | ✅ Selesai |
+| 1 | Brainstorming arsitektur (stack, no game engine, skema DB) + setup awal project | ✅ Selesai |
 | 2 | Implementasi struktur data lokal (Drift schema: sessions, attempts, personal_best, achievements) | ✅ Selesai |
 | 3 | Audio service + virtual piano UI (fondasi Explorer Mode) | ✅ Selesai |
 | 4 | Fitur Note Recognition end-to-end (jadi template pola untuk fitur lain) | ✅ Selesai |
 | 5 | Sistem gamifikasi (XP, level, personal best, achievement logic) | ✅ Selesai |
-| 6 | Fitur latihan lain (Interval Training, Rhythm Match) + Practice tab | ✅ Selesai — Melody Echo **ditunda ke Sesi 10** (keputusan user). |
+| 6 | Fitur latihan (Interval Training, Rhythm Match) + Practice tab | ✅ Selesai |
 | 7 | Statistik & grafik progres + refactor navbar arsitektur | ✅ Selesai |
 | 8 | Progression path UI (peta level) + polish Explorer Mode | ✅ Selesai |
-| 9 | Halaman Dashboard (baru ditambahkan Sesi 5 — belum ada detail konten/desain, lihat catatan) | ✅ Selesai |
-| 10 | Brainstorming (Fitur Peningkatan UX & Edukasi Latihan) | ⏸️ Dijeda sementara — brainstorming Note Recognition & Interval Training menghasilkan rencana konkret (lihat 11.1 & 11.2), lanjut brainstorming mode latihan lain (Melody Echo, Rhythm Match) setelah 11.2 selesai |
-| 11 | Implementasi dari Rencana Pembaruan (UX & Edukasi Latihan) | ⏳ Belum mulai |
-| 11.1 | Update Note Recognition (Mekanik & Visual Tambahan) — sub-sesi dari Sesi 11, dikerjakan lebih dulu sebagai test case | ✅ Selesai |
-| 11.2 | Update Interval Training (Mekanik & Visual Tambahan) — sub-sesi dari Sesi 11, lanjutan pola 11.1 | ✅ Selesai |
-| 12 | Persiapan Maestro Mode (WebSocket client) + **Melody Echo** (ditunda dari Sesi 6) | ⏳ Belum mulai |
-| 13 | Testing & persiapan submission tahap 2 | ⏳ Belum mulai |
+| 9 | Halaman Dashboard & Settings Screen | ✅ Selesai |
+| 10 | Brainstorming & Implementasi Sistem Submode (Introduce Carousel, Start Practice, Guided Practice) | ✅ Selesai |
+| 11 | Implementasi dari Rencana Pembaruan (UX & Edukasi Latihan + Piano Kromatik 14 Tuts) | ✅ Selesai |
+| 11.1 | Update Note Recognition (Mekanik & Visual Tambahan `flutter_animate`) | ✅ Selesai |
+| 11.2 | Update Interval Training (Visual Jembatan Jarak + Next Round) | ✅ Selesai |
+| 12 | Mode Rhythm Match Berbasis Permainan Lagu (Song-Based Playback: Easy, Medium, Hard) + Timer & Rating Bintang di Result Screen | ✅ Selesai |
+| 13 | Persiapan Maestro Mode (WebSocket client) & Submode Melody Echo | ⏳ Belum mulai |
 | 14 | Fitur Kustomisasi & Reward Peti Rahasia (Piano Skins / Themes) | ⏳ Belum mulai |
-| 15 | Update Piano Virtual jadi Kromatik (13 tuts: natural + sharp/flat) + penyesuaian di semua mode latihan (Note Recognition, Interval Training, Rhythm Match, Melody Echo) | ⏳ Belum mulai — baru tahap keputusan, lihat "Diskusi & Keputusan Baru (Paska Sesi 10)" |
+| 15 | Update Piano Virtual jadi Kromatik (14 tuts: B3 + 13 tuts C4–C5 kromatik) | ✅ Selesai |
 
 *(Rencana ini bisa disesuaikan/dipecah lebih lanjut sesuai kebutuhan saat pengembangan berjalan. Sesi 9 "Dashboard" disisipkan saat Sesi 5. Sesi 10 & 11 ditambahkan di akhir Sesi 9 atas permintaan user untuk memprioritaskan peningkatan UX, kesenangan, dan nilai edukatif mode latihan).*
 
@@ -467,45 +486,35 @@ Fokus: **Fitur Note Recognition end-to-end** — jadi pola template untuk fitur 
   - Satu `AppBottomNav` di bawah — ganti tab = `setState` ganti index, bukan push halaman
   - Navbar hilang otomatis saat gameplay di-push ON TOP of HomeScreen
 - **AppBottomNav redesign** — desain baru mengikuti SessionResult style: ikon + teks label + animated underline indicator (bukan circle background).
-- `main.dart`: `home:` sekarang `HomeScreen()` (bukan `PracticeScreen()`).
-- PracticeScreen & StatsScreen direfactor: stripped Scaffold/SafeArea/AppBottomNav, sekarang cuma content Column yang hidup di dalam IndexedStack.
-- Dashboard & Progression: placeholder inline di HomeScreen ("Coming soon — Sesi 8/9").
-
-**3. Fix SessionResultScreen Continue/Retry Buttons:**
-- **Masalah:** `onContinue`/`onRetry` VoidCallback menangkap `context` dari calling screen (NoteRecognitionScreen, dll.) yang sudah di-`pushReplacement` → context mati → tombol tidak bekerja.
-- **Fix:** VoidCallbacks diganti `retryScreenBuilder` (`WidgetBuilder?`). SessionResultScreen handle navigasi sendiri pakai context-nya sendiri yang valid:
-  - Continue → `Navigator.pop(context)` (kembali ke HomeScreen)
-  - Retry → `Navigator.pushReplacement(context, retryScreenBuilder)` (sesi baru)
-- `_StaticBottomNav` **dihapus** dari SessionResultScreen — navbar cuma di HomeScreen.
-- Semua 3 caller (NoteRecognition, IntervalTraining, RhythmMatch) diupdate: `retryScreenBuilder: (_) => const XxxScreen()`.
-
-**File placeholder_screens.dart** (`features/placeholder/`) — orphan file, dibuat lalu **tidak lagi dipakai** setelah placeholder di-inline ke HomeScreen. Bisa dihapus.
+- `main.dart`: `home:` sekarang `HomeScreen()`.
 
 ---
 
 ## Status Proyek Saat Ini
 
-**Sesi 7 selesai.** Semua dari Sesi 1–7 sudah dikerjakan (kecuali Melody Echo → Sesi 10). Sistem gamifikasi sudah **hidup end-to-end** dan disambungkan ke Note Recognition:
-- **Level & XP**: `LevelInfo` (entity baru, domain layer) — formula linear, 100 XP/level, diturunkan on-the-fly dari `getTotalXp()` (bukan kolom terpisah, konsisten dengan keputusan Sesi 1). `ProgressionRepository.getLevelInfo()`/`watchLevelInfo()` ditambahkan.
-- **Personal best**: sudah tersambung penuh lewat `completeSession()` (sebelumnya infrastruktur sudah ada dari Sesi 2, sekarang benar-benar dipanggil dari controller).
-- **Achievement**: `seedIfEmpty()` akhirnya diisi — 6 achievement konkret didefinisikan di `achievement_definitions.dart` (domain layer, tidak bergantung Drift): *First Notes* (1 sesi), *Dedicated Learner* (5 sesi), *Note Master* (100 nada benar kumulatif), *Perfect Round* (1 sesi tanpa salah), *Century Scorer* (skor ≥100 dalam 1 sesi), *On Fire* (streak 3 hari). `AchievementDao` dapat method baru `getByTitle()` dan `setProgress()` (untuk achievement non-akumulatif seperti streak, yang nilainya bisa naik-turun — beda dari `incrementProgress()` yang cuma nambah).
-- **Streak harian**: dihitung dari `SessionDao.getDistinctSessionDays()` (tanggal unik sesi selesai) + logic di `ProgressionRepositoryImpl._computeStreakDays()` — grace period 1 hari (streak masih hidup kalau sesi terakhir kemarin).
-- **Satu pintu orkestrasi**: `ProgressionRepository.completeSession()` — dipanggil controller setelah `finishSession()`, menggabungkan submit personal best + deteksi level-up + hitung streak + update semua achievement jadi satu `SessionCompletionResult`.
-- `NoteRecognitionController` & `NoteRecognitionScreen` disambungkan: `streakDays`/`leveledUp` di `SessionResultScreen` sekarang data asli, bukan placeholder. Seeding achievement dipanggil (idempotent) di awal `NoteRecognitionController._start()` sebagai solusi sementara — **perlu dipindah ke titik startup app** begitu ada (belum ada `main.dart` terpusat/go_router, lihat catatan di bawah).
-- State `NoteRecognitionState` dapat field `completion` (`SessionCompletionResult?`) — UI menunggu field ini terisi sebelum pindah ke `SessionResultScreen`, supaya tidak menampilkan data basi (ada jeda async antara sesi ditandai selesai dan `completeSession()` rampung).
+**Sesi 12 selesai.** Pengembangan Explorer Mode (virtual) dan fondasi utama aplikasi Melody Sense sudah **100% selesai & beroperasi penuh end-to-end**:
 
-**Belum diputuskan/dikerjakan dari Sesi 5:**
-- `isNewPersonalBest` dan `newlyUnlockedAchievements` sudah dihasilkan `completeSession()` tapi **belum ditampilkan di UI** — `SessionResultScreen` belum punya slot visual untuk itu (belum ada desain). Datanya sudah tersedia di `SessionCompletionResult`, tinggal disambungkan begitu desainnya ada.
-- Belum ada UI untuk menampilkan `LevelInfo` (progress bar ke level berikutnya) di luar pill "Level Up!" generik yang sudah ada — belum ada layar Dashboard/Progression yang jadi tempatnya.
-- Daftar 6 achievement masih draft tim (lihat `achievement_definitions.dart`), belum direview/difinalkan.
-- Titik seeding achievement (`seedDefaultAchievementsIfEmpty()`) masih numpang di `NoteRecognitionController._start()`, perlu pindah ke startup app.
+- **Note Recognition (100% Selesai)**: Submode Introduce (3 slide), Start Practice (10 ronde + nyawa), & Guided Practice (hint menyala). Dilengkapi mekanik Ronde Misteri (+20 XP), Compare Playback saat salah, dan animasi `flutter_animate`.
+- **Interval Training (100% Selesai)**: Submode Introduce (4 slide), Start Practice, & Guided Practice. Dilengkapi Visual Jembatan Jarak (*Distance Bridge* curve), tombol *Next Round* melayang, dan Compare Playback adaptif.
+- **Rhythm Match (100% Selesai)**: Berbasis permainan lagu (*Song-Based Playback*) tanpa timeout auto-advance. Menyediakan 3 lagu (Easy: *Mary Had a Little Lamb*, Medium: *Happy Birthday*, Hard: *Ode to Joy*). Dilengkapi Submode Introduce (3 slide + 4 ketukan intro), Song Select, Guided Practice, Auto-Clear Touch Highlight (120ms), serta kalkulasi Akurasi (%), Waktu Penyelesaian (detik), dan Rating 3 Bintang (⭐⭐⭐) yang ditampilkan di `SessionResultScreen`.
+- **Free Play (100% Selesai)**: Sandbox piano bebas 14 tuts (`B3–C5` kromatik) tanpa batas waktu/nyawa.
+- **Dashboard Screen (100% Selesai)**: Tab utama dengan greeting, Level & XP badge, dialog status koneksi Smart Piano ESP32, grid 2x2 challenge mode, dan banner Personal Best.
+- **Progression Screen (100% Selesai)**: Tab jalur belajar berliku (*winding path CustomPainter*) dengan simpul level adaptif (*completed*, *active*, *locked*, *mystery chest*).
+- **Stats Screen (100% Selesai)**: Tab statistik progres pengguna, grafik bar akurasi 14 nada, grid badge/achievement, dan histori latihan.
+- **Settings Screen (100% Selesai)**: Pengaturan volume piano virtual (`shared_preferences` & `SoLoud`), toggle *Sense Mode* (aksesibilitas), dan opsi reset database.
+- **Sistem Gamifikasi & Database (100% Selesai)**: Database SQLite (`Drift`) mengelola sesi latihan, histori attempt, streak harian dengan grace period, level-up linear (100 XP/level), personal best per mode, dan 6 badge achievement otomatis.
+
+**Catatan/Hal Terbuka untuk Sesi Selanjutnya:**
+- **Maestro Mode & Hardware ESP32**: Integrasi WebSocket persisten dengan prototipe breadboard ESP32 13 tombol kromatik.
+- **Melody Echo**: Mode latihan pengulangan melodi berbasis Maestro Mode / ESP32.
+- **Sense Mode Hardware Integration**: Pemasangan label Braille di tombol fisik ESP32 & integrasi narasi TTS (`flutter_tts`) untuk disabilitas tunanetra/low vision.
 
 **Pola yang sudah settled dan siap dipakai ulang untuk fitur lain:**
-- Pola controller: `StateNotifier.autoDispose` yang start session di constructor, cek jawaban, log attempt, tutup sesi lewat `finishSession()` + `completeSession()`. **Terbukti reusable** — dipakai ulang persis untuk Interval Training & Rhythm Match di Sesi 6, cuma beda cara generate target/cek jawaban.
-- Shell `SessionResultScreen` — reusable, tinggal disuplai `isWin`/`accuracy`/`xpEarned`/`streakDays`/`leveledUp`.
-- Pola gate `audioReadyProvider` untuk fitur yang langsung memutar audio dari interaksi user, dan pola gate serupa (`state.completion == null`) untuk menunggu orkestrasi async selesai sebelum pindah layar.
-- Pola "satu pintu orkestrasi" (`completeSession()`) — mode latihan lain tinggal panggil method yang sama dengan `TrainingMode` berbeda, tidak perlu menulis ulang logic personal best/level/streak/achievement.
-- Konstanta/entity generik lintas fitur (`kAvailableNotes`, `RoundFeedback`) taruh di `core/domain/entities/practice_entities.dart`, JANGAN pinjam langsung dari state file fitur lain (lihat pelajaran bug di "Ringkasan Sesi 6" poin 1 & 3, dan catatan di "Struktur folder").
+- Pola controller: `StateNotifier.autoDispose` yang start session di constructor, cek jawaban, log attempt, tutup sesi lewat `finishSession()` + `completeSession()`.
+- Shell `SessionResultScreen` — reusable, tinggal disuplai `isWin`/`accuracy`/`xpEarned`/`streakDays`/`leveledUp`/`timeSpentMs`/`stars`.
+- Pola gate `audioReadyProvider` untuk fitur yang langsung memutar audio dari interaksi user.
+- Pola "satu pintu orkestrasi" (`completeSession()`).
+- Konstanta/entity generik lintas fitur (`kAvailableNotes`, `RoundFeedback`) ditaruh di `core/domain/entities/practice_entities.dart`.
 
 ### Belum dikerjakan / catatan untuk sesi berikutnya:
 - **Melody Echo** — ditunda ke Sesi 10 (bersama Maestro Mode/WebSocket).
@@ -860,14 +869,20 @@ Mode **Rhythm Match** resmi selesai diimplementasikan dengan konsep permainan la
 ### Features & Architecture (Sesi 12):
 1. **Lagu Bawaan ([song_entity.dart](file:///e:/Semester%205/KMIPN/melody_sense/lib/features/rhythm_match/domain/entities/song_entity.dart))**:
    - 🟢 **Easy**: *Mary Had a Little Lamb* (26 nada diatonis C4–G4).
-   - 🟡 **Medium**: *Happy Birthday* (25 nada, menyertakan tuts hitam `A#4` & oktaf `C5`).
-   - 🔴 **Hard**: *Ode to Joy (Beethoven — Tema Utama)* (47 nada simfoni Beethoven B3–G4).
+   - 🟡 **Medium**: *Happy Birthday* (24 nada, menyertakan tuts hitam `A#4` & oktaf `C5`).
+   - 🔴 **Hard**: *Ode to Joy (Beethoven — Tema Utama)* (47 nada simfoni Beethoven B3–G4, lengkap dengan Frase A, A', B, & A'').
 2. **Visual Key & Prompt Format**: Tuts sharp/flat dan kartu prompt menampilkan simbol `#` langsung (misal `C#`, `D#`, `F#`, `G#`, `A#`) tanpa akhiran angka oktaf `#4`.
-2. **Tanpa Timeout Auto-Advance**: Pengguna menekan tuts nada demi nada hingga lagu selesai. Sistem mengukur **Waktu Penyelesaian (detik)**, **Akurasi (%)**, dan **Rating Bintang (1–3 ⭐)**.
-3. **Submodes**:
-   - **Introduce ([rhythm_match_introduce_screen.dart](file:///e:/Semester%205/KMIPN/melody_sense/lib/features/rhythm_match/presentation/screens/rhythm_match_introduce_screen.dart))**: Carousel 3 Slide + Modul Interaktif 4 Ketukan Twinkle Star.
-   - **Start Practice ([rhythm_match_song_select_screen.dart](file:///e:/Semester%205/KMIPN/melody_sense/lib/features/rhythm_match/presentation/screens/rhythm_match_song_select_screen.dart))**: Layar pilih lagu dengan rekor waktu/bintang.
+3. **Mekanik Tanpa Timeout Auto-Advance**: Pengguna menekan tuts nada demi nada hingga lagu selesai. Sistem mengukur **Waktu Penyelesaian (detik)**, **Akurasi (%)**, dan **Rating Bintang (1–3 ⭐)**.
+4. **Auto-Clear Key Highlight**: Tuts piano yang ditekan berkedip selama 120ms sebagai *touch feedback* lalu otomatis mati kembali tanpa menetap.
+5. **Robust Controller Lifecycle**: Menggunakan `StateNotifierProvider.autoDispose.family` (`RhythmMatchArgs`) untuk mencegah bug *stuck loading* saat navigasi antar layar.
+6. **Submodes**:
+   - **Introduce ([rhythm_match_introduce_screen.dart](file:///e:/Semester%205/KMIPN/melody_sense/lib/features/rhythm_match/presentation/screens/rhythm_match_introduce_screen.dart))**: Carousel 3 Slide + Modul Interaktif 4 Ketukan Intro Twinkle Star.
+   - **Start Practice ([rhythm_match_song_select_screen.dart](file:///e:/Semester%205/KMIPN/melody_sense/lib/features/rhythm_match/presentation/screens/rhythm_match_song_select_screen.dart))**: Layar pilih lagu (Easy, Medium, Hard).
    - **Guided Practice ([rhythm_match_gameplay_screen.dart](file:///e:/Semester%205/KMIPN/melody_sense/lib/features/rhythm_match/presentation/screens/rhythm_match_gameplay_screen.dart))**: Latihan terbimbing dengan petunjuk tuts target menyala hijau terang di piano.
+7. **Timer & Rating Bintang di Result Screen ([session_result_screen.dart](file:///e:/Semester%205/KMIPN/melody_sense/lib/core/widgets/session_result_screen.dart))**:
+   - Menambahkan parameter opsional `timeSpentMs`, `stars`, dan `customSubtitle` di `SessionResultScreen`.
+   - Menampilkan kartu **Waktu** penyelesaian (misal `14.2s` atau `1m 15s`) serta indikator rating 3 bintang (⭐⭐⭐) secara dinamis pada layar hasil sesi mode Rhythm Match.
+
 
 
 

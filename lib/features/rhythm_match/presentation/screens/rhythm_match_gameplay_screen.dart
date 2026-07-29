@@ -108,6 +108,9 @@ class _RhythmMatchGameplayScreenState
         isWin: state.stars >= 1,
         accuracy: state.accuracy,
         xpEarned: state.xp,
+        timeSpentMs: state.completedMs,
+        stars: state.stars,
+        customSubtitle: 'Lagu "${state.selectedSong.title}" Selesai!',
         streakDays: completion.streakDays,
         leveledUp: completion.leveledUp,
         retryScreenBuilder: (context) => RhythmMatchSongSelectScreen(
