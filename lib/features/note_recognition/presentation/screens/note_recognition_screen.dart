@@ -31,20 +31,35 @@ class NoteRecognitionScreen extends ConsumerStatefulWidget {
 
 class _NoteRecognitionScreenState extends ConsumerState<NoteRecognitionScreen> {
   Timer? _hintTimer;
+  Timer? _senseAutoPlayTimer;
+  Timer? _hardwareHighlightTimer;
   StreamSubscription<String>? _noteSub;
   String? _guidedHintNote;
+  String? _activeHardwareNote;
   int _lastRoundIndex = -1;
+  RoundFeedback? _lastFeedback;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final mode = ref.read(operatingModeProvider);
+
+      // Narasi intro saat masuk layar dalam Sense Mode
+      if (mode == AppOperatingMode.sense) {
+        ref.read(ttsServiceProvider).speak('Note Recognition. Tebak nada yang dimainkan.');
+      }
+
       // Di Maestro dan Sense Mode, dengarkan input tombol fisik ESP32
       if (mode != AppOperatingMode.explorer) {
         final wsService = ref.read(webSocketServiceProvider);
         _noteSub = wsService.noteStream.listen((note) {
           ref.read(noteRecognitionControllerProvider(widget.submode).notifier).submitAnswer(note);
+          _hardwareHighlightTimer?.cancel();
+          setState(() => _activeHardwareNote = note);
+          _hardwareHighlightTimer = Timer(const Duration(milliseconds: 250), () {
+            if (mounted) setState(() => _activeHardwareNote = null);
+          });
         });
       }
     });
@@ -54,7 +69,46 @@ class _NoteRecognitionScreenState extends ConsumerState<NoteRecognitionScreen> {
   void dispose() {
     _noteSub?.cancel();
     _hintTimer?.cancel();
+    _senseAutoPlayTimer?.cancel();
+    _hardwareHighlightTimer?.cancel();
     super.dispose();
+  }
+
+  /// Mulai timer 5 detik auto play khusus Sense Mode
+  void _startSenseAutoPlayTimer() {
+    _senseAutoPlayTimer?.cancel();
+    final mode = ref.read(operatingModeProvider);
+    if (mode == AppOperatingMode.sense) {
+      _senseAutoPlayTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+        if (!mounted) return;
+        final state = ref.read(noteRecognitionControllerProvider(widget.submode));
+        if (state != null && !state.isSessionOver && state.feedback == RoundFeedback.none) {
+          ref.read(noteRecognitionControllerProvider(widget.submode).notifier).playTarget();
+        }
+      });
+    }
+  }
+
+  /// Narasi TTS berurutan untuk Sense Mode saat ronde baru dimulai:
+  /// 1. "Ronde {n}"
+  /// 2. "Tekan note {targetNote}"
+  /// 3. Audio nada target diputar oleh controller
+  void _speakRoundIntro(int roundIndex, String targetNote) {
+    final tts = ref.read(ttsServiceProvider);
+    tts.speakSequence([
+      'Ronde ${roundIndex + 1}',
+      'Tekan note $targetNote',
+    ]);
+  }
+
+  /// Narasi TTS saat feedback diberikan (benar/salah)
+  void _speakFeedback(RoundFeedback feedback, String? pressedNote, String targetNote) {
+    final tts = ref.read(ttsServiceProvider);
+    if (feedback == RoundFeedback.correct) {
+      tts.speak('Benar! $targetNote');
+    } else if (feedback == RoundFeedback.wrong) {
+      tts.speak('Salah. Jawaban yang benar adalah $targetNote');
+    }
   }
 
   void _resetHintTimer(NoteRecognitionState state) {
@@ -94,9 +148,14 @@ class _NoteRecognitionScreenState extends ConsumerState<NoteRecognitionScreen> {
     }
 
     if (state.isSessionOver) {
+      _senseAutoPlayTimer?.cancel();
       final completion = state.completion!;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!context.mounted) return;
+        if (mode == AppOperatingMode.sense) {
+          final accuracy = (state.accuracy * 100).toInt();
+          ref.read(ttsServiceProvider).speak('Sesi selesai. Akurasi $accuracy persen.');
+        }
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (_) => SessionResultScreen(
@@ -112,20 +171,31 @@ class _NoteRecognitionScreenState extends ConsumerState<NoteRecognitionScreen> {
       });
     }
 
-    // Lacak pergantian ronde untuk mereset timer petunjuk (hint) & narasi TTS
+    // Lacak pergantian ronde & narasi TTS berurutan
     if (state.roundIndex != _lastRoundIndex) {
       _lastRoundIndex = state.roundIndex;
       _resetHintTimer(state);
+      _startSenseAutoPlayTimer();
       if (mode == AppOperatingMode.sense) {
-        ref.read(ttsServiceProvider).speak(
-              'Ronde ${state.roundIndex + 1}. Dengarkan nada target.',
-            );
+        _speakRoundIntro(state.roundIndex, state.targetNote);
       }
+    }
+
+    // Lacak feedback baru & narasi TTS
+    if (state.feedback != RoundFeedback.none && state.feedback != _lastFeedback) {
+      _lastFeedback = state.feedback;
+      _senseAutoPlayTimer?.cancel();
+      if (mode == AppOperatingMode.sense) {
+        _speakFeedback(state.feedback, state.lastPressedNote, state.targetNote);
+      }
+    } else if (state.feedback == RoundFeedback.none) {
+      _lastFeedback = null;
     }
 
     // Jika user sudah menekan jawaban, hilangkan hint
     if (state.feedback != RoundFeedback.none) {
       _hintTimer?.cancel();
+      _senseAutoPlayTimer?.cancel();
       _guidedHintNote = null;
     }
 
@@ -151,10 +221,23 @@ class _NoteRecognitionScreenState extends ConsumerState<NoteRecognitionScreen> {
         isConnected: isConnected,
         title: mode == AppOperatingMode.sense ? 'Sense Mode — Note Recognition' : 'Maestro Mode — Note Recognition',
         subtitle: 'Tekan tombol fisik ESP32 untuk menebak nada target',
+        targetLabel: widget.submode == PracticeSubmode.guided 
+            ? 'Guided Practice (Tebak Nada)' 
+            : 'Play the note',
+        targetValue: state.targetNote,
+        correctNote: correctNote,
+        wrongNote: wrongNote,
+        showPianoLabels: true,
         xp: state.xp,
         progress: state.progress,
-        activeHardwareNote: state.lastPressedNote,
+        activeHardwareNote: _activeHardwareNote,
         comboCount: state.roundIndex > 0 ? state.roundIndex : null,
+        onAutoPlay: () => controller.playTarget(),
+        isPlaying: state.isPlaying,
+        isMysteryRound: state.roundIndex == state.mysteryRoundIndex,
+        feedback: state.feedback,
+        roundIndex: state.roundIndex,
+        totalRounds: state.totalRounds,
         onClose: () => Navigator.of(context).maybePop(),
       );
     }

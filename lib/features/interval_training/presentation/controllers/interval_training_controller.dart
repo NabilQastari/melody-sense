@@ -93,6 +93,8 @@ class IntervalTrainingController extends StateNotifier<IntervalTrainingState?> {
     await _playSequenceWithStatus([current.rootNote, current.targetNote]);
   }
 
+  Future<void> playTarget() => playSequence();
+
   Future<void> _playSequenceWithStatus(List<String> notes) async {
     if (!mounted) return;
     state = state?.copyWith(isPlaying: true);

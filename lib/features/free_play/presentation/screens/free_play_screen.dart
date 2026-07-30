@@ -52,13 +52,12 @@ class _FreePlayScreenState extends ConsumerState<FreePlayScreen> {
     audio.playNote(note);
 
     _highlightTimer?.cancel();
-
     setState(() {
       _activeNote = note;
       _lastPlayedNote = note;
     });
 
-    _highlightTimer = Timer(const Duration(milliseconds: 280), () {
+    _highlightTimer = Timer(const Duration(milliseconds: 250), () {
       if (mounted) setState(() => _activeNote = null);
     });
   }

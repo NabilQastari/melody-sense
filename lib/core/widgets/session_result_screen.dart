@@ -22,6 +22,8 @@ class SessionResultScreen extends StatelessWidget {
     this.leveledUp = false,
     this.timeSpentMs,
     this.stars,
+    this.perfectCount,
+    this.totalNotes,
     this.customSubtitle,
     this.retryScreenBuilder,
   });
@@ -37,6 +39,8 @@ class SessionResultScreen extends StatelessWidget {
   final bool leveledUp;
   final int? timeSpentMs;
   final int? stars;
+  final int? perfectCount;
+  final int? totalNotes;
   final String? customSubtitle;
 
   /// Builder untuk layar yang dibuka saat user tap Retry. Null = tombol
@@ -176,18 +180,29 @@ class SessionResultScreen extends StatelessWidget {
                               label: 'XP Earned',
                             ).animate().fadeIn(delay: 450.ms, duration: 400.ms).slideX(begin: -0.1, end: 0),
                           ),
+                          if (perfectCount != null) ...[
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: _StatCard(
+                                icon: Icons.stars_rounded,
+                                iconColor: Colors.purpleAccent,
+                                value: '$perfectCount/${totalNotes ?? 0}',
+                                label: 'Perfect',
+                              ).animate().fadeIn(delay: 450.ms, duration: 400.ms).slideY(begin: 0.1, end: 0),
+                            ),
+                          ],
                           if (timeSpentMs != null) ...[
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             Expanded(
                               child: _StatCard(
                                 icon: Icons.timer_outlined,
                                 iconColor: Colors.blue,
                                 value: _formatDuration(timeSpentMs!),
-                                label: 'Waktu',
+                                label: 'Durasi',
                               ).animate().fadeIn(delay: 450.ms, duration: 400.ms).slideY(begin: 0.1, end: 0),
                             ),
                           ],
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 6),
                           Expanded(
                             child: _StatCard(
                               icon: Icons.local_fire_department_rounded,

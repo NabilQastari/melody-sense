@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:melody_sense/core/domain/entities/practice_entities.dart' show RoundFeedback;
 import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/virtual_piano.dart';
 
@@ -14,10 +15,25 @@ class MaestroGameplayScreen extends StatelessWidget {
     this.isConnected = true,
     required this.title,
     this.subtitle,
+    this.targetLabel,
+    this.targetValue,
+    this.rootNote,
+    this.correctNote,
+    this.wrongNote,
+    this.bridgeStartNote,
+    this.bridgeEndNote,
+    this.bridgeLabel,
+    this.showPianoLabels = true,
     this.xp = 0,
     this.progress = 0.0,
     this.activeHardwareNote,
     this.comboCount,
+    this.onAutoPlay,
+    this.isPlaying = false,
+    this.isMysteryRound = false,
+    this.feedback = RoundFeedback.none,
+    this.roundIndex = 0,
+    this.totalRounds = 0,
     this.onClose,
   });
 
@@ -30,6 +46,33 @@ class MaestroGameplayScreen extends StatelessWidget {
   /// Hanya dipakai di portrait, mis. instruksi latihan.
   final String? subtitle;
 
+  /// Label target (mis: "Mulai dari C4 → Tebak Nada Kedua").
+  final String? targetLabel;
+
+  /// Nilai target (mis: "Major 2nd (+2 semitones)" atau "C4").
+  final String? targetValue;
+
+  /// Nada acuan (Root Note) yang diberi penanda khusus di tuts piano.
+  final String? rootNote;
+
+  /// Nada jawaban benar yang di-highlight hijau.
+  final String? correctNote;
+
+  /// Nada jawaban salah yang di-highlight merah.
+  final String? wrongNote;
+
+  /// Nada awal jembatan visual.
+  final String? bridgeStartNote;
+
+  /// Nada akhir jembatan visual.
+  final String? bridgeEndNote;
+
+  /// Label jembatan visual (mis: "2 semitones").
+  final String? bridgeLabel;
+
+  /// Tampilkan nama nada pada tuts piano.
+  final bool showPianoLabels;
+
   final int xp;
 
   /// 0.0 - 1.0
@@ -41,6 +84,13 @@ class MaestroGameplayScreen extends StatelessWidget {
   /// Null = tidak tampilkan combo badge (mis. Melody Echo tidak punya
   /// combo di desain).
   final int? comboCount;
+
+  final VoidCallback? onAutoPlay;
+  final bool isPlaying;
+  final bool isMysteryRound;
+  final RoundFeedback feedback;
+  final int roundIndex;
+  final int totalRounds;
 
   final VoidCallback? onClose;
 
@@ -69,7 +119,11 @@ class MaestroGameplayScreen extends StatelessWidget {
           Row(
             children: [
               _ConnectionBadge(isConnected: isConnected),
+              const SizedBox(width: 8),
+              _XpCounter(xp: xp),
               const Spacer(),
+              if (onAutoPlay != null) _AutoPlayPill(onTap: onAutoPlay),
+              const SizedBox(width: 8),
               _CloseButton(onTap: onClose),
             ],
           ),
@@ -77,46 +131,106 @@ class MaestroGameplayScreen extends StatelessWidget {
           Row(
             children: [
               Expanded(child: _ProgressBar(progress: progress)),
-              const SizedBox(width: 10),
-              _XpCounter(xp: xp),
             ],
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 16),
           Text(
             title,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: FontWeight.w700,
               color: AppColors.primaryDark,
             ),
           ),
           if (subtitle != null) ...[
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
             Text(
               subtitle!,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 13, color: Colors.grey),
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ],
-          const SizedBox(height: 12),
-          const Expanded(child: Center(child: _MascotWithSoundWave())),
-          const SizedBox(height: 16),
-          const Text(
-            'PHYSICAL DEVICE STATUS',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey,
-              letterSpacing: 0.5,
+          if (targetValue != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryDark.withValues(alpha: 0.06),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  if (targetLabel != null)
+                    Text(
+                      targetLabel!,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primaryDark.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  const SizedBox(height: 2),
+                  Text(
+                    targetValue!,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primaryDark,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
+          Expanded(
+            child: Center(
+              child: onAutoPlay != null
+                  ? _NotePromptCard(
+                      onTap: onAutoPlay,
+                      isMystery: isMysteryRound,
+                      isPlaying: isPlaying,
+                    )
+                  : const _MascotWithSoundWave(),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.piano_rounded, size: 14, color: AppColors.accent),
+              const SizedBox(width: 6),
+              const Text(
+                'VISUALIZER HARDWARE SMART PIANO',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primaryDark,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
           VirtualPiano(
-            height: 48,
-            showLabels: false,
+            height: 110,
+            showLabels: showPianoLabels,
             activeNote: activeHardwareNote,
+            rootNote: rootNote,
+            correctNote: correctNote,
+            wrongNote: wrongNote,
+            bridgeStartNote: bridgeStartNote,
+            bridgeEndNote: bridgeEndNote,
+            bridgeLabel: bridgeLabel,
             onNotePressed: null,
           ),
           const SizedBox(height: 8),
@@ -135,47 +249,57 @@ class MaestroGameplayScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _CloseButton(onTap: onClose),
-              const SizedBox(width: 4),
+              const SizedBox(width: 8),
               _ConnectionBadge(isConnected: isConnected),
               const Spacer(),
+              if (onAutoPlay != null) ...[
+                _AutoPlayPill(onTap: onAutoPlay),
+                const SizedBox(width: 8),
+              ],
               if (comboCount != null) _ComboBadge(count: comboCount!),
             ],
-          ),
-          const SizedBox(height: 14),
-          const Text(
-            'CURRENT CHALLENGE',
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: AppColors.primaryDark,
-            ),
           ),
           const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(child: _ProgressBar(progress: progress, height: 6)),
-              const SizedBox(width: 10),
-              Text(
-                '${(progress.clamp(0.0, 1.0) * 100).round()}% Completed',
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primaryDark,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
+                    if (targetValue != null)
+                      Text(
+                        '$targetLabel — $targetValue',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.accent,
+                        ),
+                      ),
+                  ],
                 ),
               ),
+              if (onAutoPlay != null) ...[
+                _NotePromptCard(
+                  onTap: onAutoPlay,
+                  isMystery: isMysteryRound,
+                  isPlaying: isPlaying,
+                ),
+                const SizedBox(width: 12),
+              ],
+              _XpCounter(xp: xp),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
+          _ProgressBar(progress: progress, height: 6),
+          const SizedBox(height: 12),
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -184,7 +308,14 @@ class MaestroGameplayScreen extends StatelessWidget {
                   alignment: Alignment.bottomCenter,
                   child: VirtualPiano(
                     height: height,
+                    showLabels: showPianoLabels,
                     activeNote: activeHardwareNote,
+                    rootNote: rootNote,
+                    correctNote: correctNote,
+                    wrongNote: wrongNote,
+                    bridgeStartNote: bridgeStartNote,
+                    bridgeEndNote: bridgeEndNote,
+                    bridgeLabel: bridgeLabel,
                     onNotePressed: null,
                   ),
                 );
@@ -316,6 +447,100 @@ class _ComboBadge extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AutoPlayPill extends StatelessWidget {
+  const _AutoPlayPill({this.onTap});
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.primaryDark,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.play_circle_fill,
+                color: AppColors.surfaceWhite, size: 16),
+            SizedBox(width: 6),
+            Text(
+              'Auto Play',
+              style: TextStyle(
+                color: AppColors.surfaceWhite,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NotePromptCard extends StatelessWidget {
+  const _NotePromptCard({
+    this.onTap,
+    this.isMystery = false,
+    this.isPlaying = false,
+  });
+  final VoidCallback? onTap;
+  final bool isMystery;
+  final bool isPlaying;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 120,
+      height: 120,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceWhite,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: isMystery
+                ? Colors.amber.withValues(alpha: 0.3)
+                : AppColors.primaryDark.withValues(alpha: 0.10),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(24),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: onTap,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                isPlaying ? Icons.volume_up_rounded : Icons.music_note_rounded,
+                size: 48,
+                color: isMystery ? Colors.amber : AppColors.accent,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                isPlaying ? 'Playing...' : 'Tap to Play',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primaryDark.withValues(alpha: 0.6),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

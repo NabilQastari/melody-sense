@@ -93,8 +93,11 @@ class RhythmMatchController extends StateNotifier<RhythmMatchState?> {
       responseTimeMs: responseTimeMs,
     );
 
+    final bool isPerfect = isCorrect && responseTimeMs <= 750;
     final nextAttempts = current.totalAttempts + 1;
     final nextCorrect = isCorrect ? current.correctCount + 1 : current.correctCount;
+    final nextPerfect = isPerfect ? current.perfectCount + 1 : current.perfectCount;
+    final nextResponseTime = isCorrect ? current.totalResponseTimeMs + responseTimeMs : current.totalResponseTimeMs;
     final nextIndex = current.currentNoteIndex + 1;
     final bool songCompleted = nextIndex >= current.selectedSong.totalNotes;
 
@@ -103,18 +106,20 @@ class RhythmMatchController extends StateNotifier<RhythmMatchState?> {
       final double accuracy = nextCorrect / nextAttempts;
 
       int stars = 1;
-      if (accuracy >= 0.90) {
+      if (accuracy >= 0.90 && nextPerfect >= (current.selectedSong.totalNotes * 0.7)) {
         stars = 3;
       } else if (accuracy >= 0.70) {
         stars = 2;
       }
 
-      final xpEarned = (20 + (accuracy * 30).round() + (stars * 10));
+      final xpEarned = (20 + (accuracy * 30).round() + (stars * 10) + (nextPerfect * 2));
 
       state = current.copyWith(
         currentNoteIndex: nextIndex,
         totalAttempts: nextAttempts,
         correctCount: nextCorrect,
+        perfectCount: nextPerfect,
+        totalResponseTimeMs: nextResponseTime,
         lastPressedNote: note,
         feedback: isCorrect ? RoundFeedback.correct : RoundFeedback.wrong,
         completedMs: elapsedMs,
@@ -129,6 +134,8 @@ class RhythmMatchController extends StateNotifier<RhythmMatchState?> {
         currentNoteIndex: nextIndex,
         totalAttempts: nextAttempts,
         correctCount: nextCorrect,
+        perfectCount: nextPerfect,
+        totalResponseTimeMs: nextResponseTime,
         lastPressedNote: note,
         feedback: isCorrect ? RoundFeedback.correct : RoundFeedback.wrong,
       );

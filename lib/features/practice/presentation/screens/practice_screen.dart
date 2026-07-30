@@ -123,7 +123,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
       children: [
         const Text(
-          'Choose Your Path',
+          'Pilih Mode Operasional',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w800,
@@ -132,7 +132,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         ),
         const SizedBox(height: 4),
         Text(
-          "Select how you'd like to master your skills today.",
+          'Tentukan bagaimana kamu ingin berinteraksi dan mengasah kemampuan musikmu.',
           style: TextStyle(fontSize: 13, color: AppColors.primaryDark.withValues(alpha: 0.6)),
         ),
         const SizedBox(height: 24),
@@ -140,12 +140,52 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         // 1. Explorer Mode Card
         _PathCard(
           title: 'Explorer Mode',
-          description: 'Play using the virtual piano on your screen. Touch input on phone only.',
+          titleSuffix: const Icon(Icons.touch_app_rounded, size: 16, color: AppColors.accent),
+          description: 'Berlatih menggunakan piano virtual di layar HP. Cocok untuk belajar mandiri tanpa memerlukan alat fisik.',
           icon: Icons.keyboard_rounded,
           faintIcon: Icons.keyboard_alt_outlined,
           iconColor: Colors.white,
           iconBgColor: AppColors.accent,
-          actionLabel: 'Start Exploring',
+          actionLabel: 'Start Explorer',
+          actionIcon: Icons.play_arrow_rounded,
+          customActionColor: AppColors.accent,
+          statusWidget: Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.accent.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: AppColors.accent,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Input: Piano Virtual',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primaryDark,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  'Touchscreen Only',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.primaryDark.withValues(alpha: 0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
           onTap: () {
             ref.read(operatingModeProvider.notifier).state = AppOperatingMode.explorer;
             ref.read(ttsServiceProvider).setEnabled(false);
@@ -226,22 +266,74 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         const SizedBox(height: 16),
 
         // 3. Sense Mode Card
-        _PathCard(
-          title: 'Sense Mode',
-          description: 'Accessibility mode for blind/low-vision users with TTS voice cues & physical ESP32 buttons.',
-          icon: Icons.waves_rounded,
-          faintIcon: Icons.waves_rounded,
-          iconColor: Colors.white,
-          iconBgColor: AppColors.accent,
-          actionLabel: 'Start Sense',
-          onTap: () {
-            ref.read(operatingModeProvider.notifier).state = AppOperatingMode.sense;
-            ref.read(senseModeProvider.notifier).toggle(true);
-            setState(() {
-              _showChallenges = true;
-            });
-          },
-        ),
+        () {
+          final connectionStateAsync = ref.watch(webSocketConnectionStateProvider);
+          final wsService = ref.watch(webSocketServiceProvider);
+          final connectionState = connectionStateAsync.maybeWhen(
+            data: (s) => s,
+            orElse: () => wsService.connectionState,
+          );
+          final isConnected = connectionState == WebSocketConnectionState.connected;
+
+          return _PathCard(
+            title: 'Sense Mode',
+            titleSuffix: Icon(Icons.record_voice_over_rounded, size: 16, color: Colors.orange.shade800),
+            description: 'Mode aksesibilitas tunanetra / low-vision dengan panduan narasi suara TTS berurutan & tuts fisik ESP32.',
+            icon: Icons.waves_rounded,
+            faintIcon: Icons.waves_rounded,
+            iconColor: Colors.white,
+            iconBgColor: Colors.orange.shade800,
+            actionLabel: 'Start Sense',
+            actionIcon: Icons.play_arrow_rounded,
+            customActionColor: Colors.orange.shade800,
+            statusWidget: Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.orange.shade200),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: isConnected ? Colors.orange.shade800 : Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'TTS & Haptics: Aktif',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.orange.shade900,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    isConnected ? 'ESP32 Connected' : 'ESP32 Offline',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: isConnected ? Colors.green.shade700 : Colors.red.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            onTap: () {
+              ref.read(operatingModeProvider.notifier).state = AppOperatingMode.sense;
+              ref.read(senseModeProvider.notifier).toggle(true);
+              setState(() {
+                _showChallenges = true;
+              });
+            },
+          );
+        }(),
       ],
     );
   }
@@ -288,9 +380,9 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
               ),
             ),
             const Text(
-              'Pick a Challenge',
+              'Pilih Tantangan Latihan',
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 22,
                 fontWeight: FontWeight.w800,
                 color: AppColors.primaryDark,
               ),

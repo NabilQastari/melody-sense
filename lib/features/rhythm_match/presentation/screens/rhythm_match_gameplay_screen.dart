@@ -87,10 +87,8 @@ class _RhythmMatchGameplayScreenState
 
     ref.read(rhythmMatchControllerProvider(_args).notifier).submitNote(note);
 
-    _clearHighlightTimer = Timer(const Duration(milliseconds: 120), () {
-      if (mounted) {
-        setState(() => _activeHighlightNote = null);
-      }
+    _clearHighlightTimer = Timer(const Duration(milliseconds: 200), () {
+      if (mounted) setState(() => _activeHighlightNote = null);
     });
   }
 
@@ -121,6 +119,10 @@ class _RhythmMatchGameplayScreenState
     // Jika lagu selesai dan completion ready → Pindah ke SessionResultScreen
     if (state.isSessionOver && state.completion != null) {
       final completion = state.completion!;
+      final seconds = ((state.completedMs ?? 0) / 1000).toStringAsFixed(1);
+      final subtitleExplanation =
+          'Match "${state.selectedSong.title}" berlangsung selama $seconds detik.\n'
+          '${state.perfectCount}/${state.selectedSong.totalNotes} ketukan Perfect (${state.avgResponseTimeMs}ms rata-rata respon).';
 
       return SessionResultScreen(
         isWin: state.stars >= 1,
@@ -128,7 +130,9 @@ class _RhythmMatchGameplayScreenState
         xpEarned: state.xp,
         timeSpentMs: state.completedMs,
         stars: state.stars,
-        customSubtitle: 'Lagu "${state.selectedSong.title}" Selesai!',
+        perfectCount: state.perfectCount,
+        totalNotes: state.selectedSong.totalNotes,
+        customSubtitle: subtitleExplanation,
         streakDays: completion.streakDays,
         leveledUp: completion.leveledUp,
         retryScreenBuilder: (context) => RhythmMatchSongSelectScreen(

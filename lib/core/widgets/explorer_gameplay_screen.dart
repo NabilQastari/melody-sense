@@ -311,9 +311,10 @@ class _ExplorerGameplayScreenState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               _CloseButton(onTap: widget.onClose),
+              const SizedBox(width: 8),
               Expanded(
                 child: Column(
                   children: [
@@ -353,6 +354,11 @@ class _ExplorerGameplayScreenState
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
+              if (widget.onAutoPlay != null) ...[
+                _AutoPlayPill(onTap: widget.onAutoPlay),
+                const SizedBox(width: 8),
+              ],
               _XpCounter(xp: widget.xp),
             ],
           ),
@@ -415,6 +421,22 @@ class _ExplorerGameplayScreenState
                     _AutoPlayCircle(onTap: widget.onAutoPlay),
                   ],
                 ),
+              ],
+            )
+          else if (widget.onAutoPlay != null)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'Dengarkan nada target:',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primaryDark,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                _AutoPlayCircle(onTap: widget.onAutoPlay),
               ],
             ),
           const SizedBox(height: 8),

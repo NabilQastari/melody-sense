@@ -14,6 +14,8 @@ class RhythmMatchState {
     this.submode = PracticeSubmode.practice,
     this.currentNoteIndex = 0,
     this.correctCount = 0,
+    this.perfectCount = 0,
+    this.totalResponseTimeMs = 0,
     this.totalAttempts = 0,
     this.xp = 0,
     this.startedAt,
@@ -35,6 +37,12 @@ class RhythmMatchState {
   /// Jumlah tuts yang ditekan BENAR sejauh ini.
   final int correctCount;
 
+  /// Jumlah ketukan dengan timming PERFECT (sangat presisi).
+  final int perfectCount;
+
+  /// Total akumulasi waktu respon dalam milidetik.
+  final int totalResponseTimeMs;
+
   /// Total penekanan tuts yang dilakukan user.
   final int totalAttempts;
 
@@ -51,6 +59,10 @@ class RhythmMatchState {
   final String? lastPressedNote;
   final bool isSessionOver;
   final SessionCompletionResult? completion;
+
+  /// Rata-rata waktu respon per ketukan (dalam ms).
+  int get avgResponseTimeMs =>
+      correctCount > 0 ? (totalResponseTimeMs ~/ correctCount) : 0;
 
   /// Nada yang HARUS ditekan user saat ini.
   String get targetNote =>
@@ -81,6 +93,8 @@ class RhythmMatchState {
     PracticeSubmode? submode,
     int? currentNoteIndex,
     int? correctCount,
+    int? perfectCount,
+    int? totalResponseTimeMs,
     int? totalAttempts,
     int? xp,
     DateTime? startedAt,
@@ -97,6 +111,8 @@ class RhythmMatchState {
       submode: submode ?? this.submode,
       currentNoteIndex: currentNoteIndex ?? this.currentNoteIndex,
       correctCount: correctCount ?? this.correctCount,
+      perfectCount: perfectCount ?? this.perfectCount,
+      totalResponseTimeMs: totalResponseTimeMs ?? this.totalResponseTimeMs,
       totalAttempts: totalAttempts ?? this.totalAttempts,
       xp: xp ?? this.xp,
       startedAt: startedAt ?? this.startedAt,

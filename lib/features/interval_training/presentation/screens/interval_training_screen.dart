@@ -33,20 +33,35 @@ class IntervalTrainingScreen extends ConsumerStatefulWidget {
 class _IntervalTrainingScreenState extends ConsumerState<IntervalTrainingScreen> {
   Timer? _rootHintTimer;
   Timer? _targetHintTimer;
+  Timer? _senseAutoPlayTimer;
+  Timer? _hardwareHighlightTimer;
   StreamSubscription<String>? _noteSub;
   String? _guidedRootHint;
   String? _guidedTargetHint;
+  String? _activeHardwareNote;
   int _lastRoundIndex = -1;
+  RoundFeedback? _lastFeedback;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final mode = ref.read(operatingModeProvider);
+
+      // Narasi intro saat masuk layar dalam Sense Mode
+      if (mode == AppOperatingMode.sense) {
+        ref.read(ttsServiceProvider).speak('Interval Training. Tebak jarak interval nada.');
+      }
+
       if (mode != AppOperatingMode.explorer) {
         final wsService = ref.read(webSocketServiceProvider);
         _noteSub = wsService.noteStream.listen((note) {
           ref.read(intervalTrainingControllerProvider(widget.submode).notifier).submitAnswer(note);
+          _hardwareHighlightTimer?.cancel();
+          setState(() => _activeHardwareNote = note);
+          _hardwareHighlightTimer = Timer(const Duration(milliseconds: 250), () {
+            if (mounted) setState(() => _activeHardwareNote = null);
+          });
         });
       }
     });
@@ -57,7 +72,24 @@ class _IntervalTrainingScreenState extends ConsumerState<IntervalTrainingScreen>
     _noteSub?.cancel();
     _rootHintTimer?.cancel();
     _targetHintTimer?.cancel();
+    _senseAutoPlayTimer?.cancel();
+    _hardwareHighlightTimer?.cancel();
     super.dispose();
+  }
+
+  /// Mulai timer 5 detik auto play khusus Sense Mode
+  void _startSenseAutoPlayTimer() {
+    _senseAutoPlayTimer?.cancel();
+    final mode = ref.read(operatingModeProvider);
+    if (mode == AppOperatingMode.sense) {
+      _senseAutoPlayTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+        if (!mounted) return;
+        final state = ref.read(intervalTrainingControllerProvider(widget.submode));
+        if (state != null && !state.isSessionOver && state.feedback == RoundFeedback.none) {
+          ref.read(intervalTrainingControllerProvider(widget.submode).notifier).playTarget();
+        }
+      });
+    }
   }
 
   void _resetHintTimers(IntervalTrainingState state) {
@@ -107,9 +139,14 @@ class _IntervalTrainingScreenState extends ConsumerState<IntervalTrainingScreen>
     }
 
     if (state.isSessionOver) {
+      _senseAutoPlayTimer?.cancel();
       final completion = state.completion!;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!context.mounted) return;
+        if (mode == AppOperatingMode.sense) {
+          final accuracy = (state.accuracy * 100).toInt();
+          ref.read(ttsServiceProvider).speak('Sesi selesai. Akurasi $accuracy persen.');
+        }
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (_) => SessionResultScreen(
@@ -125,15 +162,33 @@ class _IntervalTrainingScreenState extends ConsumerState<IntervalTrainingScreen>
       });
     }
 
-    // Lacak pergantian ronde untuk mereset timer petunjuk (hint) & narasi TTS
+    // Lacak pergantian ronde & narasi TTS berurutan
     if (state.roundIndex != _lastRoundIndex) {
       _lastRoundIndex = state.roundIndex;
       _resetHintTimers(state);
+      _startSenseAutoPlayTimer();
       if (mode == AppOperatingMode.sense) {
-        ref.read(ttsServiceProvider).speak(
-              'Ronde ${state.roundIndex + 1}. Tebak jarak interval nada.',
-            );
+        ref.read(ttsServiceProvider).speakSequence([
+          'Ronde ${state.roundIndex + 1}',
+          '${state.intervalName}',
+          'Dari ${state.rootNote}, tekan note ${state.targetNote}',
+        ]);
       }
+    }
+
+    // Lacak feedback baru & narasi TTS
+    if (state.feedback != RoundFeedback.none && state.feedback != _lastFeedback) {
+      _lastFeedback = state.feedback;
+      _senseAutoPlayTimer?.cancel();
+      if (mode == AppOperatingMode.sense) {
+        if (state.feedback == RoundFeedback.correct) {
+          ref.read(ttsServiceProvider).speak('Benar! ${state.targetNote}');
+        } else if (state.feedback == RoundFeedback.wrong) {
+          ref.read(ttsServiceProvider).speak('Salah. Jawaban yang benar adalah ${state.targetNote}');
+        }
+      }
+    } else if (state.feedback == RoundFeedback.none) {
+      _lastFeedback = null;
     }
 
     // Jika user sudah menjawab, hilangkan hint
@@ -141,6 +196,7 @@ class _IntervalTrainingScreenState extends ConsumerState<IntervalTrainingScreen>
     if (isTransitioning) {
       _rootHintTimer?.cancel();
       _targetHintTimer?.cancel();
+      _senseAutoPlayTimer?.cancel();
       _guidedRootHint = null;
       _guidedTargetHint = null;
     }
@@ -150,6 +206,9 @@ class _IntervalTrainingScreenState extends ConsumerState<IntervalTrainingScreen>
     String? correctNote;
     String? wrongNote;
     String? activeNote = _guidedRootHint;
+    String? bridgeStartNote;
+    String? bridgeEndNote;
+    String? bridgeLabel;
 
     if (state.feedback == RoundFeedback.correct) {
       correctNote = state.lastPressedNote;
@@ -159,27 +218,6 @@ class _IntervalTrainingScreenState extends ConsumerState<IntervalTrainingScreen>
     } else if (_guidedTargetHint != null) {
       correctNote = _guidedTargetHint;
     }
-
-    // RENDER SENSE / MAESTRO GAMEPLAY SHELL (HARDWARE ESP32)
-    if (mode == AppOperatingMode.maestro || mode == AppOperatingMode.sense) {
-      final connectionStateAsync = ref.watch(webSocketConnectionStateProvider);
-      final wsService = ref.watch(webSocketServiceProvider);
-      final isConnected = (connectionStateAsync.value ?? wsService.connectionState) == WebSocketConnectionState.connected;
-
-      return MaestroGameplayScreen(
-        isConnected: isConnected,
-        title: mode == AppOperatingMode.sense ? 'Sense Mode — Interval Training' : 'Maestro Mode — Interval Training',
-        subtitle: 'Dengarkan interval ${state.rootNote} lalu tekan nada target di ESP32',
-        xp: state.xp,
-        progress: state.progress,
-        activeHardwareNote: state.lastPressedNote,
-        comboCount: state.roundIndex > 0 ? state.roundIndex : null,
-        onClose: () => Navigator.of(context).maybePop(),
-      );
-    }
-    String? bridgeStartNote;
-    String? bridgeEndNote;
-    String? bridgeLabel;
 
     // Fase feedback (sudah dijawab)
     if (isTransitioning && state.lastPressedNote != null) {
@@ -199,6 +237,44 @@ class _IntervalTrainingScreenState extends ConsumerState<IntervalTrainingScreen>
     } else if (_guidedTargetHint != null) {
       // Sorot target note jika hint detik ke-6 aktif
       correctNote = _guidedTargetHint;
+    }
+
+    final targetLabel = widget.submode == PracticeSubmode.guided 
+        ? 'Guided Practice (Tebak Nada Kedua dari ${state.rootNote})' 
+        : 'Mulai dari ${state.rootNote} → Tebak Nada Kedua';
+    final targetValue = '${state.intervalName} (+${state.semitones} semitone${state.semitones == 1 ? "" : "s"})';
+
+    // RENDER SENSE / MAESTRO GAMEPLAY SHELL (HARDWARE ESP32)
+    if (mode == AppOperatingMode.maestro || mode == AppOperatingMode.sense) {
+      final connectionStateAsync = ref.watch(webSocketConnectionStateProvider);
+      final wsService = ref.watch(webSocketServiceProvider);
+      final isConnected = (connectionStateAsync.value ?? wsService.connectionState) == WebSocketConnectionState.connected;
+
+      return MaestroGameplayScreen(
+        isConnected: isConnected,
+        title: mode == AppOperatingMode.sense ? 'Sense Mode — Interval Training' : 'Maestro Mode — Interval Training',
+        subtitle: 'Dengarkan interval ${state.rootNote} lalu tekan nada target di ESP32',
+        targetLabel: targetLabel,
+        targetValue: targetValue,
+        rootNote: state.rootNote,
+        correctNote: correctNote,
+        wrongNote: wrongNote,
+        bridgeStartNote: bridgeStartNote,
+        bridgeEndNote: bridgeEndNote,
+        bridgeLabel: bridgeLabel,
+        showPianoLabels: true,
+        xp: state.xp,
+        progress: state.progress,
+        activeHardwareNote: _activeHardwareNote,
+        comboCount: state.roundIndex > 0 ? state.roundIndex : null,
+        onAutoPlay: () => controller.playTarget(),
+        isPlaying: state.isPlaying,
+        isMysteryRound: state.roundIndex == state.mysteryRoundIndex,
+        feedback: state.feedback,
+        roundIndex: state.roundIndex,
+        totalRounds: state.totalRounds,
+        onClose: () => Navigator.of(context).maybePop(),
+      );
     }
 
     return Scaffold(

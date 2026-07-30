@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:melody_sense/core/domain/entities/operating_mode.dart';
 import 'package:melody_sense/core/network/websocket_service.dart';
+import 'package:melody_sense/core/providers/operating_mode_providers.dart';
 import 'package:melody_sense/core/providers/tts_providers.dart';
 import 'package:melody_sense/core/providers/websocket_providers.dart';
 import 'package:melody_sense/core/widgets/maestro_gameplay_screen.dart';
@@ -49,20 +51,20 @@ class _MaestroChallengeScreenState
   }
 
   void _onHardwareNoteReceived(String note) {
-    ref.read(ttsServiceProvider).speak('Nada $note');
+    // TTS hanya aktif di Sense Mode
+    final mode = ref.read(operatingModeProvider);
+    if (mode == AppOperatingMode.sense) {
+      ref.read(ttsServiceProvider).speak('Nada $note');
+    }
 
+    _noteHighlightTimer?.cancel();
     setState(() {
       _activeHardwareNote = note;
       _comboCount += 1;
     });
 
-    _noteHighlightTimer?.cancel();
-    _noteHighlightTimer = Timer(const Duration(milliseconds: 350), () {
-      if (mounted) {
-        setState(() {
-          _activeHardwareNote = null;
-        });
-      }
+    _noteHighlightTimer = Timer(const Duration(milliseconds: 250), () {
+      if (mounted) setState(() => _activeHardwareNote = null);
     });
   }
 
