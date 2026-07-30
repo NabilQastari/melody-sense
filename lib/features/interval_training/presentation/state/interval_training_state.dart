@@ -158,6 +158,13 @@ class IntervalTrainingState {
 
   String get intervalName => currentRound.intervalName;
 
+  /// Jarak semitone antara rootNote dan targetNote.
+  int get semitones {
+    final start = kSemitoneByNote[rootNote] ?? 0;
+    final end = kSemitoneByNote[targetNote] ?? 0;
+    return (end - start).abs();
+  }
+
   /// 0.0 - 1.0, dikonsumsi langsung oleh ExplorerGameplayScreen.progress.
   double get progress =>
       totalRounds == 0 ? 0.0 : (roundIndex / totalRounds).clamp(0.0, 1.0);

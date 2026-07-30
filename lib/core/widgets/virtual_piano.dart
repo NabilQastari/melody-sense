@@ -58,6 +58,7 @@ class VirtualPiano extends StatefulWidget {
     this.activeNote,
     this.correctNote,
     this.wrongNote,
+    this.rootNote,
     this.bridgeStartNote,
     this.bridgeEndNote,
     this.bridgeLabel,
@@ -80,6 +81,9 @@ class VirtualPiano extends StatefulWidget {
 
   /// Nada awal jembatan visual (mis. rootNote).
   final String? bridgeStartNote;
+
+  /// Nada acuan awal (Root Note) yang diberi highlight khusus sebagai titik jangkar.
+  final String? rootNote;
 
   /// Nada akhir jembatan visual (mis. lastPressedNote/targetNote).
   final String? bridgeEndNote;
@@ -195,6 +199,7 @@ class _VirtualPianoState extends State<VirtualPiano> {
                   isActive: note == widget.activeNote,
                   isCorrect: note == widget.correctNote,
                   isWrong: note == widget.wrongNote,
+                  isRoot: note == widget.rootNote,
                   showLabel: widget.showLabels,
                 ),
               ),
@@ -228,6 +233,7 @@ class _VirtualPianoState extends State<VirtualPiano> {
                   isActive: blackNote == widget.activeNote,
                   isCorrect: blackNote == widget.correctNote,
                   isWrong: blackNote == widget.wrongNote,
+                  isRoot: blackNote == widget.rootNote,
                   showLabel: widget.showLabels,
                 ),
               ),
@@ -302,6 +308,7 @@ class _PianoKey extends StatelessWidget {
     required this.showLabel,
     this.isCorrect = false,
     this.isWrong = false,
+    this.isRoot = false,
   });
 
   final String note;
@@ -310,6 +317,7 @@ class _PianoKey extends StatelessWidget {
   final bool showLabel;
   final bool isCorrect;
   final bool isWrong;
+  final bool isRoot;
 
   @override
   Widget build(BuildContext context) {
@@ -317,6 +325,7 @@ class _PianoKey extends StatelessWidget {
 
     Color keyColor;
     Color textColor;
+    BoxBorder? keyBorder;
 
     if (isBlack) {
       if (octave == 3) {
@@ -351,6 +360,10 @@ class _PianoKey extends StatelessWidget {
     } else if (isActive) {
       keyColor = AppColors.accent;
       textColor = AppColors.surfaceWhite;
+    } else if (isRoot) {
+      keyColor = isBlack ? const Color(0xFF1E3A5F) : const Color(0xFFE3F2FD);
+      textColor = isBlack ? Colors.white : const Color(0xFF1565C0);
+      keyBorder = Border.all(color: const Color(0xFF1E88E5), width: 2.0);
     }
 
     final String displayLabel =
@@ -365,6 +378,7 @@ class _PianoKey extends StatelessWidget {
         curve: Curves.easeOut,
         decoration: BoxDecoration(
           color: keyColor,
+          border: keyBorder,
           borderRadius: isBlack
               ? const BorderRadius.vertical(bottom: Radius.circular(8))
               : BorderRadius.circular(14),
@@ -381,13 +395,36 @@ class _PianoKey extends StatelessWidget {
         alignment: Alignment.bottomCenter,
         padding: EdgeInsets.only(bottom: isBlack ? 6 : 10),
         child: showLabel
-            ? Text(
-                displayLabel,
-                style: TextStyle(
-                  fontSize: isBlack ? 10 : 11,
-                  fontWeight: FontWeight.w700,
-                  color: textColor,
-                ),
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isRoot && !isCorrect && !isWrong)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1976D2),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'ROOT',
+                        style: TextStyle(
+                          fontSize: 7,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  Text(
+                    displayLabel,
+                    style: TextStyle(
+                      fontSize: isBlack ? 10 : 11,
+                      fontWeight: FontWeight.w700,
+                      color: textColor,
+                    ),
+                  ),
+                ],
               )
             : null,
       ),

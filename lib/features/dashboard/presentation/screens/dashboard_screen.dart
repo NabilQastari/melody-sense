@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:melody_sense/core/network/websocket_service.dart';
+import 'package:melody_sense/core/providers/websocket_providers.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/settings_screen.dart';
 import 'package:melody_sense/features/interval_training/presentation/screens/interval_training_submode_picker_screen.dart';
-import 'package:melody_sense/features/melody_echo/presentation/screens/melody_echo_screen.dart';
+import 'package:melody_sense/features/melody_echo/presentation/screens/melody_echo_submode_picker_screen.dart';
 import 'package:melody_sense/features/note_recognition/presentation/screens/note_recognition_submode_picker_screen.dart';
-import 'package:melody_sense/features/rhythm_match/presentation/screens/rhythm_match_screen.dart';
+import 'package:melody_sense/features/rhythm_match/presentation/screens/rhythm_match_submode_screen.dart';
 import 'package:melody_sense/features/stats/presentation/providers/stats_providers.dart';
 
 /// Dashboard Screen - Sesi 9 (Halaman Dashboard)
@@ -108,7 +110,7 @@ class DashboardScreen extends ConsumerWidget {
                 const SizedBox(height: 20),
 
                 // ── Smart Piano Connection Card ──
-                _buildSmartPianoCard(context),
+                _buildSmartPianoCard(context, ref),
                 const SizedBox(height: 16),
 
                 // ── Last Played Tag ──
@@ -166,7 +168,7 @@ class DashboardScreen extends ConsumerWidget {
                       subtitle: 'Repeat what you hear',
                       icon: Icons.record_voice_over_rounded,
                       onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const MelodyEchoScreen()),
+                        MaterialPageRoute(builder: (_) => const MelodyEchoSubmodePickerScreen()),
                       ),
                     ),
                     _ChallengeGridCard(
@@ -174,7 +176,7 @@ class DashboardScreen extends ConsumerWidget {
                       subtitle: 'Master the timing',
                       icon: Icons.timer_rounded,
                       onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const RhythmMatchScreen()),
+                        MaterialPageRoute(builder: (_) => const RhythmMatchSubmodeScreen()),
                       ),
                     ),
                   ],
@@ -191,7 +193,38 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSmartPianoCard(BuildContext context) {
+  Widget _buildSmartPianoCard(BuildContext context, WidgetRef ref) {
+    final connectionStateAsync = ref.watch(webSocketConnectionStateProvider);
+    final wsService = ref.watch(webSocketServiceProvider);
+
+    final connectionState = connectionStateAsync.maybeWhen(
+      data: (state) => state,
+      orElse: () => wsService.connectionState,
+    );
+
+    String statusText;
+    Color statusColor;
+    bool isConnected = connectionState == WebSocketConnectionState.connected;
+
+    switch (connectionState) {
+      case WebSocketConnectionState.connected:
+        statusText = 'Connected (${wsService.currentIp})';
+        statusColor = Colors.green;
+        break;
+      case WebSocketConnectionState.connecting:
+        statusText = 'Connecting...';
+        statusColor = Colors.orange;
+        break;
+      case WebSocketConnectionState.error:
+        statusText = 'Connection Error';
+        statusColor = Colors.red;
+        break;
+      case WebSocketConnectionState.disconnected:
+        statusText = 'Not Connected';
+        statusColor = Colors.grey;
+        break;
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
@@ -217,24 +250,37 @@ class DashboardScreen extends ConsumerWidget {
             child: const Icon(Icons.piano_rounded, color: AppColors.primaryDark, size: 22),
           ),
           const SizedBox(width: 14),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'SMART PIANO',
-                  style: TextStyle(
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.grey,
-                    letterSpacing: 0.5,
-                  ),
+                Row(
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        color: statusColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    const Text(
+                      'SMART PIANO',
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.grey,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
-                  'Not Connected',
-                  style: TextStyle(
-                    fontSize: 14,
+                  statusText,
+                  style: const TextStyle(
+                    fontSize: 13,
                     fontWeight: FontWeight.w800,
                     color: AppColors.primaryDark,
                   ),
@@ -244,23 +290,14 @@ class DashboardScreen extends ConsumerWidget {
           ),
           ElevatedButton(
             onPressed: () {
-              showDialog(
-                context: context,
-                builder: (_) => AlertDialog(
-                  title: const Text('Smart Piano Connect'),
-                  content: const Text(
-                      'ESP32 Smart Piano WiFi & WebSocket connection will be initialized in Session 10.'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('OK'),
-                    )
-                  ],
-                ),
-              );
+              if (isConnected) {
+                wsService.disconnect();
+              } else {
+                _showConnectDialog(context, wsService);
+              }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.accent,
+              backgroundColor: isConnected ? Colors.red.shade400 : AppColors.accent,
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -268,10 +305,61 @@ class DashboardScreen extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(14),
               ),
             ),
-            child: const Text(
-              'Connect',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+            child: Text(
+              isConnected ? 'Disconnect' : 'Connect',
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showConnectDialog(BuildContext context, WebSocketService wsService) {
+    final ipController = TextEditingController(text: wsService.currentIp ?? '192.168.4.1');
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Smart Piano WebSocket Connect'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Masukkan IP address ESP32 Smart Piano (Mode Access Point Wi-Fi default: 192.168.4.1)',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: ipController,
+              decoration: const InputDecoration(
+                labelText: 'ESP32 IP Address',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.wifi_rounded),
+              ),
+              keyboardType: TextInputType.number,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final ip = ipController.text.trim();
+              if (ip.isNotEmpty) {
+                wsService.connect(ip);
+              }
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.accent,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Connect'),
           ),
         ],
       ),

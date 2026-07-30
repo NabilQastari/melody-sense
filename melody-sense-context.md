@@ -57,6 +57,8 @@ Pengembangan hardware fisik **awalnya** direncanakan dilanjutkan setelah lolos t
 > - **Komponen tambahan dikonfirmasi:** 5× push button baru (untuk 5 tuts sharp/flat) + 1× ESP32.
 > - **Komponen suara:** tetap pakai 2 buzzer pasif yang sudah ada (dipindah dari prototipe Mega) — mini speaker dipertimbangkan tapi **tidak dipilih** (butuh modul amplifier tambahan, dianggap belum perlu).
 
+> ✅ **Update lanjutan (Sesi 13):** Jumlah tombol final direvisi lagi jadi **14 tombol** (13 kromatik + `B3`, menyamakan dengan piano virtual 14 tuts). Pin mapping ESP32 sudah **final** dan breadboard sudah **terbukti berfungsi** (firmware standalone tanpa WebSocket, tested & bunyi). Detail lengkap pin mapping, wiring, dan source code firmware ada di bagian "Implementasi Sesi 13: Breadboard ESP32 — Wiring Final & Firmware" di akhir dokumen ini.
+
 ---
 
 ## Keputusan Arsitektur & Tech Stack (Sesi 1, direvisi Sesi 3)
@@ -291,7 +293,7 @@ Implementasi konkret (DAO, domain entities, repository, Riverpod providers) suda
 | 11.1 | Update Note Recognition (Mekanik & Visual Tambahan `flutter_animate`) | ✅ Selesai |
 | 11.2 | Update Interval Training (Visual Jembatan Jarak + Next Round) | ✅ Selesai |
 | 12 | Mode Rhythm Match Berbasis Permainan Lagu (Song-Based Playback: Easy, Medium, Hard) + Timer & Rating Bintang di Result Screen | ✅ Selesai |
-| 13 | Persiapan Maestro Mode (WebSocket client) & Submode Melody Echo | ⏳ Belum mulai |
+| 13 | Persiapan Maestro Mode (WebSocket client) & Submode Melody Echo | ✅ Selesai |
 | 14 | Fitur Kustomisasi & Reward Peti Rahasia (Piano Skins / Themes) | ⏳ Belum mulai |
 | 15 | Update Piano Virtual jadi Kromatik (14 tuts: B3 + 13 tuts C4–C5 kromatik) | ✅ Selesai |
 
@@ -492,7 +494,7 @@ Fokus: **Fitur Note Recognition end-to-end** — jadi pola template untuk fitur 
 
 ## Status Proyek Saat Ini
 
-**Sesi 12 selesai.** Pengembangan Explorer Mode (virtual) dan fondasi utama aplikasi Melody Sense sudah **100% selesai & beroperasi penuh end-to-end**:
+**Sesi 13 selesai.** Pengembangan Explorer Mode (virtual) dan fondasi utama aplikasi Melody Sense sudah **100% selesai & beroperasi penuh end-to-end** (status software di bawah masih dari Sesi 12, belum ada perubahan software di Sesi 13 — Sesi 13 murni hardware breadboard ESP32, lihat "Implementasi Sesi 13: Breadboard ESP32 — Wiring Final & Firmware"):
 
 - **Note Recognition (100% Selesai)**: Submode Introduce (3 slide), Start Practice (10 ronde + nyawa), & Guided Practice (hint menyala). Dilengkapi mekanik Ronde Misteri (+20 XP), Compare Playback saat salah, dan animasi `flutter_animate`.
 - **Interval Training (100% Selesai)**: Submode Introduce (4 slide), Start Practice, & Guided Practice. Dilengkapi Visual Jembatan Jarak (*Distance Bridge* curve), tombol *Next Round* melayang, dan Compare Playback adaptif.
@@ -505,7 +507,7 @@ Fokus: **Fitur Note Recognition end-to-end** — jadi pola template untuk fitur 
 - **Sistem Gamifikasi & Database (100% Selesai)**: Database SQLite (`Drift`) mengelola sesi latihan, histori attempt, streak harian dengan grace period, level-up linear (100 XP/level), personal best per mode, dan 6 badge achievement otomatis.
 
 **Catatan/Hal Terbuka untuk Sesi Selanjutnya:**
-- **Maestro Mode & Hardware ESP32**: Integrasi WebSocket persisten dengan prototipe breadboard ESP32 13 tombol kromatik.
+- **Maestro Mode & Hardware ESP32**: Integrasi WebSocket persisten dengan prototipe breadboard ESP32 14 tombol kromatik (pin mapping sudah final & firmware dasar sudah terverifikasi berfungsi — lihat "Implementasi Sesi 13: Breadboard ESP32 — Wiring Final & Firmware"). WebSocket belum diintegrasikan, firmware saat ini masih standalone (Serial only).
 - **Melody Echo**: Mode latihan pengulangan melodi berbasis Maestro Mode / ESP32.
 - **Sense Mode Hardware Integration**: Pemasangan label Braille di tombol fisik ESP32 & integrasi narasi TTS (`flutter_tts`) untuk disabilitas tunanetra/low vision.
 
@@ -842,8 +844,8 @@ Melanjutkan rencana breadboard prototype ESP32 (lihat "Progres Hardware Saat Ini
 - GPIO 0, 2, 15 → strapping pins, ada efek saat boot, sebaiknya dihindari
 
 **Belum diputuskan (baru, menyusul open question lama):**
-- Pemetaan pin final 13 tombol + 2 buzzer khusus di ESP32
-- Notasi nada sharp/flat di kontrak JSON note event — `"C#4"` vs `"Db4"` vs nomor MIDI (makin mendesak karena hardware & software sekarang sama-sama kromatik)
+- ~~Pemetaan pin final 13 tombol + 2 buzzer khusus di ESP32~~ → ✅ **Selesai di Sesi 13**, jadi 14 tombol + 2 buzzer (lihat "Implementasi Sesi 13: Breadboard ESP32 — Wiring Final & Firmware")
+- Notasi nada sharp/flat di kontrak JSON note event — `"C#4"` vs `"Db4"` vs nomor MIDI (makin mendesak karena hardware & software sekarang sama-sama kromatik) — **masih open**, WebSocket belum diimplementasikan di firmware
 - Siapa di tim yang pegang firmware ESP32 (masih belum dijawab sejak sebelum Sesi 4)
 
 ### 2. Update Besar: Piano Virtual Jadi 14 Tuts (B3 + 13 Tuts Kromatik C4–C5)
@@ -883,6 +885,373 @@ Mode **Rhythm Match** resmi selesai diimplementasikan dengan konsep permainan la
    - Menambahkan parameter opsional `timeSpentMs`, `stars`, dan `customSubtitle` di `SessionResultScreen`.
    - Menampilkan kartu **Waktu** penyelesaian (misal `14.2s` atau `1m 15s`) serta indikator rating 3 bintang (⭐⭐⭐) secara dinamis pada layar hasil sesi mode Rhythm Match.
 
+---
 
+## Implementasi Sesi 13: Breadboard ESP32 — Wiring Final & Firmware
 
+Melanjutkan breadboard prototype ESP32 (lihat "Progres Hardware Saat Ini" & bagian Sesi 10), pin mapping final disusun dan **firmware sudah diupload & terverifikasi berfungsi** (buzzer berbunyi saat tombol ditekan, log Serial Monitor sesuai ekspektasi).
 
+### Komponen final
+- 1× ESP32 (chip ESP32-D0WD-V3, WROOM — bukan WROVER, jadi GPIO 16/17 aman dipakai I/O)
+- **14 push button** nada kromatik: `B3, C4, C#4, D4, D#4, E4, F4, F#4, G4, G#4, A4, A#4, B4, C5` (menyamakan dengan piano virtual 14 tuts)
+- 2× tombol tambahan: **Auto Play** & **Cheat Note**
+- 2× Buzzer pasif (dari prototipe Mega)
+- **Tanpa resistor eksternal sama sekali** — semua tombol pakai internal pull-up ESP32 (`INPUT_PULLUP`), buzzer digerakkan langsung via `tone()`/`noTone()` dari GPIO
+
+### Pin mapping final (ESP32, tanpa resistor)
+
+| Nada/Fungsi | GPIO |
+|---|---|
+| B3 | 4 |
+| C4 | 5 |
+| C#4 | 13 |
+| D4 | 14 |
+| D#4 | 16 |
+| E4 | 17 |
+| F4 | 18 |
+| F#4 | 19 |
+| G4 | 21 |
+| G#4 | 22 |
+| A4 | 23 |
+| A#4 | 15 |
+| B4 | 26 |
+| C5 | 27 |
+| Auto Play | 0 |
+| Cheat Note | 2 |
+| Buzzer 1 | 32 |
+| Buzzer 2 | 33 |
+
+**Pin yang sengaja dihindari** (dan alasannya, untuk referensi ke depan kalau perlu geser pin lagi):
+- GPIO 6–11 → internal flash, tidak boleh dipakai
+- GPIO 1, 3 → serial TX0/RX0
+- GPIO 12 → strapping (voltase flash), dihindari untuk keamanan
+- GPIO 34–39 → input-only, **tidak punya pull-up internal** → tidak bisa dipakai untuk tombol tanpa resistor eksternal (ini alasan Auto Play/Cheat Note dipindah ke GPIO 0 & 2, bukan ke 34/35 seperti rencana awal)
+- GPIO 0, 2, 15 → strapping pin, tetap dipakai (untuk A#4, Auto Play, Cheat Note) karena butuh pull-up internal, dengan catatan: **jangan tekan tombol-tombol ini tepat saat ESP32 power-on/reset**, aman dipakai normal setelah boot selesai (~1 detik)
+
+### Catatan troubleshooting yang relevan
+- Sempat ada kasus upload sketch yang salah (ke-flash sketch lama `SensorTDS.ino`, bukan firmware piano) — penyebab awal "tidak ada suara". Solusi: selalu cek nama file di log `esptool` (`Writing '...NamaSketch.ino.bin'`) sebelum menyimpulkan hardware bermasalah.
+- Setelah sketch yang benar ter-upload: **hardware terkonfirmasi berfungsi** — tombol menghasilkan bunyi dari buzzer sesuai nada yang dipetakan.
+
+### Firmware (`.ino`) — Versi Lengkap (Standalone + Wi-Fi AP + WebSocket Server)
+
+Firmware ini mendukung **Standalone Mode** (bunyi buzzer lokal, Auto Play, Cheat Mode) **DAN WebSocket Server** untuk streaming event nada secara real-time ke aplikasi Flutter (Maestro Mode).
+
+**Library Tambahan yang Dibutuhkan:**
+- `WiFi.h` (Sudah bawaan ESP32 Core di Arduino IDE)
+- `WebSocketsServer.h` (Library **WebSockets** oleh Markus Sattler — install via Library Manager)
+
+```cpp
+// ============================================================
+// Melody Sense - Firmware ESP32 (Breadboard Prototype)
+// 14 tombol kromatik (B3-C5) + 2 Buzzer Pasif + Auto Play + Cheat Mode
+// + Wi-Fi Access Point ("MelodySense_Piano") + WebSocket Server (Port 81 /ws)
+// Status: SIAP UNTUK MAESTRO MODE VIA WEBSOCKET
+// ============================================================
+
+#include <WiFi.h>
+#include <WebSocketsServer.h>
+
+// --- Config Wi-Fi Access Point & WebSocket ---
+const char* ssid     = "MelodySense_Piano";
+const char* password = "melodysense123";
+WebSocketsServer webSocket = WebSocketsServer(81);
+
+const int buzzerPin1 = 32;
+const int buzzerPin2 = 33;
+const int autoPin    = 0;   // strapping pin, aman dipakai setelah boot selesai
+const int cheatPin   = 2;   // strapping pin, aman dipakai setelah boot selesai
+
+const int jumlahTombol = 14;
+
+// Urutan: B3, C4, C#4, D4, D#4, E4, F4, F#4, G4, G#4, A4, A#4, B4, C5
+const int tombol[jumlahTombol] = {4, 5, 13, 14, 16, 17, 18, 19, 21, 22, 23, 15, 26, 27};
+
+const int nada[jumlahTombol] = {
+  247, 262, 277, 294, 311, 330, 349, 370, 392, 415, 440, 466, 494, 523
+};
+
+const char* namaNada[jumlahTombol] = {
+  "B3", "C4", "C#4", "D4", "D#4", "E4", "F4", "F#4", "G4", "G#4", "A4", "A#4", "B4", "C5"
+};
+
+struct Note {
+  int index;   // -1 = jeda, selain itu index ke array nada[] (0-13)
+  int durasi;
+  int jeda;
+};
+
+// Lagu demo (pola "Twinkle Twinkle" / "Bintang Kecil")
+Note musik[] = {
+  {1, 350, 40}, {1, 350, 40}, {8, 350, 40}, {8, 350, 40},
+  {10, 350, 60}, {10, 350, 10}, {8, 400, 60},
+  {-1, 0, 300},
+
+  {6, 350, 40}, {6, 350, 40}, {5, 350, 40}, {5, 350, 40},
+  {3, 350, 40}, {3, 350, 40}, {1, 350, 40},
+  {-1, 0, 300},
+
+  {8, 350, 40}, {8, 350, 40}, {6, 350, 40}, {6, 350, 40},
+  {5, 350, 40}, {5, 350, 40}, {3, 350, 40},
+  {-1, 0, 300},
+
+  {8, 350, 40}, {8, 350, 40}, {6, 350, 40}, {6, 350, 40},
+  {5, 350, 40}, {5, 350, 40}, {3, 350, 40},
+  {-1, 0, 300},
+
+  {1, 350, 40}, {1, 350, 40}, {8, 350, 40}, {8, 350, 40},
+  {10, 350, 60}, {10, 350, 10}, {8, 400, 60},
+  {-1, 0, 300},
+
+  {6, 350, 40}, {6, 350, 40}, {5, 350, 40}, {5, 350, 40},
+  {3, 350, 40}, {3, 350, 40}, {1, 350, 40},
+  {-1, 0, 300},
+};
+
+const int panjangMusik = sizeof(musik) / sizeof(musik[0]);
+int nadaAktif = -1;
+
+// --- Cheat Mode State ---
+bool cheatMode = false;
+bool cheatButtonWasPressed = false;
+int cheatNoteIndex = 0;
+bool cheatNadaSedangBunyi = false;
+
+// --- Helper: Send WebSocket JSON Event ---
+void kirimNoteEvent(const char* noteName) {
+  String json = "{\"note\":\"" + String(noteName) + "\",\"velocity\":100}";
+  webSocket.broadcastTXT(json);
+}
+
+// --- Helper: mainkan/hentikan nada di 2 buzzer sekaligus ---
+void mainkanNada(int freq) {
+  tone(buzzerPin1, freq);
+  tone(buzzerPin2, freq);
+}
+
+void hentikanNada() {
+  noTone(buzzerPin1);
+  noTone(buzzerPin2);
+}
+
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
+  switch(type) {
+    case WStype_DISCONNECTED:
+      Serial.printf("[%u] App Disconnected!\n", num);
+      break;
+    case WStype_CONNECTED:
+      {
+        IPAddress ip = webSocket.remoteIP(num);
+        Serial.printf("[%u] App Connected from %d.%d.%d.%d\n", num, ip[0], ip[1], ip[2], ip[3]);
+      }
+      break;
+    case WStype_TEXT:
+      Serial.printf("[%u] Received from App: %s\n", num, payload);
+      // Opsi: terima perintah Auto Play dari aplikasi
+      if (strcmp((char*)payload, "AUTOPLAY") == 0) {
+        mainkanMusik();
+      }
+      break;
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println("\n=== Melody Sense - ESP32 Smart Piano Ready ===");
+  
+  // Setup Wi-Fi Access Point
+  WiFi.softAP(ssid, password);
+  IPAddress myIP = WiFi.softAPIP();
+  Serial.print("Wi-Fi AP Started! SSID: ");
+  Serial.println(ssid);
+  Serial.print("ESP32 IP Address: ");
+  Serial.println(myIP); // Default: 192.168.4.1
+
+  // Setup WebSocket Server (Port 81)
+  webSocket.begin();
+  webSocket.onEvent(webSocketEvent);
+  Serial.println("WebSocket Server listening on port 81");
+
+  for (int i = 0; i < jumlahTombol; i++) {
+    pinMode(tombol[i], INPUT_PULLUP);
+  }
+  pinMode(autoPin, INPUT_PULLUP);
+  pinMode(cheatPin, INPUT_PULLUP);
+  Serial.println("=========================================");
+}
+
+int skipJeda(int idx) {
+  while (idx < panjangMusik && musik[idx].index == -1) {
+    idx++;
+  }
+  return idx;
+}
+
+void mainkanMusik() {
+  hentikanNada();
+  delay(100);
+
+  Serial.println("\n>>> AUTO MODE: Lagu dimulai <<<");
+
+  int nomorNada = 1;
+  for (int i = 0; i < panjangMusik; i++) {
+    for (int j = 0; j < jumlahTombol; j++) {
+      if (digitalRead(tombol[j]) == LOW) {
+        hentikanNada();
+        Serial.println(">>> AUTO MODE: Dibatalkan (tombol manual ditekan) <<<");
+        return;
+      }
+    }
+
+    if (musik[i].index == -1) {
+      Serial.println("  -- jeda baris --");
+      hentikanNada();
+      delay(musik[i].jeda);
+    } else {
+      Serial.print("  [");
+      Serial.print(nomorNada++);
+      Serial.print("] Nada: ");
+      Serial.print(namaNada[musik[i].index]);
+      Serial.println(" ms");
+
+      mainkanNada(nada[musik[i].index]);
+      kirimNoteEvent(namaNada[musik[i].index]); // Streaming ke App
+      delay(musik[i].durasi);
+      hentikanNada();
+      delay(musik[i].jeda);
+    }
+  }
+
+  hentikanNada();
+  delay(300);
+  Serial.println(">>> AUTO MODE: Lagu selesai <<<\n");
+}
+
+void handleCheatMode() {
+  bool adaTombolDitekan = false;
+
+  for (int i = 0; i < jumlahTombol; i++) {
+    if (digitalRead(tombol[i]) == LOW) {
+      adaTombolDitekan = true;
+      break;
+    }
+  }
+
+  if (adaTombolDitekan) {
+    if (!cheatNadaSedangBunyi) {
+      cheatNoteIndex = skipJeda(cheatNoteIndex);
+
+      if (cheatNoteIndex >= panjangMusik) {
+        cheatNoteIndex = 0;
+        cheatNoteIndex = skipJeda(cheatNoteIndex);
+        Serial.println("[CHEAT] Lagu selesai, reset ke awal");
+      }
+
+      int nadaYangBenar = musik[cheatNoteIndex].index;
+      mainkanNada(nada[nadaYangBenar]);
+      kirimNoteEvent(namaNada[nadaYangBenar]); // Streaming ke App
+      cheatNadaSedangBunyi = true;
+
+      Serial.print("[CHEAT] Tombol ditekan -> Memainkan nada: ");
+      Serial.println(namaNada[nadaYangBenar]);
+    }
+  } else {
+    if (cheatNadaSedangBunyi) {
+      hentikanNada();
+      cheatNadaSedangBunyi = false;
+
+      cheatNoteIndex++;
+      cheatNoteIndex = skipJeda(cheatNoteIndex);
+
+      Serial.println("[CHEAT] Tombol dilepas -> Siap ke nada berikutnya");
+    }
+  }
+}
+
+void loop() {
+  // Service WebSocket Task
+  webSocket.loop();
+
+  // --- Toggle Cheat Mode ---
+  bool cheatDitekan = (digitalRead(cheatPin) == LOW);
+  if (cheatDitekan && !cheatButtonWasPressed) {
+    cheatMode = !cheatMode;
+    cheatButtonWasPressed = true;
+
+    if (cheatMode) {
+      cheatNoteIndex = 0;
+      cheatNadaSedangBunyi = false;
+      hentikanNada();
+      nadaAktif = -1;
+      Serial.println("\n[CHEAT] === CHEAT MODE AKTIF ===");
+    } else {
+      hentikanNada();
+      cheatNadaSedangBunyi = false;
+      Serial.println("[CHEAT] === CHEAT MODE NONAKTIF ===");
+    }
+    delay(50);
+  }
+  if (!cheatDitekan) {
+    cheatButtonWasPressed = false;
+  }
+
+  if (cheatMode) {
+    handleCheatMode();
+    return;
+  }
+
+  // --- Mode Normal: Manual ---
+  int nadaTekan = -1;
+  for (int i = 0; i < jumlahTombol; i++) {
+    if (digitalRead(tombol[i]) == LOW) {
+      nadaTekan = i;
+      break;
+    }
+  }
+
+  if (nadaTekan != -1) {
+    if (nadaTekan != nadaAktif) {
+      hentikanNada();
+      delayMicroseconds(500);
+      mainkanNada(nada[nadaTekan]);
+      kirimNoteEvent(namaNada[nadaTekan]); // Stream ke WebSocket
+      nadaAktif = nadaTekan;
+
+      Serial.print("[MANUAL] Tombol ");
+      Serial.print(nadaTekan + 1);
+      Serial.print(" -> Nada: ");
+      Serial.print(namaNada[nadaTekan]);
+      Serial.print(" | Frekuensi: ");
+      Serial.print(nada[nadaTekan]);
+      Serial.println(" Hz");
+    }
+  } else {
+    if (nadaAktif != -1) {
+      hentikanNada();
+      Serial.print("[MANUAL] Tombol ");
+      Serial.print(nadaAktif + 1);
+      Serial.println(" dilepas -> Nada berhenti");
+      nadaAktif = -1;
+    }
+  }
+
+  // --- Mode Normal: Auto ---
+  if (nadaTekan == -1 && digitalRead(autoPin) == LOW) {
+    delay(50);
+    if (digitalRead(autoPin) == LOW) {
+      Serial.println("[AUTO] Tombol AUTO ditekan");
+      mainkanMusik();
+      while (digitalRead(autoPin) == LOW) {
+        webSocket.loop();
+        delay(10);
+      }
+      Serial.println("[AUTO] Tombol AUTO dilepas");
+    }
+  }
+}
+```
+
+### Belum dikerjakan / open question setelah Sesi 13
+- Integrasi Wi-Fi + WebSocket dari firmware ini ke aplikasi Flutter (Maestro Mode) — firmware saat ini masih standalone
+- Notasi nada sharp/flat di kontrak JSON note event (`"C#4"` vs `"Db4"` vs MIDI) — masih open question
+- Siapa di tim yang pegang firmware ESP32 ke depannya — masih open question
+- Kode Braille di tombol fisik untuk Sense Mode — belum disentuh

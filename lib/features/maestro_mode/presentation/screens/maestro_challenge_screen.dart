@@ -1,36 +1,90 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:melody_sense/core/network/websocket_service.dart';
+import 'package:melody_sense/core/providers/websocket_providers.dart';
 import 'package:melody_sense/core/widgets/maestro_gameplay_screen.dart';
 
-/// Challenge/Combo gameplay — Maestro Mode (mis. "C Major Arpeggio").
+/// Challenge / Gameplay — Maestro Mode (Smart Piano ESP32 Hardware).
 ///
-/// Wrapper tipis di atas [MaestroGameplayScreen], sesuai desain 05d.
-/// Bedanya dari Melody Echo: tidak ada mascot/subtitle di portrait,
-/// tapi ada comboCount.
-class MaestroChallengeScreen extends StatelessWidget {
+/// Merender UI [MaestroGameplayScreen] secara reaktif terhubung ke WebSocket ESP32.
+/// Tuts piano di layar menyala secara real-time saat tombol fisik ESP32 ditekan!
+class MaestroChallengeScreen extends ConsumerStatefulWidget {
   const MaestroChallengeScreen({
     super.key,
-    this.isConnected = true,
     this.challengeName = 'C Major Arpeggio',
-    this.progress = 0.65,
-    this.comboCount = 8,
-    this.activeHardwareNote = 'G4',
   });
 
-  final bool isConnected;
   final String challengeName;
-  final double progress;
-  final int comboCount;
-  final String? activeHardwareNote;
+
+  @override
+  ConsumerState<MaestroChallengeScreen> createState() =>
+      _MaestroChallengeScreenState();
+}
+
+class _MaestroChallengeScreenState
+    extends ConsumerState<MaestroChallengeScreen> {
+  String? _activeHardwareNote;
+  Timer? _noteHighlightTimer;
+  StreamSubscription<String>? _noteSub;
+  int _comboCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    final wsService = ref.read(webSocketServiceProvider);
+    _noteSub = wsService.noteStream.listen((note) {
+      _onHardwareNoteReceived(note);
+    });
+  }
+
+  @override
+  void dispose() {
+    _noteSub?.cancel();
+    _noteHighlightTimer?.cancel();
+    super.dispose();
+  }
+
+  void _onHardwareNoteReceived(String note) {
+    setState(() {
+      _activeHardwareNote = note;
+      _comboCount += 1;
+    });
+
+    _noteHighlightTimer?.cancel();
+    _noteHighlightTimer = Timer(const Duration(milliseconds: 350), () {
+      if (mounted) {
+        setState(() {
+          _activeHardwareNote = null;
+        });
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final connectionStateAsync = ref.watch(webSocketConnectionStateProvider);
+    final wsService = ref.watch(webSocketServiceProvider);
+
+    final connectionState = connectionStateAsync.maybeWhen(
+      data: (s) => s,
+      orElse: () => wsService.connectionState,
+    );
+
+    final isConnected = connectionState == WebSocketConnectionState.connected;
+
     return MaestroGameplayScreen(
       isConnected: isConnected,
-      title: challengeName,
-      xp: 0,
-      progress: progress,
-      activeHardwareNote: activeHardwareNote,
-      comboCount: comboCount,
+      title: widget.challengeName,
+      subtitle: isConnected
+          ? 'Tekan tombol fisik Smart Piano untuk memainkan nada'
+          : 'Smart Piano terputus. Sambungkan via Dashboard.',
+      xp: _comboCount * 10,
+      progress: (_comboCount / 20).clamp(0.0, 1.0),
+      activeHardwareNote: _activeHardwareNote,
+      comboCount: _comboCount > 0 ? _comboCount : null,
       onClose: () => Navigator.of(context).maybePop(),
     );
   }

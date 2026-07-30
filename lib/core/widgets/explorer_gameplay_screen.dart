@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:melody_sense/core/domain/entities/practice_entities.dart' show RoundFeedback;
+import 'package:melody_sense/core/providers/websocket_providers.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/virtual_piano.dart';
 
@@ -16,7 +18,7 @@ import 'package:melody_sense/core/widgets/virtual_piano.dart';
 /// Dipakai oleh fitur-fitur spesifik (note_recognition, interval_training,
 /// dst.) lewat wrapper screen masing-masing yang menyuplai konten sesuai
 /// jenis latihan — shell ini sendiri tidak tahu soal domain logic.
-class ExplorerGameplayScreen extends StatefulWidget {
+class ExplorerGameplayScreen extends ConsumerStatefulWidget {
   const ExplorerGameplayScreen({
     super.key,
     required this.targetLabel,
@@ -28,6 +30,7 @@ class ExplorerGameplayScreen extends StatefulWidget {
     this.sequenceNotes = const [],
     this.correctNote,
     this.wrongNote,
+    this.rootNote,
     this.activeNote,
     this.bridgeStartNote,
     this.bridgeEndNote,
@@ -66,6 +69,7 @@ class ExplorerGameplayScreen extends StatefulWidget {
 
   final String? correctNote;
   final String? wrongNote;
+  final String? rootNote;
   final String? activeNote;
   final String? bridgeStartNote;
   final String? bridgeEndNote;
@@ -82,18 +86,29 @@ class ExplorerGameplayScreen extends StatefulWidget {
   final VoidCallback? onClose;
 
   @override
-  State<ExplorerGameplayScreen> createState() =>
+  ConsumerState<ExplorerGameplayScreen> createState() =>
       _ExplorerGameplayScreenState();
 }
 
-class _ExplorerGameplayScreenState extends State<ExplorerGameplayScreen> {
+class _ExplorerGameplayScreenState
+    extends ConsumerState<ExplorerGameplayScreen> {
   String? _activeNote;
   Timer? _clearHighlightTimer;
+  StreamSubscription<String>? _noteSub;
 
   /// Durasi highlight tuts sebelum otomatis hilang. Meniru tuts piano
   /// fisik yang kembali ke posisi normal setelah bunyi/sentuhan
   /// selesai — bukan menetap sampai tuts lain ditekan.
   static const _highlightDuration = Duration(milliseconds: 100);
+
+  @override
+  void initState() {
+    super.initState();
+    final wsService = ref.read(webSocketServiceProvider);
+    _noteSub = wsService.noteStream.listen((note) {
+      _handleNotePressed(note);
+    });
+  }
 
   void _handleNotePressed(String note) {
     setState(() => _activeNote = note);
@@ -110,6 +125,7 @@ class _ExplorerGameplayScreenState extends State<ExplorerGameplayScreen> {
 
   @override
   void dispose() {
+    _noteSub?.cancel();
     _clearHighlightTimer?.cancel();
     super.dispose();
   }
@@ -276,6 +292,7 @@ class _ExplorerGameplayScreenState extends State<ExplorerGameplayScreen> {
               activeNote: _activeNote ?? widget.activeNote,
               correctNote: widget.correctNote,
               wrongNote: widget.wrongNote,
+              rootNote: widget.rootNote,
               bridgeStartNote: widget.bridgeStartNote,
               bridgeEndNote: widget.bridgeEndNote,
               bridgeLabel: widget.bridgeLabel,
@@ -449,6 +466,7 @@ class _ExplorerGameplayScreenState extends State<ExplorerGameplayScreen> {
               activeNote: _activeNote ?? widget.activeNote,
               correctNote: widget.correctNote,
               wrongNote: widget.wrongNote,
+              rootNote: widget.rootNote,
               bridgeStartNote: widget.bridgeStartNote,
               bridgeEndNote: widget.bridgeEndNote,
               bridgeLabel: widget.bridgeLabel,
@@ -469,6 +487,7 @@ class _CappedPiano extends StatelessWidget {
     required this.activeNote,
     this.correctNote,
     this.wrongNote,
+    this.rootNote,
     this.bridgeStartNote,
     this.bridgeEndNote,
     this.bridgeLabel,
@@ -479,6 +498,7 @@ class _CappedPiano extends StatelessWidget {
   final String? activeNote;
   final String? correctNote;
   final String? wrongNote;
+  final String? rootNote;
   final String? bridgeStartNote;
   final String? bridgeEndNote;
   final String? bridgeLabel;
@@ -496,6 +516,7 @@ class _CappedPiano extends StatelessWidget {
             activeNote: activeNote,
             correctNote: correctNote,
             wrongNote: wrongNote,
+            rootNote: rootNote,
             bridgeStartNote: bridgeStartNote,
             bridgeEndNote: bridgeEndNote,
             bridgeLabel: bridgeLabel,

@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:melody_sense/core/network/websocket_service.dart';
 import 'package:melody_sense/core/providers/audio_providers.dart';
+import 'package:melody_sense/core/providers/websocket_providers.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/virtual_piano.dart';
 
@@ -11,9 +13,10 @@ import 'package:melody_sense/core/widgets/virtual_piano.dart';
 /// skor. User bisa tekan tuts sesuka hati untuk eksplorasi nada.
 ///
 /// Fitur:
-/// - Piano virtual interaktif (9 nada, B3–C5)
+/// - Piano virtual interaktif (14 nada, B3–C5 kromatik)
 /// - Highlight tuts yang baru ditekan (auto-clear 280ms)
 /// - Nama nada terakhir ditampilkan besar di tengah
+/// - Terhubung ke tombol fisik Smart Piano ESP32 via WebSocket
 /// - Tidak ada sesi/attempt yang dicatat ke database
 class FreePlayScreen extends ConsumerStatefulWidget {
   const FreePlayScreen({super.key});
@@ -26,6 +29,16 @@ class _FreePlayScreenState extends ConsumerState<FreePlayScreen> {
   String? _activeNote;
   String? _lastPlayedNote;
   Timer? _highlightTimer;
+  StreamSubscription<String>? _noteSub;
+
+  @override
+  void initState() {
+    super.initState();
+    final wsService = ref.read(webSocketServiceProvider);
+    _noteSub = wsService.noteStream.listen((note) {
+      _onNotePressed(note);
+    });
+  }
 
   void _onNotePressed(String note) {
     final audio = ref.read(audioServiceProvider);
@@ -45,6 +58,7 @@ class _FreePlayScreenState extends ConsumerState<FreePlayScreen> {
 
   @override
   void dispose() {
+    _noteSub?.cancel();
     _highlightTimer?.cancel();
     super.dispose();
   }

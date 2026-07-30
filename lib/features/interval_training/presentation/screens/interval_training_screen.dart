@@ -155,9 +155,9 @@ class _IntervalTrainingScreenState extends ConsumerState<IntervalTrainingScreen>
         children: [
           ExplorerGameplayScreen(
             targetLabel: widget.submode == PracticeSubmode.guided 
-                ? 'Guided Practice (Tebak Nada Kedua)' 
-                : 'Target',
-            targetValue: state.intervalName,
+                ? 'Guided Practice (Tebak Nada Kedua dari ${state.rootNote})' 
+                : 'Mulai dari ${state.rootNote} → Tebak Nada Kedua',
+            targetValue: '${state.intervalName} (+${state.semitones} semitone${state.semitones == 1 ? "" : "s"})',
             xp: state.xp,
             livesTotal: state.livesTotal,
             livesRemaining: state.livesRemaining,
@@ -165,6 +165,7 @@ class _IntervalTrainingScreenState extends ConsumerState<IntervalTrainingScreen>
             sequenceNotes: const [],
             correctNote: correctNote,
             wrongNote: wrongNote,
+            rootNote: state.rootNote,
             activeNote: activeNote,
             bridgeStartNote: bridgeStartNote,
             bridgeEndNote: bridgeEndNote,

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:melody_sense/core/domain/entities/practice_entities.dart';
 import 'package:melody_sense/core/providers/audio_providers.dart';
+import 'package:melody_sense/core/providers/websocket_providers.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/session_result_screen.dart';
 import 'package:melody_sense/core/widgets/virtual_piano.dart';
@@ -32,6 +33,7 @@ class _RhythmMatchGameplayScreenState
     extends ConsumerState<RhythmMatchGameplayScreen> {
   Timer? _liveTimer;
   Timer? _clearHighlightTimer;
+  StreamSubscription<String>? _noteSub;
   int _elapsedMs = 0;
   String? _activeHighlightNote;
 
@@ -54,10 +56,17 @@ class _RhythmMatchGameplayScreenState
         }
       }
     });
+
+    // Listen tombol fisik ESP32 via WebSocket
+    final wsService = ref.read(webSocketServiceProvider);
+    _noteSub = wsService.noteStream.listen((note) {
+      _handleNotePressed(note);
+    });
   }
 
   @override
   void dispose() {
+    _noteSub?.cancel();
     _liveTimer?.cancel();
     _clearHighlightTimer?.cancel();
     super.dispose();

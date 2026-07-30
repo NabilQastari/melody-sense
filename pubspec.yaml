@@ -38,6 +38,7 @@ dependencies:
   go_router: ^14.2.7            # navigasi antar layar/mode
   audio_session: ^0.1.21
   flutter_animate: ^4.5.0
+  web_socket_channel: ^3.0.1    # WebSocket client untuk ESP32 Smart Piano
 
 
 dev_dependencies:

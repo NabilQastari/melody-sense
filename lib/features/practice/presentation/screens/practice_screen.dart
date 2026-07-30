@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:melody_sense/core/network/websocket_service.dart';
+import 'package:melody_sense/core/providers/websocket_providers.dart';
+import 'package:melody_sense/features/maestro_mode/presentation/screens/maestro_challenge_screen.dart';
 import '../../../../core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/settings_screen.dart';
 import '../../../stats/presentation/providers/stats_providers.dart';
 import '../../../free_play/presentation/screens/free_play_screen.dart';
 import '../../../interval_training/presentation/screens/interval_training_submode_picker_screen.dart';
-import '../../../melody_echo/presentation/screens/melody_echo_screen.dart';
+import '../../../melody_echo/presentation/screens/melody_echo_submode_picker_screen.dart';
 import '../../../note_recognition/presentation/screens/note_recognition_submode_picker_screen.dart';
 import '../../../rhythm_match/presentation/screens/rhythm_match_submode_screen.dart';
 import '../models/challenge_info.dart';
@@ -50,7 +53,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         icon: Icons.person_rounded,
         difficulty: ChallengeDifficulty.intermediate,
         enabled: true,
-        builder: (_) => const MelodyEchoScreen(),
+        builder: (_) => const MelodyEchoSubmodePickerScreen(),
       ),
       ChallengeInfo(
         title: 'Rhythm Match',
@@ -150,61 +153,70 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         const SizedBox(height: 16),
 
         // 2. Maestro Mode Card
-        _PathCard(
-          title: 'Maestro Mode',
-          titleSuffix: const Icon(Icons.wifi, size: 16, color: AppColors.primaryDark),
-          description: 'Connect your Piano via Wi-Fi. Experience real-time feedback through your physical instrument.',
-          icon: Icons.piano_rounded,
-          faintIcon: Icons.piano_outlined,
-          iconColor: Colors.white,
-          iconBgColor: AppColors.primaryDark,
-          actionLabel: 'Scan for Devices',
-          actionIcon: Icons.bluetooth_searching_rounded,
-          customActionColor: AppColors.primaryDark,
-          statusWidget: Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceTint.withValues(alpha: 0.25),
-              borderRadius: BorderRadius.circular(10),
+        () {
+          final connectionStateAsync = ref.watch(webSocketConnectionStateProvider);
+          final wsService = ref.watch(webSocketServiceProvider);
+          final connectionState = connectionStateAsync.maybeWhen(
+            data: (s) => s,
+            orElse: () => wsService.connectionState,
+          );
+          final isConnected = connectionState == WebSocketConnectionState.connected;
+
+          return _PathCard(
+            title: 'Maestro Mode',
+            titleSuffix: const Icon(Icons.wifi, size: 16, color: AppColors.primaryDark),
+            description: 'Connect your Piano via Wi-Fi. Experience real-time feedback through your physical instrument.',
+            icon: Icons.piano_rounded,
+            faintIcon: Icons.piano_outlined,
+            iconColor: Colors.white,
+            iconBgColor: AppColors.primaryDark,
+            actionLabel: isConnected ? 'Start Maestro' : 'Open Maestro Mode',
+            actionIcon: Icons.play_arrow_rounded,
+            customActionColor: AppColors.primaryDark,
+            statusWidget: Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceTint.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: isConnected ? Colors.green : Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    isConnected ? 'Status: Connected' : 'Status: Offline',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryDark,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    isConnected ? wsService.currentIp ?? '192.168.4.1' : 'Connect via Dashboard',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.primaryDark.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            child: Row(
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Text(
-                  'Status: Offline',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primaryDark,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  'Connect your devices',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.primaryDark.withValues(alpha: 0.6),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          onTap: () {
-            // Just show a snackbar for now
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Maestro Mode - Hardware connection coming soon!')),
-            );
-          },
-        ),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const MaestroChallengeScreen()),
+              );
+            },
+          );
+        }(),
         const SizedBox(height: 16),
 
         // 3. Sense Mode Card
