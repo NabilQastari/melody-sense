@@ -39,6 +39,7 @@ dependencies:
   audio_session: ^0.1.21
   flutter_animate: ^4.5.0
   web_socket_channel: ^3.0.1    # WebSocket client untuk ESP32 Smart Piano
+  flutter_tts: ^4.2.0           # Text-to-Speech untuk Sense Mode (Aksesibilitas)
 
 
 dev_dependencies:

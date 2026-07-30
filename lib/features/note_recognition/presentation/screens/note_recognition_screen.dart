@@ -2,15 +2,21 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:melody_sense/core/domain/entities/operating_mode.dart';
 import 'package:melody_sense/core/domain/entities/practice_entities.dart';
+import 'package:melody_sense/core/network/websocket_service.dart';
 import 'package:melody_sense/core/providers/audio_providers.dart';
+import 'package:melody_sense/core/providers/operating_mode_providers.dart';
+import 'package:melody_sense/core/providers/tts_providers.dart';
+import 'package:melody_sense/core/providers/websocket_providers.dart';
 import 'package:melody_sense/core/widgets/explorer_gameplay_screen.dart';
+import 'package:melody_sense/core/widgets/maestro_gameplay_screen.dart';
 import 'package:melody_sense/core/widgets/session_result_screen.dart';
 
 import '../controllers/note_recognition_controller.dart';
 import '../state/note_recognition_state.dart';
 
-/// Note Recognition — Explorer Mode (Mendukung Multi-Submode).
+/// Note Recognition — Mendukung 3 Mode Utama (Explorer, Maestro, Sense).
 class NoteRecognitionScreen extends ConsumerStatefulWidget {
   const NoteRecognitionScreen({
     super.key,
@@ -25,11 +31,28 @@ class NoteRecognitionScreen extends ConsumerStatefulWidget {
 
 class _NoteRecognitionScreenState extends ConsumerState<NoteRecognitionScreen> {
   Timer? _hintTimer;
+  StreamSubscription<String>? _noteSub;
   String? _guidedHintNote;
   int _lastRoundIndex = -1;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final mode = ref.read(operatingModeProvider);
+      // Di Maestro dan Sense Mode, dengarkan input tombol fisik ESP32
+      if (mode != AppOperatingMode.explorer) {
+        final wsService = ref.read(webSocketServiceProvider);
+        _noteSub = wsService.noteStream.listen((note) {
+          ref.read(noteRecognitionControllerProvider(widget.submode).notifier).submitAnswer(note);
+        });
+      }
+    });
+  }
+
+  @override
   void dispose() {
+    _noteSub?.cancel();
     _hintTimer?.cancel();
     super.dispose();
   }
@@ -56,6 +79,7 @@ class _NoteRecognitionScreenState extends ConsumerState<NoteRecognitionScreen> {
     final audioReady = ref.watch(audioReadyProvider);
     final state = ref.watch(noteRecognitionControllerProvider(widget.submode));
     final controller = ref.read(noteRecognitionControllerProvider(widget.submode).notifier);
+    final mode = ref.watch(operatingModeProvider);
 
     if (state == null || audioReady.isLoading) {
       return const Scaffold(
@@ -88,10 +112,15 @@ class _NoteRecognitionScreenState extends ConsumerState<NoteRecognitionScreen> {
       });
     }
 
-    // Lacak pergantian ronde untuk mereset timer petunjuk (hint)
+    // Lacak pergantian ronde untuk mereset timer petunjuk (hint) & narasi TTS
     if (state.roundIndex != _lastRoundIndex) {
       _lastRoundIndex = state.roundIndex;
       _resetHintTimer(state);
+      if (mode == AppOperatingMode.sense) {
+        ref.read(ttsServiceProvider).speak(
+              'Ronde ${state.roundIndex + 1}. Dengarkan nada target.',
+            );
+      }
     }
 
     // Jika user sudah menekan jawaban, hilangkan hint
@@ -109,10 +138,28 @@ class _NoteRecognitionScreenState extends ConsumerState<NoteRecognitionScreen> {
       correctNote = state.targetNote;
       wrongNote = state.lastPressedNote;
     } else if (_guidedHintNote != null) {
-      // Tampilkan hint dengan menyalakan tuts target berwarna hijau
       correctNote = _guidedHintNote;
     }
 
+    // RENDER SENSE / MAESTRO GAMEPLAY SHELL (HARDWARE ESP32)
+    if (mode == AppOperatingMode.maestro || mode == AppOperatingMode.sense) {
+      final connectionStateAsync = ref.watch(webSocketConnectionStateProvider);
+      final wsService = ref.watch(webSocketServiceProvider);
+      final isConnected = (connectionStateAsync.value ?? wsService.connectionState) == WebSocketConnectionState.connected;
+
+      return MaestroGameplayScreen(
+        isConnected: isConnected,
+        title: mode == AppOperatingMode.sense ? 'Sense Mode — Note Recognition' : 'Maestro Mode — Note Recognition',
+        subtitle: 'Tekan tombol fisik ESP32 untuk menebak nada target',
+        xp: state.xp,
+        progress: state.progress,
+        activeHardwareNote: state.lastPressedNote,
+        comboCount: state.roundIndex > 0 ? state.roundIndex : null,
+        onClose: () => Navigator.of(context).maybePop(),
+      );
+    }
+
+    // RENDER EXPLORER GAMEPLAY SHELL (VIRTUAL TOUCH ONLY)
     return ExplorerGameplayScreen(
       targetLabel: widget.submode == PracticeSubmode.guided 
           ? 'Guided Practice (Tebak Nada)' 

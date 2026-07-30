@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
 
 /// 14 nada (B3 + 13 nada kromatik C4–C5) sesuai hardware Smart Piano ESP32.
@@ -161,6 +162,7 @@ class _VirtualPianoState extends State<VirtualPiano> {
 
     if (hitNote != _lastTriggeredNote) {
       _lastTriggeredNote = hitNote;
+      HapticFeedback.lightImpact();
       widget.onNotePressed!(hitNote);
     }
   }

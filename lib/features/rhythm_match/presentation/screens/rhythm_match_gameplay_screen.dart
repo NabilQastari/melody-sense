@@ -3,8 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:melody_sense/core/domain/entities/operating_mode.dart';
 import 'package:melody_sense/core/domain/entities/practice_entities.dart';
 import 'package:melody_sense/core/providers/audio_providers.dart';
+import 'package:melody_sense/core/providers/operating_mode_providers.dart';
+import 'package:melody_sense/core/providers/tts_providers.dart';
 import 'package:melody_sense/core/providers/websocket_providers.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/session_result_screen.dart';
@@ -57,11 +60,17 @@ class _RhythmMatchGameplayScreenState
       }
     });
 
-    // Listen tombol fisik ESP32 via WebSocket
-    final wsService = ref.read(webSocketServiceProvider);
-    _noteSub = wsService.noteStream.listen((note) {
-      _handleNotePressed(note);
-    });
+    // Listen tombol fisik ESP32 via WebSocket hanya jika Maestro / Sense mode
+    final mode = ref.read(operatingModeProvider);
+    if (mode != AppOperatingMode.explorer) {
+      final wsService = ref.read(webSocketServiceProvider);
+      _noteSub = wsService.noteStream.listen((note) {
+        if (mode == AppOperatingMode.sense) {
+          ref.read(ttsServiceProvider).speak('Nada $note');
+        }
+        _handleNotePressed(note);
+      });
+    }
   }
 
   @override

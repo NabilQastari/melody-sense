@@ -6,6 +6,7 @@ import 'package:flutter_soloud/flutter_soloud.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/providers/database_providers.dart';
 import 'package:melody_sense/core/providers/education_progress_provider.dart';
+import 'package:melody_sense/core/providers/tts_providers.dart';
 
 /// Settings Screen - Sesi 9 (Pengaturan Aplikasi)
 ///
@@ -20,7 +21,6 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   double _volume = 1.0;
-  bool _senseMode = false;
   bool _isLoading = true;
 
   @override
@@ -33,7 +33,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _volume = prefs.getDouble('piano_volume') ?? 1.0;
-      _senseMode = prefs.getBool('sense_mode') ?? false;
       _isLoading = false;
     });
   }
@@ -47,9 +46,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _updateSenseMode(bool value) async {
-    setState(() => _senseMode = value);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('sense_mode', value);
+    await ref.read(senseModeProvider.notifier).toggle(value);
   }
 
   Future<void> _resetProgress() async {
@@ -191,7 +188,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         _buildSectionHeader('ACCESSIBILITY'),
                         _buildCard([
                           SwitchListTile(
-                            value: _senseMode,
+                            value: ref.watch(senseModeProvider),
                             onChanged: _updateSenseMode,
                             title: const Text(
                               'Sense Mode',

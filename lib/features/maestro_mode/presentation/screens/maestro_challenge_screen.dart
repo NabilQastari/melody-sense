@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:melody_sense/core/network/websocket_service.dart';
+import 'package:melody_sense/core/providers/tts_providers.dart';
 import 'package:melody_sense/core/providers/websocket_providers.dart';
 import 'package:melody_sense/core/widgets/maestro_gameplay_screen.dart';
 
@@ -48,6 +49,8 @@ class _MaestroChallengeScreenState
   }
 
   void _onHardwareNoteReceived(String note) {
+    ref.read(ttsServiceProvider).speak('Nada $note');
+
     setState(() {
       _activeHardwareNote = note;
       _comboCount += 1;

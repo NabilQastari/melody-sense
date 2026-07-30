@@ -2,9 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'package:melody_sense/core/network/websocket_service.dart';
+import 'package:melody_sense/core/domain/entities/operating_mode.dart';
 import 'package:melody_sense/core/providers/audio_providers.dart';
+import 'package:melody_sense/core/providers/operating_mode_providers.dart';
+import 'package:melody_sense/core/providers/tts_providers.dart';
 import 'package:melody_sense/core/providers/websocket_providers.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/virtual_piano.dart';
@@ -34,10 +35,16 @@ class _FreePlayScreenState extends ConsumerState<FreePlayScreen> {
   @override
   void initState() {
     super.initState();
-    final wsService = ref.read(webSocketServiceProvider);
-    _noteSub = wsService.noteStream.listen((note) {
-      _onNotePressed(note);
-    });
+    final mode = ref.read(operatingModeProvider);
+    if (mode != AppOperatingMode.explorer) {
+      final wsService = ref.read(webSocketServiceProvider);
+      _noteSub = wsService.noteStream.listen((note) {
+        if (mode == AppOperatingMode.sense) {
+          ref.read(ttsServiceProvider).speak('Nada $note');
+        }
+        _onNotePressed(note);
+      });
+    }
   }
 
   void _onNotePressed(String note) {

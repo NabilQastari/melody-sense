@@ -270,8 +270,11 @@ Implementasi konkret (DAO, domain entities, repository, Riverpod providers) suda
 **Tentatif**
 - Cheat Note — kemungkinan diganti fitur lain, keputusan masih ditunda (belum ada progress sampai Sesi 4)
 
-**Mode Aksesibilitas — "Sense Mode" (baru, direncanakan paska Sesi 3)**
-- Satu paket terintegrasi untuk pengguna tunanetra/low vision, dibangun di atas Maestro Mode (fisik). Detail lengkap ada di bagian "Mode Disabilitas (Sense Mode)" di atas. Belum ada progress implementasi.
+**Mode Aksesibilitas — "Sense Mode" & Pemisahan 3 Mode Utama (Diperbarui)**
+- Aplikasi memiliki 3 Mode Utama yang terpisah secara tegas melalui `operatingModeProvider` (`AppOperatingMode`):
+  1. **Explorer Mode**: Khusus piano virtual (layar sentuh HP). Tombol fisik ESP32 diabaikan, TTS mati, menggunakan shell UI `ExplorerGameplayScreen`.
+  2. **Maestro Mode**: Menggunakan tombol fisik ESP32 via WebSocket. Memiliki tantangan yang sama dengan Explorer Mode, tetapi dikendalikan dari hardware fisik dengan shell UI `MaestroGameplayScreen` (ada indikator hardware & combo). TTS mati.
+  3. **Sense Mode**: Menggunakan tombol fisik ESP32 + fitur Aksesibilitas Penuh (TTS voice narration, haptic feedback vibration, & audio navigation cues) aktif untuk pengguna tunanetra / low vision.
 
 ---
 
@@ -293,9 +296,9 @@ Implementasi konkret (DAO, domain entities, repository, Riverpod providers) suda
 | 11.1 | Update Note Recognition (Mekanik & Visual Tambahan `flutter_animate`) | ✅ Selesai |
 | 11.2 | Update Interval Training (Visual Jembatan Jarak + Next Round) | ✅ Selesai |
 | 12 | Mode Rhythm Match Berbasis Permainan Lagu (Song-Based Playback: Easy, Medium, Hard) + Timer & Rating Bintang di Result Screen | ✅ Selesai |
-| 13 | Persiapan Maestro Mode (WebSocket client) & Submode Melody Echo | ✅ Selesai |
-| 14 | Fitur Kustomisasi & Reward Peti Rahasia (Piano Skins / Themes) | ⏳ Belum mulai |
-| 15 | Update Piano Virtual jadi Kromatik (14 tuts: B3 + 13 tuts C4–C5 kromatik) | ✅ Selesai |
+| 13 | Integration ESP32 Hardware Firmware (Wi-Fi AP + WebSocket Server 81) & WebSocket Client ke Semua Mode Game | ✅ Selesai |
+| 14 | Mode Aksesibilitas "Sense Mode" (Text-to-Speech / `flutter_tts`, Screen Reader `Semantics`, Haptic Feedback & Audio Navigation) | ✅ Selesai |
+| 15 | Fitur Kustomisasi & Reward Peti Rahasia (Piano Skins / Themes) | ⏳ Dipindah ke Akhir |
 
 *(Rencana ini bisa disesuaikan/dipecah lebih lanjut sesuai kebutuhan saat pengembangan berjalan. Sesi 9 "Dashboard" disisipkan saat Sesi 5. Sesi 10 & 11 ditambahkan di akhir Sesi 9 atas permintaan user untuk memprioritaskan peningkatan UX, kesenangan, dan nilai edukatif mode latihan).*
 

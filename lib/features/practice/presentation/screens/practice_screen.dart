@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:melody_sense/core/domain/entities/operating_mode.dart';
 import 'package:melody_sense/core/network/websocket_service.dart';
+import 'package:melody_sense/core/providers/operating_mode_providers.dart';
+import 'package:melody_sense/core/providers/tts_providers.dart';
 import 'package:melody_sense/core/providers/websocket_providers.dart';
-import 'package:melody_sense/features/maestro_mode/presentation/screens/maestro_challenge_screen.dart';
 import '../../../../core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/settings_screen.dart';
 import '../../../stats/presentation/providers/stats_providers.dart';
@@ -138,13 +140,15 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         // 1. Explorer Mode Card
         _PathCard(
           title: 'Explorer Mode',
-          description: 'Play using the virtual piano on your screen. Perfect for practice on the go or learning new concepts',
+          description: 'Play using the virtual piano on your screen. Touch input on phone only.',
           icon: Icons.keyboard_rounded,
           faintIcon: Icons.keyboard_alt_outlined,
           iconColor: Colors.white,
           iconBgColor: AppColors.accent,
           actionLabel: 'Start Exploring',
           onTap: () {
+            ref.read(operatingModeProvider.notifier).state = AppOperatingMode.explorer;
+            ref.read(ttsServiceProvider).setEnabled(false);
             setState(() {
               _showChallenges = true;
             });
@@ -165,12 +169,12 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           return _PathCard(
             title: 'Maestro Mode',
             titleSuffix: const Icon(Icons.wifi, size: 16, color: AppColors.primaryDark),
-            description: 'Connect your Piano via Wi-Fi. Experience real-time feedback through your physical instrument.',
+            description: 'Connect your Smart Piano via Wi-Fi. Drive challenges using your physical instrument.',
             icon: Icons.piano_rounded,
             faintIcon: Icons.piano_outlined,
             iconColor: Colors.white,
             iconBgColor: AppColors.primaryDark,
-            actionLabel: isConnected ? 'Start Maestro' : 'Open Maestro Mode',
+            actionLabel: 'Start Maestro',
             actionIcon: Icons.play_arrow_rounded,
             customActionColor: AppColors.primaryDark,
             statusWidget: Container(
@@ -211,9 +215,11 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
               ),
             ),
             onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const MaestroChallengeScreen()),
-              );
+              ref.read(operatingModeProvider.notifier).state = AppOperatingMode.maestro;
+              ref.read(ttsServiceProvider).setEnabled(false);
+              setState(() {
+                _showChallenges = true;
+              });
             },
           );
         }(),
@@ -222,17 +228,18 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         // 3. Sense Mode Card
         _PathCard(
           title: 'Sense Mode',
-          description: 'Accessibility-first design with audio cues and Braille-pattern feedback.',
+          description: 'Accessibility mode for blind/low-vision users with TTS voice cues & physical ESP32 buttons.',
           icon: Icons.waves_rounded,
           faintIcon: Icons.waves_rounded,
           iconColor: Colors.white,
           iconBgColor: AppColors.accent,
           actionLabel: 'Start Sense',
           onTap: () {
-            // Just show a snackbar for now
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Sense Mode - Accessibility layout coming soon!')),
-            );
+            ref.read(operatingModeProvider.notifier).state = AppOperatingMode.sense;
+            ref.read(senseModeProvider.notifier).toggle(true);
+            setState(() {
+              _showChallenges = true;
+            });
           },
         ),
       ],
@@ -242,6 +249,21 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
   // ── SCREEN 2: Challenge List ──
   Widget _buildChallengeList() {
     final challenges = _buildChallenges();
+    final mode = ref.watch(operatingModeProvider);
+
+    String modeTitle = 'Explorer Mode (Virtual)';
+    Color modeColor = AppColors.accent;
+    IconData modeIcon = Icons.keyboard_rounded;
+
+    if (mode == AppOperatingMode.maestro) {
+      modeTitle = 'Maestro Mode (ESP32 Hardware)';
+      modeColor = AppColors.primaryDark;
+      modeIcon = Icons.piano_rounded;
+    } else if (mode == AppOperatingMode.sense) {
+      modeTitle = 'Sense Mode (Aksesibilitas + ESP32)';
+      modeColor = Colors.orange.shade800;
+      modeIcon = Icons.waves_rounded;
+    }
 
     return ListView(
       key: const ValueKey('ChallengeList'),
@@ -275,15 +297,31 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 4),
-        Padding(
-          padding: const EdgeInsets.only(left: 36),
-          child: Text(
-            'Master your musical ear through daily play.',
-            style: TextStyle(fontSize: 13, color: AppColors.primaryDark.withValues(alpha: 0.6)),
+        const SizedBox(height: 8),
+        Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: modeColor.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: modeColor.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(modeIcon, size: 16, color: modeColor),
+              const SizedBox(width: 6),
+              Text(
+                'Mode Aktif: $modeTitle',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: modeColor,
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 20),
         // ── Free Play card ──
         _FreePlayCard(
           onTap: () => Navigator.of(context).push(

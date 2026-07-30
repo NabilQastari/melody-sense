@@ -3,15 +3,21 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:melody_sense/core/domain/entities/operating_mode.dart';
+import 'package:melody_sense/core/network/websocket_service.dart';
 import 'package:melody_sense/core/providers/audio_providers.dart';
+import 'package:melody_sense/core/providers/operating_mode_providers.dart';
+import 'package:melody_sense/core/providers/tts_providers.dart';
+import 'package:melody_sense/core/providers/websocket_providers.dart';
 import 'package:melody_sense/core/widgets/explorer_gameplay_screen.dart';
+import 'package:melody_sense/core/widgets/maestro_gameplay_screen.dart';
 import 'package:melody_sense/core/widgets/session_result_screen.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
 
 import '../controllers/interval_training_controller.dart';
 import '../state/interval_training_state.dart';
 
-/// Interval Training — Explorer Mode (Mendukung Multi-Submode & Kontrol Transisi Manual).
+/// Interval Training — Mendukung 3 Mode Utama (Explorer, Maestro, Sense).
 class IntervalTrainingScreen extends ConsumerStatefulWidget {
   const IntervalTrainingScreen({
     super.key,
@@ -27,12 +33,28 @@ class IntervalTrainingScreen extends ConsumerStatefulWidget {
 class _IntervalTrainingScreenState extends ConsumerState<IntervalTrainingScreen> {
   Timer? _rootHintTimer;
   Timer? _targetHintTimer;
+  StreamSubscription<String>? _noteSub;
   String? _guidedRootHint;
   String? _guidedTargetHint;
   int _lastRoundIndex = -1;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final mode = ref.read(operatingModeProvider);
+      if (mode != AppOperatingMode.explorer) {
+        final wsService = ref.read(webSocketServiceProvider);
+        _noteSub = wsService.noteStream.listen((note) {
+          ref.read(intervalTrainingControllerProvider(widget.submode).notifier).submitAnswer(note);
+        });
+      }
+    });
+  }
+
+  @override
   void dispose() {
+    _noteSub?.cancel();
     _rootHintTimer?.cancel();
     _targetHintTimer?.cancel();
     super.dispose();
@@ -47,7 +69,6 @@ class _IntervalTrainingScreenState extends ConsumerState<IntervalTrainingScreen>
     if (widget.submode == PracticeSubmode.guided &&
         state.feedback == RoundFeedback.none &&
         !state.isSessionOver) {
-      // Tahap 1: Detik ke-3, sorot Root Note (jangkar awal)
       _rootHintTimer = Timer(const Duration(seconds: 3), () {
         if (mounted) {
           setState(() {
@@ -56,7 +77,6 @@ class _IntervalTrainingScreenState extends ConsumerState<IntervalTrainingScreen>
         }
       });
 
-      // Tahap 2: Detik ke-6, sorot Target Note (jawaban yang benar)
       _targetHintTimer = Timer(const Duration(seconds: 6), () {
         if (mounted) {
           setState(() {
@@ -72,6 +92,7 @@ class _IntervalTrainingScreenState extends ConsumerState<IntervalTrainingScreen>
     final audioReady = ref.watch(audioReadyProvider);
     final state = ref.watch(intervalTrainingControllerProvider(widget.submode));
     final controller = ref.read(intervalTrainingControllerProvider(widget.submode).notifier);
+    final mode = ref.watch(operatingModeProvider);
 
     if (state == null || audioReady.isLoading) {
       return const Scaffold(
@@ -104,10 +125,15 @@ class _IntervalTrainingScreenState extends ConsumerState<IntervalTrainingScreen>
       });
     }
 
-    // Lacak pergantian ronde untuk mereset timer petunjuk (hint)
+    // Lacak pergantian ronde untuk mereset timer petunjuk (hint) & narasi TTS
     if (state.roundIndex != _lastRoundIndex) {
       _lastRoundIndex = state.roundIndex;
       _resetHintTimers(state);
+      if (mode == AppOperatingMode.sense) {
+        ref.read(ttsServiceProvider).speak(
+              'Ronde ${state.roundIndex + 1}. Tebak jarak interval nada.',
+            );
+      }
     }
 
     // Jika user sudah menjawab, hilangkan hint
@@ -123,7 +149,34 @@ class _IntervalTrainingScreenState extends ConsumerState<IntervalTrainingScreen>
 
     String? correctNote;
     String? wrongNote;
-    String? activeNote = _guidedRootHint; // Sorot root note jika hint aktif
+    String? activeNote = _guidedRootHint;
+
+    if (state.feedback == RoundFeedback.correct) {
+      correctNote = state.lastPressedNote;
+    } else if (isWrong) {
+      correctNote = state.targetNote;
+      wrongNote = state.lastPressedNote;
+    } else if (_guidedTargetHint != null) {
+      correctNote = _guidedTargetHint;
+    }
+
+    // RENDER SENSE / MAESTRO GAMEPLAY SHELL (HARDWARE ESP32)
+    if (mode == AppOperatingMode.maestro || mode == AppOperatingMode.sense) {
+      final connectionStateAsync = ref.watch(webSocketConnectionStateProvider);
+      final wsService = ref.watch(webSocketServiceProvider);
+      final isConnected = (connectionStateAsync.value ?? wsService.connectionState) == WebSocketConnectionState.connected;
+
+      return MaestroGameplayScreen(
+        isConnected: isConnected,
+        title: mode == AppOperatingMode.sense ? 'Sense Mode — Interval Training' : 'Maestro Mode — Interval Training',
+        subtitle: 'Dengarkan interval ${state.rootNote} lalu tekan nada target di ESP32',
+        xp: state.xp,
+        progress: state.progress,
+        activeHardwareNote: state.lastPressedNote,
+        comboCount: state.roundIndex > 0 ? state.roundIndex : null,
+        onClose: () => Navigator.of(context).maybePop(),
+      );
+    }
     String? bridgeStartNote;
     String? bridgeEndNote;
     String? bridgeLabel;
