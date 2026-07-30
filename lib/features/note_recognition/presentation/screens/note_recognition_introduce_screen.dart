@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:melody_sense/core/theme/app_colors.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:melody_sense/core/providers/audio_providers.dart';
 import 'package:melody_sense/core/providers/education_progress_provider.dart';
+import 'package:melody_sense/core/theme/app_colors.dart';
+import 'package:melody_sense/core/widgets/pattern_painters.dart';
+import 'package:melody_sense/core/widgets/sticker_badge.dart';
+import 'package:melody_sense/core/widgets/torn_paper_card.dart';
+import 'package:melody_sense/core/widgets/whisker_banner_header.dart';
 
 class NoteRecognitionIntroduceScreen extends ConsumerStatefulWidget {
   const NoteRecognitionIntroduceScreen({super.key});
@@ -83,47 +87,49 @@ class _NoteRecognitionIntroduceScreenState
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   GestureDetector(
                     onTap: () => Navigator.of(context).pop(),
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppColors.surfaceTint.withValues(alpha: 0.5),
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.primaryDark, width: 2.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primaryDark.withValues(alpha: 0.15),
+                            offset: const Offset(2, 2),
+                          ),
+                        ],
                       ),
-                      child: const Icon(Icons.arrow_back_rounded,
+                      child: Icon(Icons.arrow_back_rounded,
                           size: 20, color: AppColors.primaryDark),
                     ),
                   ),
-                  Text(
-                    'Slide ${_currentPage + 1} dari 3',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primaryDark.withValues(alpha: 0.6),
+                  const SizedBox(width: 10),
+                  const WhiskerBannerHeader(
+                    title: 'NOTE RECOGNITION',
+                    fontSize: 14,
+                    rotateAngle: -0.03,
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  ),
+                  const Spacer(),
+                  StickerBadge(
+                    rotateAngle: 0.03,
+                    backgroundColor: AppColors.surfaceTint,
+                    borderColor: AppColors.primaryDark,
+                    borderWidth: 1.8,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: Text(
+                      'SLIDE ${_currentPage + 1}/3',
+                      style: GoogleFonts.fredoka(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primaryDark,
+                      ),
                     ),
                   ),
-                  if (_currentPage < 2)
-                    TextButton(
-                      onPressed: () {
-                        _pageController.animateToPage(
-                          2,
-                          duration: const Duration(milliseconds: 350),
-                          curve: Curves.easeInOut,
-                        );
-                      },
-                      child: const Text(
-                        'Lewati',
-                        style: TextStyle(
-                          color: AppColors.accent,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    )
-                  else
-                    const SizedBox(width: 48),
                 ],
               ),
             ),
@@ -145,17 +151,12 @@ class _NoteRecognitionIntroduceScreenState
 
             // ── Bottom Navigation Controls ──
             Container(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
               decoration: BoxDecoration(
                 color: AppColors.surfaceWhite,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryDark.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, -4),
-                  ),
-                ],
+                border: Border(
+                  top: BorderSide(color: AppColors.primaryDark, width: 2.2),
+                ),
               ),
               child: Row(
                 children: [
@@ -173,44 +174,43 @@ class _NoteRecognitionIntroduceScreenState
                               ? AppColors.primaryDark
                               : AppColors.surfaceTint,
                           borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: AppColors.primaryDark, width: 1.2),
                         ),
                       );
                     }),
                   ),
                   const Spacer(),
-                  // Action button
-                  ElevatedButton(
-                    onPressed: _nextPage,
-                    style: ElevatedButton.styleFrom(
+                  GestureDetector(
+                    onTap: _nextPage,
+                    child: StickerBadge(
+                      rotateAngle: -0.02,
                       backgroundColor: AppColors.primaryDark,
-                      foregroundColor: AppColors.surfaceWhite,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          _currentPage == 2
-                              ? 'Selesai & Mulai Latihan'
-                              : 'Lanjut',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
+                      borderColor: AppColors.primaryDark,
+                      borderWidth: 2.2,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _currentPage == 2
+                                ? 'SELESAI & MULAI LATIHAN'
+                                : 'LANJUT',
+                            style: GoogleFonts.fredoka(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Icon(
-                          _currentPage == 2
-                              ? Icons.check_circle_rounded
-                              : Icons.arrow_forward_rounded,
-                          size: 18,
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          Icon(
+                            _currentPage == 2
+                                ? Icons.check_circle_rounded
+                                : Icons.arrow_forward_rounded,
+                            size: 16,
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -225,51 +225,70 @@ class _NoteRecognitionIntroduceScreenState
   // Slide 1: Apa itu Nada
   Widget _buildSlide1() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-      child: Column(
-        children: [
-          Container(
-            width: 90,
-            height: 90,
-            decoration: BoxDecoration(
-              color: Colors.blueAccent.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+      child: TornPaperCard(
+        backgroundColor: AppColors.surfaceWhite,
+        shadowColor: AppColors.surfaceTint,
+        borderWidth: 2.8,
+        tornPosition: TornEdgePosition.both,
+        padding: const EdgeInsets.all(20),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -10,
+              top: 10,
+              width: 80,
+              height: 80,
+              child: CustomPaint(
+                painter: HalftonePatternPainter(
+                  color: AppColors.surfaceTint,
+                  opacity: 0.25,
+                ),
+              ),
             ),
-            child: const Icon(
-              Icons.music_note_rounded,
-              size: 48,
-              color: Colors.blueAccent,
+            Column(
+              children: [
+                StickerBadge(
+                  rotateAngle: -0.05,
+                  backgroundColor: AppColors.accent,
+                  borderColor: AppColors.primaryDark,
+                  borderWidth: 2.5,
+                  padding: const EdgeInsets.all(16),
+                  child: const Icon(
+                    Icons.music_note_rounded,
+                    size: 40,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const WhiskerBannerHeader(
+                  title: 'APA ITU NADA (NOTE)?',
+                  fontSize: 16,
+                  rotateAngle: -0.03,
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'Nada adalah getaran suara teratur yang memiliki tinggi-rendah (pitch) tertentu. Di dalam musik barat, nada diberi lambang abjad A sampai G.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.5,
+                    color: AppColors.primaryDark.withValues(alpha: 0.8),
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                _buildInfoCard(
+                  icon: Icons.lightbulb_rounded,
+                  color: Colors.amber.shade800,
+                  title: 'NOTASI ILMIAH',
+                  description:
+                      'Di Melody Sense, nada ditulis sebagai C4, D4, E4, dst. Huruf mewakili nama nada, dan angka mewakili ketinggian oktaf.',
+                ),
+              ],
             ),
-          ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
-          const SizedBox(height: 20),
-          const Text(
-            'Apa itu Nada (Note)?',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              color: AppColors.primaryDark,
-            ),
-            textAlign: TextAlign.center,
-          ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0),
-          const SizedBox(height: 14),
-          Text(
-            'Nada adalah getaran suara teratur yang memiliki tinggi-rendah (pitch) tertentu. Di dalam musik barat, nada diberi lambang abjad A sampai G.',
-            style: TextStyle(
-              fontSize: 14,
-              height: 1.6,
-              color: AppColors.primaryDark.withValues(alpha: 0.7),
-            ),
-            textAlign: TextAlign.center,
-          ).animate().fadeIn(duration: 450.ms).slideY(begin: 0.1, end: 0),
-          const SizedBox(height: 24),
-          _buildInfoCard(
-            icon: Icons.lightbulb_rounded,
-            color: Colors.amber,
-            title: 'Notasi Ilmiah',
-            description:
-                'Di Melody Sense, nada ditulis sebagai C4, D4, E4, dst. Huruf mewakili nama nada, dan angka mewakili ketinggian oktaf.',
-          ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.1, end: 0),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -277,51 +296,70 @@ class _NoteRecognitionIntroduceScreenState
   // Slide 2: Mengenal Oktaf
   Widget _buildSlide2() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-      child: Column(
-        children: [
-          Container(
-            width: 90,
-            height: 90,
-            decoration: BoxDecoration(
-              color: Colors.purpleAccent.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+      child: TornPaperCard(
+        backgroundColor: AppColors.surfaceWhite,
+        shadowColor: AppColors.surfaceTint,
+        borderWidth: 2.8,
+        tornPosition: TornEdgePosition.both,
+        padding: const EdgeInsets.all(20),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -10,
+              top: 10,
+              width: 80,
+              height: 80,
+              child: CustomPaint(
+                painter: HalftonePatternPainter(
+                  color: AppColors.surfaceTint,
+                  opacity: 0.25,
+                ),
+              ),
             ),
-            child: const Icon(
-              Icons.waves_rounded,
-              size: 48,
-              color: Colors.purpleAccent,
+            Column(
+              children: [
+                StickerBadge(
+                  rotateAngle: 0.05,
+                  backgroundColor: AppColors.primaryDark,
+                  borderColor: AppColors.primaryDark,
+                  borderWidth: 2.5,
+                  padding: const EdgeInsets.all(16),
+                  child: const Icon(
+                    Icons.waves_rounded,
+                    size: 40,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const WhiskerBannerHeader(
+                  title: 'MENGENAL OKTAF (OCTAVE)',
+                  fontSize: 16,
+                  rotateAngle: -0.03,
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'Oktaf adalah jarak antar dua nada sejenis yang frekuensinya tepat 2 kali lipatnya. C5 memiliki frekuensi 2x lipat lebih tinggi dari C4.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.5,
+                    color: AppColors.primaryDark.withValues(alpha: 0.8),
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                _buildInfoCard(
+                  icon: Icons.graphic_eq_rounded,
+                  color: Colors.purple.shade700,
+                  title: 'PERBEDAAN RASA BUNYI',
+                  description:
+                      'Walau sama-sama bernama "Do", C4 berada di oktaf tengah yang tenang, sementara C5 berada di oktaf atas yang lebih tinggi.',
+                ),
+              ],
             ),
-          ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
-          const SizedBox(height: 20),
-          const Text(
-            'Mengenal Oktaf (Octave)',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              color: AppColors.primaryDark,
-            ),
-            textAlign: TextAlign.center,
-          ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0),
-          const SizedBox(height: 14),
-          Text(
-            'Oktaf adalah jarak antar dua nada sejenis yang frekuensinya tepat 2 kali lipatnya. C5 memiliki frekuensi 2x lipat lebih tinggi dari C4.',
-            style: TextStyle(
-              fontSize: 14,
-              height: 1.6,
-              color: AppColors.primaryDark.withValues(alpha: 0.7),
-            ),
-            textAlign: TextAlign.center,
-          ).animate().fadeIn(duration: 450.ms).slideY(begin: 0.1, end: 0),
-          const SizedBox(height: 24),
-          _buildInfoCard(
-            icon: Icons.graphic_eq_rounded,
-            color: Colors.purpleAccent,
-            title: 'Perbedaan Rasa Bunyi',
-            description:
-                'Walau sama-sama bernama "Do", C4 berada di oktaf tengah yang tenang, sementara C5 berada di oktaf atas yang lebih bernada tinggi.',
-          ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.1, end: 0),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -332,38 +370,21 @@ class _NoteRecognitionIntroduceScreenState
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.headphones_rounded,
-                    color: AppColors.accent, size: 20),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'Sentuh & Dengarkan Nada',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.primaryDark,
-                ),
-              ),
-            ],
-          ).animate().fadeIn(duration: 350.ms),
-          const SizedBox(height: 6),
+          const WhiskerBannerHeader(
+            title: 'SENTUH & DENGARKAN NADA',
+            fontSize: 15,
+            rotateAngle: -0.03,
+          ),
+          const SizedBox(height: 8),
           Text(
             'Tekan tombol nada di bawah untuk membiasakan telingamu sebelum berlatih.',
             style: TextStyle(
               fontSize: 12,
-              color: AppColors.primaryDark.withValues(alpha: 0.6),
+              fontWeight: FontWeight.w600,
+              color: AppColors.primaryDark.withValues(alpha: 0.7),
             ),
             textAlign: TextAlign.center,
-          ).animate().fadeIn(duration: 400.ms),
+          ),
           const SizedBox(height: 16),
           GridView.builder(
             shrinkWrap: true,
@@ -383,46 +404,36 @@ class _NoteRecognitionIntroduceScreenState
 
               return GestureDetector(
                 onTap: () => _playNote(note),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  decoration: BoxDecoration(
-                    color: isPlaying ? AppColors.accent : AppColors.surfaceWhite,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isPlaying ? Colors.transparent : AppColors.surfaceTint,
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primaryDark.withValues(alpha: 0.04),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
+                child: StickerBadge(
+                  rotateAngle: isPlaying ? -0.04 : 0.02,
+                  backgroundColor: isPlaying ? AppColors.accent : Colors.white,
+                  borderColor: AppColors.primaryDark,
+                  borderWidth: 2.2,
+                  padding: const EdgeInsets.all(8),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         note,
-                        style: TextStyle(
+                        style: GoogleFonts.fredoka(
                           fontSize: 16,
-                          fontWeight: FontWeight.w900,
-                          color: isPlaying
-                              ? AppColors.surfaceWhite
-                              : AppColors.primaryDark,
+                          fontWeight: FontWeight.w700,
+                          color: isPlaying ? Colors.white : AppColors.primaryDark,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(
                         solfege,
-                        style: TextStyle(
-                          fontSize: 10,
+                        style: GoogleFonts.fredoka(
+                          fontSize: 9.5,
                           fontWeight: FontWeight.w600,
                           color: isPlaying
-                              ? AppColors.surfaceWhite.withValues(alpha: 0.8)
-                              : AppColors.primaryDark.withValues(alpha: 0.5),
+                              ? Colors.white.withValues(alpha: 0.9)
+                              : AppColors.primaryDark.withValues(alpha: 0.65),
                         ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
                       Icon(
@@ -430,16 +441,14 @@ class _NoteRecognitionIntroduceScreenState
                             ? Icons.volume_up_rounded
                             : Icons.play_circle_outline_rounded,
                         size: 16,
-                        color: isPlaying
-                            ? AppColors.surfaceWhite
-                            : AppColors.primaryDark.withValues(alpha: 0.4),
+                        color: isPlaying ? Colors.white : AppColors.primaryDark,
                       ),
                     ],
                   ),
                 ),
               );
             },
-          ).animate().fadeIn(duration: 450.ms).scale(begin: const Offset(0.95, 0.95), end: const Offset(1, 1)),
+          ),
         ],
       ),
     );
@@ -452,49 +461,44 @@ class _NoteRecognitionIntroduceScreenState
     required String description,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surfaceWhite,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primaryDark.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: AppColors.surfaceTint.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.primaryDark, width: 2.0),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 20),
+          StickerBadge(
+            rotateAngle: -0.04,
+            backgroundColor: color,
+            borderColor: AppColors.primaryDark,
+            borderWidth: 1.8,
+            padding: const EdgeInsets.all(6),
+            child: Icon(icon, color: Colors.white, size: 18),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 14,
+                  style: GoogleFonts.fredoka(
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w700,
                     color: AppColors.primaryDark,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 3),
                 Text(
                   description,
                   style: TextStyle(
-                    fontSize: 12,
-                    height: 1.5,
-                    color: AppColors.primaryDark.withValues(alpha: 0.65),
+                    fontSize: 11.5,
+                    height: 1.4,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primaryDark.withValues(alpha: 0.75),
                   ),
                 ),
               ],

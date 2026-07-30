@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import 'package:melody_sense/core/theme/app_colors.dart';
+import 'package:melody_sense/core/widgets/pattern_painters.dart';
+import 'package:melody_sense/core/widgets/sticker_badge.dart';
+import 'package:melody_sense/core/widgets/torn_paper_card.dart';
+import 'package:melody_sense/core/widgets/whisker_banner_header.dart';
 
-
-/// Shell UI untuk layar hasil sesi (desain "06 - Session Results"),
-/// dipakai SEMUA mode latihan (Note Recognition, Interval Training,
-/// dst.) lewat parameter — mirip pola ExplorerGameplayScreen /
-/// MaestroGameplayScreen: shell ini tidak tahu soal domain logic,
-/// cuma menampilkan angka yang disuplai.
-///
-/// Kasus kalah (hearts habis) BELUM punya desain terpisah — atas
-/// keputusan tim, layar yang sama dipakai, cuma judul/subtitle/ikon
-/// diganti lewat [isWin] supaya tetap jelas beda dari menang.
+/// Shell UI untuk layar hasil sesi (desain "06 - Session Results")
+/// Diperbarui dengan Whisker-Inspired Design System v3.
 class SessionResultScreen extends StatelessWidget {
   const SessionResultScreen({
     super.key,
@@ -28,10 +26,7 @@ class SessionResultScreen extends StatelessWidget {
     this.retryScreenBuilder,
   });
 
-  /// Menang = sesi selesai dengan hearts tersisa. Kalah = hearts habis.
   final bool isWin;
-
-  /// 0.0 - 1.0
   final double accuracy;
   final int xpEarned;
 
@@ -43,19 +38,11 @@ class SessionResultScreen extends StatelessWidget {
   final int? totalNotes;
   final String? customSubtitle;
 
-  /// Builder untuk layar yang dibuka saat user tap Retry. Null = tombol
-  /// Retry tidak muncul. Continue selalu pop() kembali ke layar
-  /// sebelumnya (PracticeScreen).
-  ///
-  /// Navigasi ditangani di sini (bukan lewat VoidCallback dari caller)
-  /// supaya pakai BuildContext SessionResultScreen sendiri yang valid —
-  /// caller (NoteRecognitionScreen, dst.) sudah di-pushReplacement jadi
-  /// context-nya mati.
   final WidgetBuilder? retryScreenBuilder;
 
   String get _headline {
-    if (!isWin) return 'Keep Practicing!';
-    return accuracy >= 0.9 ? 'Perfect Pitch!' : 'Nice Job!';
+    if (!isWin) return 'KEEP PRACTICING!';
+    return accuracy >= 0.9 ? 'PERFECT PITCH!' : 'NICE JOB!';
   }
 
   String get _subtitle {
@@ -76,162 +63,220 @@ class SessionResultScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accentColor = isWin ? AppColors.accent : Colors.grey.shade400;
+    final accentColor = isWin ? AppColors.accent : Colors.grey.shade600;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 4),
               Row(
                 children: [
-                  const Text(
-                    'Melody Sense',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primaryDark,
-                    ),
+                  const WhiskerBannerHeader(
+                    title: 'MELODY SENSE',
+                    fontSize: 14,
+                    rotateAngle: -0.03,
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                   ),
                   const Spacer(),
-                  const Icon(Icons.settings_outlined,
-                      color: AppColors.primaryDark, size: 20),
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceWhite,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.primaryDark, width: 2.2),
+                    ),
+                    child: Icon(Icons.settings_outlined,
+                        color: AppColors.primaryDark, size: 18),
+                  ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
               Expanded(
                 child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
                   child: Column(
                     children: [
-                      if (stars != null && stars! > 0) ...[
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: List.generate(3, (index) {
-                            final isFilled = index < stars!;
-                            return Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 4),
-                              child: Icon(
-                                isFilled
-                                    ? Icons.star_rounded
-                                    : Icons.star_outline_rounded,
-                                color:
-                                    isFilled ? Colors.amber : Colors.grey.shade300,
-                                size: 32,
+                      TornPaperCard(
+                        backgroundColor: AppColors.surfaceWhite,
+                        shadowColor: AppColors.surfaceTint,
+                        borderWidth: 2.8,
+                        tornPosition: TornEdgePosition.both,
+                        padding: const EdgeInsets.all(20),
+                        child: Stack(
+                          children: [
+                            Positioned(
+                              right: -10,
+                              top: 10,
+                              width: 80,
+                              height: 80,
+                              child: CustomPaint(
+                                painter: HalftonePatternPainter(
+                                  color: AppColors.surfaceTint,
+                                  opacity: 0.3,
+                                ),
                               ),
-                            );
-                          }),
-                        ).animate().scale(
-                              duration: 400.ms,
-                              curve: Curves.elasticOut,
                             ),
-                        const SizedBox(height: 8),
-                      ] else ...[
-                        Icon(
-                          isWin
-                              ? Icons.emoji_events_rounded
-                              : Icons.favorite_border_rounded,
-                          color: accentColor,
-                          size: 22,
-                        ).animate().scale(
-                              duration: 400.ms,
-                              curve: Curves.elasticOut,
-                            ),
-                        const SizedBox(height: 8),
-                      ],
-                      Text(
-                        _headline,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primaryDark,
-                        ),
-                      ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.2, end: 0),
-                      const SizedBox(height: 6),
-                      Text(
-                        _subtitle,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade600,
-                        ),
-                      ).animate().fadeIn(delay: 150.ms, duration: 400.ms).slideY(begin: 0.2, end: 0),
-                      const SizedBox(height: 28),
-                      _AccuracyRing(accuracy: accuracy, color: accentColor)
-                          .animate().scale(delay: 300.ms, duration: 500.ms, curve: Curves.easeOutCubic),
-                      if (isWin && leveledUp) ...[
-                        const SizedBox(height: 12),
-                        _LevelUpPill()
-                            .animate().scaleXY(begin: 0.8, end: 1.0, delay: 500.ms, duration: 600.ms, curve: Curves.bounceOut),
-                      ],
-                      const SizedBox(height: 28),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _StatCard(
-                              icon: Icons.monetization_on,
-                              iconColor: Colors.amber,
-                              value: '+$xpEarned',
-                              label: 'XP Earned',
-                            ).animate().fadeIn(delay: 450.ms, duration: 400.ms).slideX(begin: -0.1, end: 0),
-                          ),
-                          if (perfectCount != null) ...[
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: _StatCard(
-                                icon: Icons.stars_rounded,
-                                iconColor: Colors.purpleAccent,
-                                value: '$perfectCount/${totalNotes ?? 0}',
-                                label: 'Perfect',
-                              ).animate().fadeIn(delay: 450.ms, duration: 400.ms).slideY(begin: 0.1, end: 0),
+                            Column(
+                              children: [
+                                if (stars != null && stars! > 0) ...[
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: List.generate(3, (index) {
+                                      final isFilled = index < stars!;
+                                      return Padding(
+                                        padding:
+                                            const EdgeInsets.symmetric(horizontal: 4),
+                                        child: Icon(
+                                          isFilled
+                                              ? Icons.star_rounded
+                                              : Icons.star_outline_rounded,
+                                          color: isFilled
+                                              ? Colors.amber.shade700
+                                              : Colors.grey.shade300,
+                                          size: 36,
+                                        ),
+                                      );
+                                    }),
+                                  ).animate().scale(
+                                        duration: 400.ms,
+                                        curve: Curves.elasticOut,
+                                      ),
+                                  const SizedBox(height: 10),
+                                ] else ...[
+                                  StickerBadge(
+                                    rotateAngle: -0.05,
+                                    backgroundColor: accentColor,
+                                    borderColor: AppColors.primaryDark,
+                                    padding: const EdgeInsets.all(12),
+                                    child: Icon(
+                                      isWin
+                                          ? Icons.emoji_events_rounded
+                                          : Icons.favorite_border_rounded,
+                                      color: Colors.white,
+                                      size: 28,
+                                    ),
+                                  ).animate().scale(
+                                        duration: 400.ms,
+                                        curve: Curves.elasticOut,
+                                      ),
+                                  const SizedBox(height: 12),
+                                ],
+
+                                WhiskerBannerHeader(
+                                  title: _headline,
+                                  fontSize: 18,
+                                  rotateAngle: -0.03,
+                                  backgroundColor: isWin ? AppColors.accent : Colors.grey.shade300,
+                                  textColor: isWin ? Colors.white : AppColors.primaryDark,
+                                ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.2, end: 0),
+
+                                const SizedBox(height: 10),
+                                Text(
+                                  _subtitle,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    height: 1.3,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primaryDark.withValues(alpha: 0.75),
+                                  ),
+                                ).animate().fadeIn(delay: 150.ms, duration: 400.ms).slideY(begin: 0.2, end: 0),
+
+                                const SizedBox(height: 24),
+                                _AccuracyRing(accuracy: accuracy, color: accentColor)
+                                    .animate().scale(delay: 300.ms, duration: 500.ms, curve: Curves.easeOutCubic),
+
+                                if (isWin && leveledUp) ...[
+                                  const SizedBox(height: 14),
+                                  StickerBadge(
+                                    rotateAngle: 0.05,
+                                    backgroundColor: AppColors.primaryDark,
+                                    borderColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                    child: Text(
+                                      'LEVEL UP!',
+                                      style: GoogleFonts.fredoka(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ).animate().scaleXY(begin: 0.8, end: 1.0, delay: 500.ms, duration: 600.ms, curve: Curves.bounceOut),
+                                ],
+
+                                const SizedBox(height: 24),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _StatCard(
+                                        icon: Icons.monetization_on_rounded,
+                                        iconColor: Colors.amber.shade700,
+                                        value: '+$xpEarned',
+                                        label: 'XP Earned',
+                                      ).animate().fadeIn(delay: 450.ms, duration: 400.ms).slideX(begin: -0.1, end: 0),
+                                    ),
+                                    if (perfectCount != null) ...[
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: _StatCard(
+                                          icon: Icons.stars_rounded,
+                                          iconColor: Colors.purpleAccent,
+                                          value: '$perfectCount/${totalNotes ?? 0}',
+                                          label: 'Perfect',
+                                        ).animate().fadeIn(delay: 450.ms, duration: 400.ms).slideY(begin: 0.1, end: 0),
+                                      ),
+                                    ],
+                                    if (timeSpentMs != null) ...[
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: _StatCard(
+                                          icon: Icons.timer_outlined,
+                                          iconColor: Colors.blue.shade700,
+                                          value: _formatDuration(timeSpentMs!),
+                                          label: 'Durasi',
+                                        ).animate().fadeIn(delay: 450.ms, duration: 400.ms).slideY(begin: 0.1, end: 0),
+                                      ),
+                                    ],
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: _StatCard(
+                                        icon: Icons.local_fire_department_rounded,
+                                        iconColor: Colors.deepOrange,
+                                        value: '$streakDays-Day',
+                                        label: 'Streak',
+                                      ).animate().fadeIn(delay: 450.ms, duration: 400.ms).slideX(begin: 0.1, end: 0),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ],
-                          if (timeSpentMs != null) ...[
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: _StatCard(
-                                icon: Icons.timer_outlined,
-                                iconColor: Colors.blue,
-                                value: _formatDuration(timeSpentMs!),
-                                label: 'Durasi',
-                              ).animate().fadeIn(delay: 450.ms, duration: 400.ms).slideY(begin: 0.1, end: 0),
-                            ),
-                          ],
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: _StatCard(
-                              icon: Icons.local_fire_department_rounded,
-                              iconColor: Colors.deepOrange,
-                              value: '$streakDays-Day',
-                              label: 'Streak',
-                            ).animate().fadeIn(delay: 450.ms, duration: 400.ms).slideX(begin: 0.1, end: 0),
-                          ),
-                        ],
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
+              const SizedBox(height: 12),
               _PrimaryButton(
-                label: 'Continue',
+                label: 'CONTINUE',
                 onTap: () => Navigator.of(context).pop(),
               ),
-              const SizedBox(height: 10),
-              if (retryScreenBuilder != null)
+              if (retryScreenBuilder != null) ...[
+                const SizedBox(height: 10),
                 _SecondaryButton(
-                  label: 'Retry',
+                  label: 'RETRY',
                   onTap: () {
                     Navigator.of(context).pushReplacement(
                       MaterialPageRoute(builder: retryScreenBuilder!),
                     );
                   },
                 ),
-              if (retryScreenBuilder != null) const SizedBox(height: 12),
+              ],
               const SizedBox(height: 8),
             ],
           ),
@@ -250,14 +295,14 @@ class _AccuracyRing extends StatelessWidget {
   Widget build(BuildContext context) {
     final percent = (accuracy * 100).round();
     return SizedBox(
-      width: 160,
-      height: 160,
+      width: 150,
+      height: 150,
       child: Stack(
         alignment: Alignment.center,
         children: [
           SizedBox(
-            width: 160,
-            height: 160,
+            width: 150,
+            height: 150,
             child: CircularProgressIndicator(
               value: accuracy.clamp(0.0, 1.0),
               strokeWidth: 12,
@@ -270,45 +315,24 @@ class _AccuracyRing extends StatelessWidget {
             children: [
               Text(
                 '$percent%',
-                style: const TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.w800,
+                style: GoogleFonts.fredoka(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w700,
                   color: AppColors.primaryDark,
                 ),
               ),
               Text(
                 'ACCURACY',
-                style: TextStyle(
+                style: GoogleFonts.fredoka(
                   fontSize: 10,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   letterSpacing: 0.5,
-                  color: Colors.grey.shade500,
+                  color: AppColors.primaryDark.withValues(alpha: 0.6),
                 ),
               ),
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _LevelUpPill extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.primaryDark,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: const Text(
-        'Level Up!',
-        style: TextStyle(
-          color: AppColors.surfaceWhite,
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-        ),
       ),
     );
   }
@@ -330,21 +354,22 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
       decoration: BoxDecoration(
-        color: AppColors.surfaceWhite,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primaryDark.withValues(alpha: 0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.primaryDark, width: 2.2),
       ),
       child: Column(
         children: [
-          Icon(icon, color: iconColor, size: 22),
+          StickerBadge(
+            rotateAngle: -0.04,
+            backgroundColor: AppColors.surfaceWhite,
+            borderColor: AppColors.primaryDark,
+            borderWidth: 1.8,
+            padding: const EdgeInsets.all(6),
+            child: Icon(icon, color: iconColor, size: 18),
+          ),
           const SizedBox(height: 6),
           () {
             if (value.startsWith('+')) {
@@ -356,9 +381,9 @@ class _StatCard extends StatelessWidget {
                 builder: (context, val, child) {
                   return Text(
                     '+${val.toInt()}',
-                    style: const TextStyle(
+                    style: GoogleFonts.fredoka(
                       fontWeight: FontWeight.w700,
-                      fontSize: 15,
+                      fontSize: 14,
                       color: AppColors.primaryDark,
                     ),
                   );
@@ -367,16 +392,19 @@ class _StatCard extends StatelessWidget {
             }
             return Text(
               value,
-              style: const TextStyle(
+              style: GoogleFonts.fredoka(
                 fontWeight: FontWeight.w700,
-                fontSize: 15,
+                fontSize: 14,
                 color: AppColors.primaryDark,
               ),
             );
           }(),
           Text(
             label,
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+            style: GoogleFonts.fredoka(
+              fontSize: 10,
+              color: AppColors.primaryDark.withValues(alpha: 0.65),
+            ),
           ),
         ],
       ),
@@ -392,20 +420,25 @@ class _PrimaryButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 50,
-      child: ElevatedButton(
-        onPressed: onTap,
-        style: ElevatedButton.styleFrom(
+      height: 48,
+      child: GestureDetector(
+        onTap: onTap,
+        child: StickerBadge(
+          rotateAngle: -0.01,
           backgroundColor: AppColors.primaryDark,
-          foregroundColor: AppColors.surfaceWhite,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+          borderColor: AppColors.primaryDark,
+          borderWidth: 2.5,
+          padding: EdgeInsets.zero,
+          child: Center(
+            child: Text(
+              label,
+              style: GoogleFonts.fredoka(
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+                color: Colors.white,
+              ),
+            ),
           ),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
         ),
       ),
     );
@@ -420,21 +453,27 @@ class _SecondaryButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 46,
-      child: OutlinedButton(
-        onPressed: onTap,
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primaryDark,
-          side: const BorderSide(color: AppColors.surfaceTint, width: 1.5),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+      height: 44,
+      child: GestureDetector(
+        onTap: onTap,
+        child: StickerBadge(
+          rotateAngle: 0.01,
+          backgroundColor: AppColors.surfaceWhite,
+          borderColor: AppColors.primaryDark,
+          borderWidth: 2.2,
+          padding: EdgeInsets.zero,
+          child: Center(
+            child: Text(
+              label,
+              style: GoogleFonts.fredoka(
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+                color: AppColors.primaryDark,
+              ),
+            ),
           ),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
         ),
       ),
     );
   }
-}
+}

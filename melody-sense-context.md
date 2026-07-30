@@ -1253,8 +1253,55 @@ void loop() {
 }
 ```
 
-### Belum dikerjakan / open question setelah Sesi 13
-- Integrasi Wi-Fi + WebSocket dari firmware ini ke aplikasi Flutter (Maestro Mode) — firmware saat ini masih standalone
-- Notasi nada sharp/flat di kontrak JSON note event (`"C#4"` vs `"Db4"` vs MIDI) — masih open question
-- Siapa di tim yang pegang firmware ESP32 ke depannya — masih open question
-- Kode Braille di tombol fisik untuk Sense Mode — belum disentuh
+### Peta Integrasi WebSocket & Event Handling
+- WebSocket Client Service (`WebSocketService`) terhubung ke AP `MelodySense_Piano` di IP `192.168.4.1:81`.
+- Stream `noteStream` mendengarkan event string nada (mis. `"C4"`, `"G4"`) dari ESP32 dan disebarkan ke screen yang sedang aktif di Maestro & Sense Mode.
+
+---
+
+## 📌 Update Sesi Terakhir: Pembaruan Fitur & Refaktorisasi Utama
+
+### 1. Pemisahan Arsitektur 3 Mode Utama (Explorer, Maestro, Sense)
+- **Explorer Mode**: Khusus piano virtual sentuh (*touchscreen*), berjalan tanpa perangkat ESP32 & tanpa fitur pengisi suara TTS.
+- **Maestro Mode**: Terhubung dengan tuts fisik ESP32 via WebSocket Server + Visualizer Piano interaktif di layar + Tombol Playback audio (Portrait & Landscape), tanpa TTS.
+- **Sense Mode**: Terhubung dengan tuts fisik ESP32 + Fitur Aksesibilitas TTS (Voice Cues & Audio Feedback) + Auto-Play audio otomatis periodik setiap 5 detik.
+
+### 2. Peningkatan Layar Pemilihan Mode (`PracticeScreen`)
+- Pembaruan visual kartu mode dengan tema warna konsisten:
+  - **Explorer Mode** (Teal Theme) — Status: *Touchscreen Active*.
+  - **Maestro Mode** (Indigo Theme) — Status: *ESP32 Status & IP Info*.
+  - **Sense Mode** (Deep Orange Theme) — Status: *TTS & Haptic Guidance Active*.
+
+### 3. Urutan Narasi Suara TTS (Sense Mode)
+- Penambahan method `speakSequence()` berurut pada `TTSService` dengan `Completer` awaitable.
+- Urutan pembacaan saat ronde baru:
+  1. *"Ronde {n}"*
+  2. *"Tekan note {targetNote}"* (atau *"Dari C4, tekan nada kedua"* pada Interval Training)
+  3. Audio nada target diputar oleh controller.
+- Narasi feedback saat jawaban benar (*"Benar! C4"*) atau salah (*"Salah. Jawaban yang benar adalah C4"*), serta pengumuman akurasi saat sesi selesai.
+
+### 4. Visual Aids Interval Training & Note Recognition (Maestro & Sense Mode)
+- **Root Note Badge**: Penanda visual khusus nada acuan (*Root Note*) pada tuts piano virtual.
+- **Target Card**: Menampilkan instruksi nada target yang dinamis.
+- **Semitone Bridge Arc**: Busur penghubung antarnada (*bridgeStartNote*, *bridgeEndNote*, *bridgeLabel* misal: *"2 semitones"*) saat jawaban salah untuk membantu pemahaman visual semitone.
+- **Piano Key Labels**: Nama nada pada tuts piano virtual ditampilkan di Maestro/Sense Mode.
+
+### 5. Tombol Playback Audio (Portrait & Landscape)
+- **Portrait Mode**: Kartu Playback (`_NotePromptCard`) 120x120 berikon not musik di area tengah.
+- **Landscape Mode**: Tombol `Auto Play` (`_AutoPlayPill`) di baris atas dan tombol lingkaran playback (`_AutoPlayCircle`) di area tengah pada semua mode (Explorer, Maestro, Sense).
+- **Sense Mode Auto-Play**: Timer periodik 5 detik (`Timer.periodic(5s)`) memicu pemutaran kembali audio nada target secara otomatis selama ronde aktif jika pengguna tunanetra belum menjawab.
+
+### 6. Audit & Perbaikan Highlight Piano (Temporary 200ms–250ms Auto-Clear)
+- Memastikan seluruh tuts piano di semua layar (`FreePlayScreen`, `MaestroChallengeScreen`, `RhythmMatchGameplayScreen`, `NoteRecognitionScreen`, `IntervalTrainingScreen`, `MelodyEchoScreen`, dan `ExplorerGameplayScreen`) bersifat **temporary** (menyala sementara selama 200ms–250ms saat ditekan lewat layar sentuh atau tombol fisik ESP32, lalu otomatis padam/clear).
+
+### 7. Statistik Hasil Rhythm Match (Durasi Match & Perfect Timing)
+- **Ketukan Perfect Hits**: Menghitung jumlah ketukan dengan presisi timing $\le 750\text{ms}$ serta rata-rata waktu respons (*Average Response Time*).
+- **Session Result Screen**: Menampilkan kartu statistik **Perfect Hits** (`Perfect: X/Total`) dan kartu **Durasi Match** (`Durasi: 24.5s`).
+- **Penjelasan Subtitle**: Menampilkan kalimat penjelasan lengkap di akhir match (misal: *"Match 'Twinkle Twinkle Little Star' berlangsung selama 24.5 detik. 12/12 ketukan Perfect (320ms rata-rata respon)"*).
+
+---
+
+## 🚀 Status Rencana Selanjutnya (Roadmap)
+- **Fitur Kustomisasi & Reward Peti Rahasia (Piano Skins & Themes)**:
+  - Pembukaan Peti Rahasia (*Secret Chest*) saat menyelesaikan sesi / mencapai akumulasi XP tertentu.
+  - Kustomisasi Tema Visual Piano (*Piano Skins*) & Instrument Soundfonts.

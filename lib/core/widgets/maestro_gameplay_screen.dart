@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:melody_sense/core/domain/entities/practice_entities.dart' show RoundFeedback;
 import 'package:melody_sense/core/theme/app_colors.dart';
+import 'package:melody_sense/core/widgets/sticker_badge.dart';
+import 'package:melody_sense/core/widgets/torn_paper_card.dart';
 import 'package:melody_sense/core/widgets/virtual_piano.dart';
 
 /// Shell UI untuk semua gameplay Maestro Mode (piano fisik via WebSocket).
@@ -137,7 +139,7 @@ class MaestroGameplayScreen extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: AppColors.primaryDark,
@@ -180,7 +182,7 @@ class MaestroGameplayScreen extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     targetValue!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
                       color: AppColors.primaryDark,
@@ -206,9 +208,9 @@ class MaestroGameplayScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.piano_rounded, size: 14, color: AppColors.accent),
+              Icon(Icons.piano_rounded, size: 14, color: AppColors.accent),
               const SizedBox(width: 6),
-              const Text(
+              Text(
                 'VISUALIZER HARDWARE SMART PIANO',
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -268,7 +270,7 @@ class MaestroGameplayScreen extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         color: AppColors.primaryDark,
@@ -277,7 +279,7 @@ class MaestroGameplayScreen extends StatelessWidget {
                     if (targetValue != null)
                       Text(
                         '$targetLabel — $targetValue',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: AppColors.accent,
@@ -336,7 +338,7 @@ class _CloseButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return IconButton(
       onPressed: onTap,
-      icon: const Icon(Icons.close, color: AppColors.primaryDark),
+      icon: Icon(Icons.close, color: AppColors.primaryDark),
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(),
     );
@@ -356,7 +358,7 @@ class _XpCounter extends StatelessWidget {
         const SizedBox(width: 3),
         Text(
           '$xp',
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w700,
             fontSize: 13,
             color: AppColors.primaryDark,
@@ -380,7 +382,7 @@ class _ProgressBar extends StatelessWidget {
         value: progress.clamp(0.0, 1.0),
         minHeight: height,
         backgroundColor: AppColors.surfaceTint,
-        valueColor: const AlwaysStoppedAnimation(AppColors.accent),
+        valueColor: AlwaysStoppedAnimation(AppColors.accent),
       ),
     );
   }
@@ -409,7 +411,7 @@ class _ConnectionBadge extends StatelessWidget {
           const SizedBox(width: 5),
           Text(
             isConnected ? 'Connected' : 'Disconnected',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
               color: AppColors.primaryDark,
@@ -440,7 +442,7 @@ class _ComboBadge extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             '${count}x Combo',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
               color: AppColors.surfaceWhite,
@@ -466,7 +468,7 @@ class _AutoPlayPill extends StatelessWidget {
           color: AppColors.primaryDark,
           borderRadius: BorderRadius.circular(20),
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.play_circle_fill,
@@ -499,47 +501,41 @@ class _NotePromptCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 120,
-      height: 120,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceWhite,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: isMystery
-                ? Colors.amber.withValues(alpha: 0.3)
-                : AppColors.primaryDark.withValues(alpha: 0.10),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(24),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(24),
-          onTap: onTap,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
+    return GestureDetector(
+      onTap: onTap,
+      child: TornPaperCard(
+        width: 130,
+        height: 130,
+        backgroundColor: AppColors.surfaceWhite,
+        shadowColor: AppColors.surfaceTint,
+        borderWidth: 2.8,
+        tornPosition: TornEdgePosition.bottom,
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            StickerBadge(
+              rotateAngle: -0.04,
+              backgroundColor: isMystery ? Colors.amber.shade700 : AppColors.accent,
+              borderColor: AppColors.primaryDark,
+              borderWidth: 2.0,
+              padding: const EdgeInsets.all(8),
+              child: Icon(
                 isPlaying ? Icons.volume_up_rounded : Icons.music_note_rounded,
-                size: 48,
-                color: isMystery ? Colors.amber : AppColors.accent,
+                size: 32,
+                color: Colors.white,
               ),
-              const SizedBox(height: 6),
-              Text(
-                isPlaying ? 'Playing...' : 'Tap to Play',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primaryDark.withValues(alpha: 0.6),
-                ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              isPlaying ? 'PLAYING...' : 'TAP TO PLAY',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primaryDark.withValues(alpha: 0.75),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -559,11 +555,11 @@ class _MascotWithSoundWave extends StatelessWidget {
         Container(
           width: 72,
           height: 72,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: AppColors.surfaceTint,
             shape: BoxShape.circle,
           ),
-          child: const Icon(
+          child: Icon(
             Icons.face_rounded,
             size: 36,
             color: AppColors.primaryDark,

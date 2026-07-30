@@ -252,18 +252,18 @@ class _VirtualPianoState extends State<VirtualPiano> {
         );
 
         if (widget._isInteractive) {
-          pianoStack = GestureDetector(
+          pianoStack = Listener(
             behavior: HitTestBehavior.opaque,
-            onPanDown: (details) => _handleTouch(
-              details.localPosition,
+            onPointerDown: (event) => _handleTouch(
+              event.localPosition,
               Size(totalWidth, totalHeight),
             ),
-            onPanUpdate: (details) => _handleTouch(
-              details.localPosition,
+            onPointerMove: (event) => _handleTouch(
+              event.localPosition,
               Size(totalWidth, totalHeight),
             ),
-            onPanEnd: (_) => _resetGesture(),
-            onPanCancel: _resetGesture,
+            onPointerUp: (_) => _resetGesture(),
+            onPointerCancel: (_) => _resetGesture(),
             child: pianoStack,
           );
         }
@@ -380,7 +380,7 @@ class _PianoKey extends StatelessWidget {
         curve: Curves.easeOut,
         decoration: BoxDecoration(
           color: keyColor,
-          border: keyBorder,
+          border: keyBorder ?? Border.all(color: AppColors.primaryDark, width: isBlack ? 1.5 : 2.0),
           borderRadius: isBlack
               ? const BorderRadius.vertical(bottom: Radius.circular(8))
               : BorderRadius.circular(14),
@@ -388,8 +388,8 @@ class _PianoKey extends StatelessWidget {
             BoxShadow(
               color: isBlack
                   ? Colors.black.withValues(alpha: 0.35)
-                  : AppColors.primaryDark.withValues(alpha: 0.08),
-              blurRadius: isBlack ? 6 : 8,
+                  : AppColors.primaryDark.withValues(alpha: 0.12),
+              blurRadius: isBlack ? 6 : 4,
               offset: Offset(0, isBlack ? 4 : 3),
             ),
           ],
@@ -401,20 +401,24 @@ class _PianoKey extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (isRoot && !isCorrect && !isWrong)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 2),
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1976D2),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        'ROOT',
-                        style: TextStyle(
-                          fontSize: 7,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          letterSpacing: 0.5,
+                    Transform.rotate(
+                      angle: -0.06,
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1976D2),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: AppColors.primaryDark, width: 1.2),
+                        ),
+                        child: const Text(
+                          'ROOT',
+                          style: TextStyle(
+                            fontSize: 7,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                       ),
                     ),
@@ -510,7 +514,7 @@ class _PianoBridgePainter extends CustomPainter {
     final textPainter = TextPainter(
       text: TextSpan(
         text: label,
-        style: const TextStyle(
+        style: TextStyle(
           color: AppColors.primaryDark,
           fontSize: 10,
           fontWeight: FontWeight.w700,

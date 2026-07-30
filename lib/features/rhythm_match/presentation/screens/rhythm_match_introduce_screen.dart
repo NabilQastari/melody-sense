@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:melody_sense/core/theme/app_colors.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import 'package:melody_sense/core/providers/audio_providers.dart';
 import 'package:melody_sense/core/providers/education_progress_provider.dart';
+import 'package:melody_sense/core/theme/app_colors.dart';
+import 'package:melody_sense/core/widgets/pattern_painters.dart';
+import 'package:melody_sense/core/widgets/sticker_badge.dart';
+import 'package:melody_sense/core/widgets/torn_paper_card.dart';
+import 'package:melody_sense/core/widgets/whisker_banner_header.dart';
 
 class RhythmMatchIntroduceScreen extends ConsumerStatefulWidget {
   const RhythmMatchIntroduceScreen({super.key});
@@ -21,7 +26,6 @@ class _RhythmMatchIntroduceScreenState
   // State untuk Slide 3 (Interactive Module)
   int _demoStep = 0;
   final List<String> _demoNotes = ['C4', 'C4', 'G4', 'G4'];
-  String? _demoPlayingNote;
 
   @override
   void dispose() {
@@ -30,16 +34,9 @@ class _RhythmMatchIntroduceScreenState
   }
 
   void _playDemoNote(String note) {
-    setState(() => _demoPlayingNote = note);
     ref.read(audioServiceProvider).playNote(note);
-
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) {
-        setState(() {
-          _demoPlayingNote = null;
-          _demoStep = (_demoStep + 1) % _demoNotes.length;
-        });
-      }
+    setState(() {
+      _demoStep = (_demoStep + 1) % _demoNotes.length;
     });
   }
 
@@ -70,62 +67,62 @@ class _RhythmMatchIntroduceScreenState
       body: SafeArea(
         child: Column(
           children: [
-            // ── Header Bar ──
+            // Header Bar
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   GestureDetector(
                     onTap: () => Navigator.of(context).pop(),
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppColors.surfaceTint.withValues(alpha: 0.5),
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.primaryDark, width: 2.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primaryDark.withValues(alpha: 0.15),
+                            offset: const Offset(2, 2),
+                          ),
+                        ],
                       ),
-                      child: const Icon(Icons.arrow_back_rounded,
+                      child: Icon(Icons.arrow_back_rounded,
                           size: 20, color: AppColors.primaryDark),
                     ),
                   ),
-                  Text(
-                    'Slide ${_currentPage + 1} dari 3',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primaryDark.withValues(alpha: 0.6),
+                  const SizedBox(width: 10),
+                  const WhiskerBannerHeader(
+                    title: 'RHYTHM MATCH',
+                    fontSize: 14,
+                    rotateAngle: -0.03,
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  ),
+                  const Spacer(),
+                  StickerBadge(
+                    rotateAngle: 0.03,
+                    backgroundColor: AppColors.surfaceTint,
+                    borderColor: AppColors.primaryDark,
+                    borderWidth: 1.8,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: Text(
+                      'SLIDE ${_currentPage + 1}/3',
+                      style: GoogleFonts.fredoka(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primaryDark,
+                      ),
                     ),
                   ),
-                  if (_currentPage < 2)
-                    TextButton(
-                      onPressed: () {
-                        _pageController.animateToPage(
-                          2,
-                          duration: const Duration(milliseconds: 350),
-                          curve: Curves.easeInOut,
-                        );
-                      },
-                      child: const Text(
-                        'Lewati',
-                        style: TextStyle(
-                          color: AppColors.accent,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    )
-                  else
-                    const SizedBox(width: 48),
                 ],
               ),
             ),
 
-            // ── Slide Content (PageView) ──
+            // Slide PageView
             Expanded(
               child: PageView(
                 controller: _pageController,
-                onPageChanged: (index) {
-                  setState(() => _currentPage = index);
-                },
+                onPageChanged: (idx) => setState(() => _currentPage = idx),
                 children: [
                   _buildSlide1(),
                   _buildSlide2(),
@@ -134,23 +131,17 @@ class _RhythmMatchIntroduceScreenState
               ),
             ),
 
-            // ── Bottom Navigation Controls ──
+            // Bottom Navigation Controls
             Container(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
               decoration: BoxDecoration(
                 color: AppColors.surfaceWhite,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryDark.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, -4),
-                  ),
-                ],
+                border: Border(
+                  top: BorderSide(color: AppColors.primaryDark, width: 2.2),
+                ),
               ),
               child: Row(
                 children: [
-                  // Dot indicators
                   Row(
                     children: List.generate(3, (index) {
                       final isActive = _currentPage == index;
@@ -164,44 +155,43 @@ class _RhythmMatchIntroduceScreenState
                               ? AppColors.primaryDark
                               : AppColors.surfaceTint,
                           borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: AppColors.primaryDark, width: 1.2),
                         ),
                       );
                     }),
                   ),
                   const Spacer(),
-                  // Action button
-                  ElevatedButton(
-                    onPressed: _nextPage,
-                    style: ElevatedButton.styleFrom(
+                  GestureDetector(
+                    onTap: _nextPage,
+                    child: StickerBadge(
+                      rotateAngle: -0.02,
                       backgroundColor: AppColors.primaryDark,
-                      foregroundColor: AppColors.surfaceWhite,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          _currentPage == 2
-                              ? 'Selesai & Mulai Latihan'
-                              : 'Lanjut',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
+                      borderColor: AppColors.primaryDark,
+                      borderWidth: 2.2,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _currentPage == 2
+                                ? 'SELESAI & MULAI LATIHAN'
+                                : 'LANJUT',
+                            style: GoogleFonts.fredoka(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Icon(
-                          _currentPage == 2
-                              ? Icons.check_circle_rounded
-                              : Icons.arrow_forward_rounded,
-                          size: 18,
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          Icon(
+                            _currentPage == 2
+                                ? Icons.check_circle_rounded
+                                : Icons.arrow_forward_rounded,
+                            size: 16,
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -213,229 +203,232 @@ class _RhythmMatchIntroduceScreenState
     );
   }
 
-  // Slide 1: Apa itu Ritme & Melodi Lagu
   Widget _buildSlide1() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-      child: Column(
-        children: [
-          Container(
-            width: 90,
-            height: 90,
-            decoration: BoxDecoration(
-              color: Colors.orangeAccent.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+      child: TornPaperCard(
+        backgroundColor: AppColors.surfaceWhite,
+        shadowColor: AppColors.surfaceTint,
+        borderWidth: 2.8,
+        tornPosition: TornEdgePosition.both,
+        padding: const EdgeInsets.all(20),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -10,
+              top: 10,
+              width: 80,
+              height: 80,
+              child: CustomPaint(
+                painter: HalftonePatternPainter(
+                  color: AppColors.surfaceTint,
+                  opacity: 0.25,
+                ),
+              ),
             ),
-            child: const Icon(
-              Icons.timer_rounded,
-              size: 48,
-              color: Colors.orangeAccent,
+            Column(
+              children: [
+                StickerBadge(
+                  rotateAngle: -0.05,
+                  backgroundColor: AppColors.accent,
+                  borderColor: AppColors.primaryDark,
+                  borderWidth: 2.5,
+                  padding: const EdgeInsets.all(16),
+                  child: const Icon(
+                    Icons.timer_rounded,
+                    size: 40,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const WhiskerBannerHeader(
+                  title: 'KONSEP RHYTHM MATCH',
+                  fontSize: 15,
+                  rotateAngle: -0.03,
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'Rhythm Match melatih ketepatan tempo dan ritme mengetuk nada sesuai irama lagu nyata.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.5,
+                    color: AppColors.primaryDark.withValues(alpha: 0.8),
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                _buildInfoCard(
+                  icon: Icons.speed_rounded,
+                  color: Colors.orange.shade800,
+                  title: 'KETEPATAN WAKTU (TEMPO)',
+                  description:
+                      'Ketuk tuts tepat saat balok irama mencapai area target untuk mendapatkan penilaian Perfect atau Great.',
+                ),
+              ],
             ),
-          ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
-          const SizedBox(height: 20),
-          const Text(
-            'Bermain Lagu & Ritme',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              color: AppColors.primaryDark,
-            ),
-            textAlign: TextAlign.center,
-          ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0),
-          const SizedBox(height: 14),
-          Text(
-            'Di mode Rhythm Match, kamu akan memainkan lagu musik nyata (seperti Twinkle Star, Happy Birthday, dan Für Elise) dari awal sampai akhir.',
-            style: TextStyle(
-              fontSize: 14,
-              height: 1.6,
-              color: AppColors.primaryDark.withValues(alpha: 0.7),
-            ),
-            textAlign: TextAlign.center,
-          ).animate().fadeIn(duration: 450.ms).slideY(begin: 0.1, end: 0),
-          const SizedBox(height: 24),
-          _buildInfoCard(
-            icon: Icons.music_note_rounded,
-            color: Colors.orangeAccent,
-            title: 'Bermain Bebas Tanpa Timer Paksaan',
-            description:
-                'Tidak ada timer yang melompat sendiri jika terlambat. Kamu bisa memainkan nada demi nada sesuai kecepatan jemarimu.',
-          ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.1, end: 0),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  // Slide 2: Penilaian Akurasi & Waktu
   Widget _buildSlide2() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-      child: Column(
-        children: [
-          Container(
-            width: 90,
-            height: 90,
-            decoration: BoxDecoration(
-              color: Colors.amber.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+      child: TornPaperCard(
+        backgroundColor: AppColors.surfaceWhite,
+        shadowColor: AppColors.surfaceTint,
+        borderWidth: 2.8,
+        tornPosition: TornEdgePosition.both,
+        padding: const EdgeInsets.all(20),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -10,
+              top: 10,
+              width: 80,
+              height: 80,
+              child: CustomPaint(
+                painter: HalftonePatternPainter(
+                  color: AppColors.surfaceTint,
+                  opacity: 0.25,
+                ),
+              ),
             ),
-            child: const Icon(
-              Icons.star_rounded,
-              size: 48,
-              color: Colors.amber,
+            Column(
+              children: [
+                StickerBadge(
+                  rotateAngle: 0.05,
+                  backgroundColor: AppColors.primaryDark,
+                  borderColor: AppColors.primaryDark,
+                  borderWidth: 2.5,
+                  padding: const EdgeInsets.all(16),
+                  child: const Icon(
+                    Icons.music_video_rounded,
+                    size: 40,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const WhiskerBannerHeader(
+                  title: 'MEMAINKAN LAGU POPULER',
+                  fontSize: 15,
+                  rotateAngle: -0.03,
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'Kamu akan memainkan lagu populer seperti Twinkle Twinkle Little Star, Happy Birthday, dan Für Elise.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.5,
+                    color: AppColors.primaryDark.withValues(alpha: 0.8),
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                _buildInfoCard(
+                  icon: Icons.star_rounded,
+                  color: Colors.amber.shade800,
+                  title: 'SKOR & KANOMAN COMBO',
+                  description:
+                      'Pertahankan ketukan tanpa luput (Miss) untuk membangun Combo streak dan meraih skor tertinggi.',
+                ),
+              ],
             ),
-          ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
-          const SizedBox(height: 20),
-          const Text(
-            'Akurasi & Waktu Terbaik',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              color: AppColors.primaryDark,
-            ),
-            textAlign: TextAlign.center,
-          ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0),
-          const SizedBox(height: 14),
-          Text(
-            'Dua hal utama yang dinilai di akhir lagu adalah seberapa tepat nada yang kamu tekan dan seberapa cepat kamu menyelesaikan seluruh lagu.',
-            style: TextStyle(
-              fontSize: 14,
-              height: 1.6,
-              color: AppColors.primaryDark.withValues(alpha: 0.7),
-            ),
-            textAlign: TextAlign.center,
-          ).animate().fadeIn(duration: 450.ms).slideY(begin: 0.1, end: 0),
-          const SizedBox(height: 24),
-          _buildInfoCard(
-            icon: Icons.emoji_events_rounded,
-            color: Colors.amber,
-            title: 'Rating Bintang (1–3 ⭐)',
-            description:
-                'Raih Akurasi nada 90%+ untuk mendapatkan 3 Bintang sempurna ⭐⭐⭐ serta bonus XP tertinggi!',
-          ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.1, end: 0),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  // Slide 3: Modul Interaktif
   Widget _buildSlide3() {
-    final targetNote = _demoNotes[_demoStep];
+    final currentTargetNote = _demoNotes[_demoStep];
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.touch_app_rounded,
-                    color: AppColors.accent, size: 20),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'Coba 4 Ketukan Intro',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.primaryDark,
-                ),
-              ),
-            ],
-          ).animate().fadeIn(duration: 350.ms),
-          const SizedBox(height: 6),
+          const WhiskerBannerHeader(
+            title: 'SIMULASI KETUKAN RITME',
+            fontSize: 15,
+            rotateAngle: -0.03,
+          ),
+          const SizedBox(height: 8),
           Text(
-            'Tekan tuts nada yang menyala di bawah untuk mencoba 4 nada awal Twinkle Star.',
+            'Tekan tombol nada target di bawah untuk mengetuk irama Twinkle Star (C4 - C4 - G4 - G4).',
             style: TextStyle(
               fontSize: 12,
-              color: AppColors.primaryDark.withValues(alpha: 0.6),
+              fontWeight: FontWeight.w600,
+              color: AppColors.primaryDark.withValues(alpha: 0.7),
             ),
             textAlign: TextAlign.center,
-          ).animate().fadeIn(duration: 400.ms),
-          const SizedBox(height: 24),
-
-          // Display Note Step
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceWhite,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primaryDark.withValues(alpha: 0.06),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Text(
-                  'Nada Ke-${_demoStep + 1} dari 4',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primaryDark.withValues(alpha: 0.5),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  targetNote,
-                  style: const TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.primaryDark,
-                  ),
-                ),
-              ],
-            ),
           ),
+          const SizedBox(height: 20),
 
-          const SizedBox(height: 24),
+          // Note indicator steps
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              for (int i = 0; i < _demoNotes.length; i++) ...[
-                GestureDetector(
-                  onTap: () => _playDemoNote(_demoNotes[i]),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      color: (_demoStep == i || _demoPlayingNote == _demoNotes[i])
-                          ? AppColors.accent
-                          : AppColors.surfaceWhite,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: _demoStep == i
-                            ? AppColors.accent
-                            : AppColors.surfaceTint,
-                        width: 2,
-                      ),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      _demoNotes[i],
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        color: _demoStep == i
-                            ? AppColors.surfaceWhite
-                            : AppColors.primaryDark,
-                      ),
-                    ),
+            children: List.generate(_demoNotes.length, (idx) {
+              final isCurrentStep = idx == _demoStep;
+              final isPastStep = idx < _demoStep;
+
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isCurrentStep
+                      ? AppColors.accent
+                      : (isPastStep ? Colors.green.shade100 : AppColors.surfaceWhite),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isCurrentStep
+                        ? AppColors.primaryDark
+                        : (isPastStep ? Colors.green.shade700 : AppColors.primaryDark),
+                    width: 2.2,
                   ),
                 ),
-                if (i < _demoNotes.length - 1) const SizedBox(width: 10),
-              ],
-            ],
-          ).animate().fadeIn(duration: 450.ms),
+                child: Text(
+                  _demoNotes[idx],
+                  style: GoogleFonts.fredoka(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: isCurrentStep
+                        ? Colors.white
+                        : (isPastStep ? Colors.green.shade900 : AppColors.primaryDark),
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 24),
+
+          // Interactive tap button
+          GestureDetector(
+            onTap: () => _playDemoNote(currentTargetNote),
+            child: StickerBadge(
+              rotateAngle: -0.03,
+              backgroundColor: AppColors.accent,
+              borderColor: AppColors.primaryDark,
+              borderWidth: 2.6,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              child: Column(
+                children: [
+                  const Icon(Icons.touch_app_rounded, color: Colors.white, size: 28),
+                  const SizedBox(height: 6),
+                  Text(
+                    'KETUK NADA: $currentTargetNote',
+                    style: GoogleFonts.fredoka(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -448,49 +441,44 @@ class _RhythmMatchIntroduceScreenState
     required String description,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surfaceWhite,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primaryDark.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: AppColors.surfaceTint.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.primaryDark, width: 2.0),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 20),
+          StickerBadge(
+            rotateAngle: -0.04,
+            backgroundColor: color,
+            borderColor: AppColors.primaryDark,
+            borderWidth: 1.8,
+            padding: const EdgeInsets.all(6),
+            child: Icon(icon, color: Colors.white, size: 18),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 14,
+                  style: GoogleFonts.fredoka(
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w700,
                     color: AppColors.primaryDark,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 3),
                 Text(
                   description,
                   style: TextStyle(
-                    fontSize: 12,
-                    height: 1.5,
-                    color: AppColors.primaryDark.withValues(alpha: 0.65),
+                    fontSize: 11.5,
+                    height: 1.4,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primaryDark.withValues(alpha: 0.75),
                   ),
                 ),
               ],

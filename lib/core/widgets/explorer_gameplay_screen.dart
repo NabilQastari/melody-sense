@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:melody_sense/core/domain/entities/practice_entities.dart' show RoundFeedback;
 import 'package:melody_sense/core/providers/websocket_providers.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
+import 'package:melody_sense/core/widgets/sticker_badge.dart';
+import 'package:melody_sense/core/widgets/torn_paper_card.dart';
 import 'package:melody_sense/core/widgets/virtual_piano.dart';
 
 /// Shell UI untuk semua gameplay Explorer Mode (virtual piano interaktif).
@@ -177,7 +179,7 @@ class _ExplorerGameplayScreenState
               children: [
                 Text(
                   'Round ${widget.roundIndex + 1} of ${widget.totalRounds}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: AppColors.primaryDark,
@@ -219,7 +221,7 @@ class _ExplorerGameplayScreenState
           Text(
             widget.targetValue,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
               color: AppColors.primaryDark,
@@ -340,7 +342,7 @@ class _ExplorerGameplayScreenState
                           ),
                           child: Text(
                             widget.targetValue,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppColors.surfaceWhite,
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -369,7 +371,7 @@ class _ExplorerGameplayScreenState
               children: [
                 Text(
                   'Round ${widget.roundIndex + 1} of ${widget.totalRounds}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: AppColors.primaryDark,
@@ -400,7 +402,7 @@ class _ExplorerGameplayScreenState
           if (widget.sequenceNotes.isNotEmpty)
             Column(
               children: [
-                const Text(
+                Text(
                   'Listen to the sequence...',
                   style: TextStyle(
                     fontSize: 12,
@@ -427,7 +429,7 @@ class _ExplorerGameplayScreenState
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
+                Text(
                   'Dengarkan nada target:',
                   style: TextStyle(
                     fontSize: 12,
@@ -559,7 +561,7 @@ class _CloseButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return IconButton(
       onPressed: onTap,
-      icon: const Icon(Icons.close, color: AppColors.primaryDark),
+      icon: Icon(Icons.close, color: AppColors.primaryDark),
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(),
     );
@@ -579,7 +581,7 @@ class _XpCounter extends StatelessWidget {
         const SizedBox(width: 4),
         Text(
           '$xp',
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w700,
             fontSize: 13,
             color: AppColors.primaryDark,
@@ -627,7 +629,7 @@ class _AutoPlayPill extends StatelessWidget {
           color: AppColors.primaryDark,
           borderRadius: BorderRadius.circular(20),
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.play_circle_fill,
@@ -660,11 +662,11 @@ class _AutoPlayCircle extends StatelessWidget {
         width: 40,
         height: 40,
         alignment: Alignment.center,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.surfaceTint,
           shape: BoxShape.circle,
         ),
-        child: const Icon(
+        child: Icon(
           Icons.play_arrow_rounded,
           color: AppColors.primaryDark,
           size: 22,
@@ -687,7 +689,7 @@ class _ProgressBar extends StatelessWidget {
         value: progress.clamp(0.0, 1.0),
         minHeight: height,
         backgroundColor: AppColors.surfaceTint,
-        valueColor: const AlwaysStoppedAnimation(AppColors.accent),
+        valueColor: AlwaysStoppedAnimation(AppColors.accent),
       ),
     );
   }
@@ -705,29 +707,28 @@ class _NotePromptCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget card = Container(
+    Widget card = TornPaperCard(
       width: 140,
       height: 140,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceWhite,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: isMystery
-                ? Colors.amber.withValues(alpha: 0.3)
-                : AppColors.primaryDark.withValues(alpha: 0.10),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+      backgroundColor: isMystery ? Colors.amber.shade50 : Colors.white,
+      shadowColor: AppColors.surfaceTint,
+      borderWidth: 2.8,
+      borderColor: isMystery ? Colors.amber.shade800 : AppColors.primaryDark,
+      tornPosition: TornEdgePosition.both,
+      padding: const EdgeInsets.all(16),
+      child: Center(
+        child: StickerBadge(
+          rotateAngle: -0.04,
+          backgroundColor: isMystery ? Colors.amber.shade700 : AppColors.accent,
+          borderColor: AppColors.primaryDark,
+          borderWidth: 2.2,
+          padding: const EdgeInsets.all(12),
+          child: Icon(
+            isMystery ? Icons.stars_rounded : Icons.music_note_rounded,
+            size: 38,
+            color: Colors.white,
           ),
-        ],
-        border: isMystery
-            ? Border.all(color: Colors.amber, width: 2)
-            : null,
-      ),
-      child: Icon(
-        isMystery ? Icons.stars_rounded : Icons.music_note_rounded,
-        size: 48,
-        color: isMystery ? Colors.amber : AppColors.accent,
+        ),
       ),
     );
 
@@ -770,13 +771,13 @@ class _NoteChip extends StatelessWidget {
       width: 36,
       height: 36,
       alignment: Alignment.center,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.primaryDark,
         shape: BoxShape.circle,
       ),
       child: Text(
         note,
-        style: const TextStyle(
+        style: TextStyle(
           color: AppColors.surfaceWhite,
           fontSize: 11,
           fontWeight: FontWeight.w600,
@@ -803,7 +804,7 @@ class _HintButton extends StatelessWidget {
           shape: BoxShape.circle,
           border: Border.all(color: AppColors.surfaceTint, width: 1.5),
         ),
-        child: const Text(
+        child: Text(
           '?',
           style: TextStyle(
             color: AppColors.primaryDark,

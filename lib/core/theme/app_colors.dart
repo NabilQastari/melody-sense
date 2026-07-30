@@ -1,26 +1,36 @@
 import 'package:flutter/material.dart';
+import 'package:melody_sense/core/theme/app_theme_data.dart';
 
 /// Color palette resmi Melody Sense.
-/// Diambil dari palette resmi desain tim (Sesi 3).
+/// Mendukung dynamic theme switching (Default, Whisker Dark, Ocean Blue, dll).
 class AppColors {
   AppColors._();
 
-  /// #51508B — heading, tombol utama, ikon aktif
-  static const Color primaryDark = Color(0xFF51508B);
+  static AppThemeData _currentTheme = AppThemes.defaultTheme;
 
-  /// #F2F5FF — latar layar
-  static const Color background = Color(0xFFF2F5FF);
+  /// Terapkan tema warna aktif.
+  static void applyTheme(AppThemeData theme) {
+    _currentTheme = theme;
+  }
 
-  /// #D5D4FF — card ungu muda, progress track (belum terisi)
-  static const Color surfaceTint = Color(0xFFD5D4FF);
+  static AppThemeData get currentTheme => _currentTheme;
 
-  /// #8197E5 — highlight tuts piano aktif, progress fill, aksen interaktif
-  static const Color accent = Color(0xFF8197E5);
+  /// Heading, tombol utama, ikon aktif, outline ink
+  static Color get primaryDark => _currentTheme.primaryDark;
 
-  // Turunan praktis yang sering dipakai di UI, supaya tidak hardcode
-  // di banyak tempat. Nilai berikut BUKAN dari palette resmi,
-  // hanya opacity/varian dari 4 warna di atas.
-  static const Color surfaceWhite = Colors.white;
-  static Color primaryDarkFaded = primaryDark.withValues(alpha: 0.6);
-  static Color accentFaded = accent.withValues(alpha: 0.15);
+  /// Latar belakang layar
+  static Color get background => _currentTheme.background;
+
+  /// Card tint, progress track (belum terisi)
+  static Color get surfaceTint => _currentTheme.surfaceTint;
+
+  /// Highlight tuts piano aktif, progress fill, aksen interaktif
+  static Color get accent => _currentTheme.accent;
+
+  /// Warna dasar kartu/permukaan (Putih atau Abu Gelap di Dark Mode)
+  static Color get surfaceWhite => _currentTheme.surfaceWhite;
+
+  // Turunan opacity praktis
+  static Color get primaryDarkFaded => _currentTheme.primaryDarkFaded;
+  static Color get accentFaded => _currentTheme.accentFaded;
 }

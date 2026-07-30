@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/sticker_badge.dart';
 import '../models/challenge_info.dart';
 
 class DifficultyBadge extends StatelessWidget {
@@ -15,21 +17,21 @@ class DifficultyBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String label = comingSoon ? 'COMING SOON' : difficulty.label;
+    final String label = comingSoon ? 'SOON' : difficulty.label;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: comingSoon ? const Color(0xFFE3E3E3) : AppColors.accent.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(8),
-      ),
+    return StickerBadge(
+      rotateAngle: 0.04,
+      backgroundColor: comingSoon ? Colors.grey.shade200 : AppColors.surfaceTint,
+      borderColor: AppColors.primaryDark,
+      borderWidth: 1.8,
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       child: Text(
         label,
-        style: TextStyle(
+        style: GoogleFonts.fredoka(
           fontSize: 9,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.4,
-          color: comingSoon ? const Color(0xFF8A8A8A) : AppColors.primaryDark,
+          color: comingSoon ? Colors.grey.shade700 : AppColors.primaryDark,
         ),
       ),
     );

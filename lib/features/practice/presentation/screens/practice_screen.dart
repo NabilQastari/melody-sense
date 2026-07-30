@@ -1,26 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'package:melody_sense/core/domain/entities/operating_mode.dart';
 import 'package:melody_sense/core/network/websocket_service.dart';
 import 'package:melody_sense/core/providers/operating_mode_providers.dart';
 import 'package:melody_sense/core/providers/tts_providers.dart';
 import 'package:melody_sense/core/providers/websocket_providers.dart';
-import '../../../../core/theme/app_colors.dart';
+import 'package:melody_sense/core/theme/app_colors.dart';
+import 'package:melody_sense/core/widgets/pattern_painters.dart';
 import 'package:melody_sense/core/widgets/settings_screen.dart';
-import '../../../stats/presentation/providers/stats_providers.dart';
+import 'package:melody_sense/core/widgets/sticker_badge.dart';
+import 'package:melody_sense/core/widgets/torn_paper_card.dart';
+import 'package:melody_sense/core/widgets/whisker_banner_header.dart';
 import '../../../free_play/presentation/screens/free_play_screen.dart';
 import '../../../interval_training/presentation/screens/interval_training_submode_picker_screen.dart';
 import '../../../melody_echo/presentation/screens/melody_echo_submode_picker_screen.dart';
 import '../../../note_recognition/presentation/screens/note_recognition_submode_picker_screen.dart';
 import '../../../rhythm_match/presentation/screens/rhythm_match_submode_screen.dart';
+import '../../../stats/presentation/providers/stats_providers.dart';
 import '../models/challenge_info.dart';
 import '../widgets/challenge_card.dart';
 
-/// "Practice" tab shell.
-///
-/// Manages the navigation between the initial "Choose Your Path" screen
-/// and the sub-challenge list "Pick a Challenge" internally using state.
+/// "Practice" tab shell refactored 100% dengan Whisker-Inspired Design System v3.
 class PracticeScreen extends ConsumerStatefulWidget {
   const PracticeScreen({super.key});
 
@@ -35,7 +37,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     return [
       ChallengeInfo(
         title: 'Note Recognition',
-        subtitle: 'Identify single notes.',
+        subtitle: 'Identify single notes visually or by ear.',
         icon: Icons.radio_button_checked_rounded,
         difficulty: ChallengeDifficulty.beginner,
         enabled: true,
@@ -75,44 +77,71 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // ── Shared App Bar Header ──
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-          child: Row(
-            children: [
-              const CircleAvatar(
-                radius: 16,
-                backgroundColor: AppColors.surfaceTint,
-                child: Icon(Icons.person, size: 18, color: AppColors.primaryDark),
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // ── Shared App Bar Header ──
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceTint,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.primaryDark, width: 2.5),
+                    ),
+                    child: CircleAvatar(
+                      radius: 14,
+                      backgroundColor: AppColors.surfaceWhite,
+                      child: Icon(Icons.person, size: 18, color: AppColors.primaryDark),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const WhiskerBannerHeader(
+                    title: 'PRACTICE',
+                    fontSize: 15,
+                    rotateAngle: -0.03,
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceWhite,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.primaryDark, width: 2.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primaryDark.withValues(alpha: 0.2),
+                            offset: const Offset(2, 2),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.settings_outlined,
+                        color: AppColors.primaryDark,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 10),
-              const Text(
-                'Melody Sense',
-                style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryDark),
-              ),
-              const Spacer(),
-              GestureDetector(
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                ),
-                child: Icon(Icons.settings_outlined, color: AppColors.primaryDark.withValues(alpha: 0.6)),
-              ),
-            ],
-          ),
+            ),
+            // ── Body Content ──
+            Expanded(
+              child: _showChallenges ? _buildChallengeList() : _buildChoosePath(),
+            ),
+          ],
         ),
-        // ── Body content ──
-        Expanded(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 250),
-            transitionBuilder: (child, animation) {
-              return FadeTransition(opacity: animation, child: child);
-            },
-            child: _showChallenges ? _buildChallengeList() : _buildChoosePath(),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -120,67 +149,51 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
   Widget _buildChoosePath() {
     return ListView(
       key: const ValueKey('ChoosePath'),
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
       children: [
-        const Text(
-          'Pilih Mode Operasional',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w800,
-            color: AppColors.primaryDark,
-          ),
+        const WhiskerBannerHeader(
+          title: 'PILIH MODE OPERASIONAL',
+          fontSize: 18,
+          rotateAngle: -0.04,
+          padding: EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
         Text(
           'Tentukan bagaimana kamu ingin berinteraksi dan mengasah kemampuan musikmu.',
-          style: TextStyle(fontSize: 13, color: AppColors.primaryDark.withValues(alpha: 0.6)),
+          style: GoogleFonts.fredoka(
+            fontSize: 12.5,
+            color: AppColors.primaryDark.withValues(alpha: 0.75),
+          ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
 
         // 1. Explorer Mode Card
         _PathCard(
-          title: 'Explorer Mode',
-          titleSuffix: const Icon(Icons.touch_app_rounded, size: 16, color: AppColors.accent),
-          description: 'Berlatih menggunakan piano virtual di layar HP. Cocok untuk belajar mandiri tanpa memerlukan alat fisik.',
+          title: 'EXPLORER MODE',
+          tag: 'TOUCHSCREEN',
+          description:
+              'Berlatih menggunakan piano virtual di layar HP. Cocok untuk belajar mandiri tanpa memerlukan alat fisik.',
           icon: Icons.keyboard_rounded,
-          faintIcon: Icons.keyboard_alt_outlined,
           iconColor: Colors.white,
           iconBgColor: AppColors.accent,
-          actionLabel: 'Start Explorer',
-          actionIcon: Icons.play_arrow_rounded,
+          actionLabel: 'START EXPLORER',
           customActionColor: AppColors.accent,
-          statusWidget: Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.accent.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
+          statusWidget: StickerBadge(
+            rotateAngle: -0.03,
+            backgroundColor: AppColors.surfaceTint,
+            borderColor: AppColors.primaryDark,
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: AppColors.accent,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Text(
-                  'Input: Piano Virtual',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primaryDark,
-                  ),
-                ),
-                const Spacer(),
+                Icon(Icons.touch_app_rounded, size: 14, color: AppColors.primaryDark),
+                SizedBox(width: 6),
                 Text(
-                  'Touchscreen Only',
+                  'Input: Piano Virtual (Touchscreen Only)',
                   style: TextStyle(
                     fontSize: 11,
-                    color: AppColors.primaryDark.withValues(alpha: 0.6),
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primaryDark,
                   ),
                 ),
               ],
@@ -194,7 +207,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
             });
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
 
         // 2. Maestro Mode Card
         () {
@@ -207,48 +220,33 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           final isConnected = connectionState == WebSocketConnectionState.connected;
 
           return _PathCard(
-            title: 'Maestro Mode',
-            titleSuffix: const Icon(Icons.wifi, size: 16, color: AppColors.primaryDark),
-            description: 'Connect your Smart Piano via Wi-Fi. Drive challenges using your physical instrument.',
+            title: 'MAESTRO MODE',
+            tag: 'HARDWARE ESP32',
+            description:
+                'Sambungkan Smart Piano via Wi-Fi. Jalankan tantangan menggunakan instrumen fisik milikmu.',
             icon: Icons.piano_rounded,
-            faintIcon: Icons.piano_outlined,
             iconColor: Colors.white,
             iconBgColor: AppColors.primaryDark,
-            actionLabel: 'Start Maestro',
-            actionIcon: Icons.play_arrow_rounded,
+            actionLabel: 'START MAESTRO',
             customActionColor: AppColors.primaryDark,
-            statusWidget: Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceTint.withValues(alpha: 0.25),
-                borderRadius: BorderRadius.circular(10),
-              ),
+            statusWidget: StickerBadge(
+              rotateAngle: 0.03,
+              backgroundColor: isConnected ? Colors.green.shade100 : Colors.red.shade100,
+              borderColor: AppColors.primaryDark,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: isConnected ? Colors.green : Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
+                  Icon(Icons.wifi_rounded,
+                      size: 14,
+                      color: isConnected ? Colors.green.shade900 : Colors.red.shade900),
+                  const SizedBox(width: 6),
                   Text(
-                    isConnected ? 'Status: Connected' : 'Status: Offline',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primaryDark,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    isConnected ? wsService.currentIp ?? '192.168.4.1' : 'Connect via Dashboard',
+                    isConnected ? 'ESP32 Connected' : 'ESP32 Offline (Connect via Dashboard)',
                     style: TextStyle(
                       fontSize: 11,
-                      color: AppColors.primaryDark.withValues(alpha: 0.6),
+                      fontWeight: FontWeight.w700,
+                      color: isConnected ? Colors.green.shade900 : Colors.red.shade900,
                     ),
                   ),
                 ],
@@ -263,7 +261,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
             },
           );
         }(),
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
 
         // 3. Sense Mode Card
         () {
@@ -276,50 +274,32 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           final isConnected = connectionState == WebSocketConnectionState.connected;
 
           return _PathCard(
-            title: 'Sense Mode',
-            titleSuffix: Icon(Icons.record_voice_over_rounded, size: 16, color: Colors.orange.shade800),
-            description: 'Mode aksesibilitas tunanetra / low-vision dengan panduan narasi suara TTS berurutan & tuts fisik ESP32.',
-            icon: Icons.waves_rounded,
-            faintIcon: Icons.waves_rounded,
+            title: 'SENSE MODE',
+            tag: 'ACCESSIBILITY & TTS',
+            description:
+                'Sensori penuh untuk pembelajar tunanetra. Dilengkapi panduan suara TTS & umpan balik taktil.',
+            icon: Icons.record_voice_over_rounded,
             iconColor: Colors.white,
             iconBgColor: Colors.orange.shade800,
-            actionLabel: 'Start Sense',
-            actionIcon: Icons.play_arrow_rounded,
+            actionLabel: 'START SENSE',
             customActionColor: Colors.orange.shade800,
-            statusWidget: Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.orange.shade200),
-              ),
+            statusWidget: StickerBadge(
+              rotateAngle: -0.03,
+              backgroundColor: Colors.orange.shade100,
+              borderColor: AppColors.primaryDark,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: isConnected ? Colors.orange.shade800 : Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
+                  Icon(Icons.record_voice_over_rounded,
+                      size: 14, color: AppColors.primaryDark),
+                  const SizedBox(width: 6),
                   Text(
-                    'TTS & Haptics: Aktif',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.orange.shade900,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    isConnected ? 'ESP32 Connected' : 'ESP32 Offline',
+                    'TTS Voice & Audio Cues Active (${isConnected ? "ESP32 Ready" : "Hardware Offline"})',
                     style: TextStyle(
                       fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: isConnected ? Colors.green.shade700 : Colors.red.shade700,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primaryDark,
                     ),
                   ),
                 ],
@@ -343,93 +323,82 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     final challenges = _buildChallenges();
     final mode = ref.watch(operatingModeProvider);
 
-    String modeTitle = 'Explorer Mode (Virtual)';
+    String modeTitle = 'EXPLORER MODE';
     Color modeColor = AppColors.accent;
-    IconData modeIcon = Icons.keyboard_rounded;
 
     if (mode == AppOperatingMode.maestro) {
-      modeTitle = 'Maestro Mode (ESP32 Hardware)';
+      modeTitle = 'MAESTRO MODE';
       modeColor = AppColors.primaryDark;
-      modeIcon = Icons.piano_rounded;
     } else if (mode == AppOperatingMode.sense) {
-      modeTitle = 'Sense Mode (Aksesibilitas + ESP32)';
+      modeTitle = 'SENSE MODE';
       modeColor = Colors.orange.shade800;
-      modeIcon = Icons.waves_rounded;
     }
 
     return ListView(
       key: const ValueKey('ChallengeList'),
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       children: [
         Row(
           children: [
             GestureDetector(
               onTap: () => setState(() => _showChallenges = false),
               child: Container(
-                padding: const EdgeInsets.all(6),
-                margin: const EdgeInsets.only(right: 10),
+                padding: const EdgeInsets.all(8),
+                margin: const EdgeInsets.only(right: 12),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceTint.withValues(alpha: 0.4),
-                  shape: BoxShape.circle,
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.primaryDark, width: 2.2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryDark.withValues(alpha: 0.15),
+                      offset: const Offset(2, 2),
+                    ),
+                  ],
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.arrow_back_ios_new_rounded,
                   size: 16,
                   color: AppColors.primaryDark,
                 ),
               ),
             ),
-            const Text(
-              'Pilih Tantangan Latihan',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: AppColors.primaryDark,
-              ),
+            WhiskerBannerHeader(
+              title: modeTitle,
+              fontSize: 16,
+              rotateAngle: -0.04,
+              backgroundColor: modeColor,
+              textColor: Colors.white,
             ),
           ],
         ),
-        const SizedBox(height: 8),
-        Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: modeColor.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: modeColor.withValues(alpha: 0.3)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(modeIcon, size: 16, color: modeColor),
-              const SizedBox(width: 6),
-              Text(
-                'Mode Aktif: $modeTitle',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: modeColor,
-                ),
-              ),
-            ],
-          ),
-        ),
-        // ── Free Play card ──
+        const SizedBox(height: 14),
+
+        // Free Play Card (Whisker Card)
         _FreePlayCard(
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => const FreePlayScreen()),
           ),
         ),
-        const SizedBox(height: 20),
-        // ── Challenges ──
+        const SizedBox(height: 18),
+
+        const WhiskerBannerHeader(
+          title: 'CHALLENGES',
+          fontSize: 15,
+          rotateAngle: -0.03,
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        ),
+        const SizedBox(height: 14),
+
+        // Challenges
         for (final challenge in challenges) ...[
           ChallengeCard(
             challenge: challenge,
             onTap: () => _openChallenge(context, challenge),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
         ],
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         ref.watch(streakProvider).maybeWhen(
               data: (days) => _StreakBanner(days: days),
               orElse: () => const _StreakBanner(days: 0),
@@ -446,141 +415,142 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
 class _PathCard extends StatelessWidget {
   const _PathCard({
     required this.title,
-    this.titleSuffix,
+    required this.tag,
     required this.description,
     required this.icon,
-    required this.faintIcon,
     required this.iconColor,
     required this.iconBgColor,
     required this.actionLabel,
-    this.actionIcon = Icons.arrow_forward_rounded,
-    this.customActionColor,
-    this.statusWidget,
+    required this.customActionColor,
+    required this.statusWidget,
     required this.onTap,
   });
 
   final String title;
-  final Widget? titleSuffix;
+  final String tag;
   final String description;
   final IconData icon;
-  final IconData faintIcon;
   final Color iconColor;
   final Color iconBgColor;
   final String actionLabel;
-  final IconData actionIcon;
-  final Color? customActionColor;
-  final Widget? statusWidget;
+  final Color customActionColor;
+  final Widget statusWidget;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade200,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Stack(
-          children: [
-            // Faint background icon at top-right
-            Positioned(
-              right: -10,
-              top: -10,
-              child: Icon(
-                faintIcon,
-                size: 110,
-                color: Colors.grey.shade100.withValues(alpha: 0.7),
+    return TornPaperCard(
+      backgroundColor: AppColors.surfaceWhite,
+      shadowColor: AppColors.surfaceTint,
+      borderWidth: 2.8,
+      tornPosition: TornEdgePosition.bottom,
+      padding: const EdgeInsets.all(16),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -10,
+            top: 10,
+            width: 80,
+            height: 80,
+            child: CustomPaint(
+              painter: HalftonePatternPainter(
+                color: AppColors.surfaceTint,
+                opacity: 0.25,
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Icon box
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: iconBgColor,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                  StickerBadge(
+                    rotateAngle: -0.05,
+                    backgroundColor: iconBgColor,
+                    borderColor: AppColors.primaryDark,
+                    borderWidth: 2.4,
+                    padding: const EdgeInsets.all(10),
                     child: Icon(icon, color: iconColor, size: 24),
                   ),
-                  const SizedBox(height: 16),
-                  // Title + Suffix
-                  Row(
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.primaryDark,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: GoogleFonts.fredoka(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primaryDark,
+                          ),
                         ),
-                      ),
-                      if (titleSuffix != null) ...[
-                        const SizedBox(width: 8),
-                        titleSuffix!,
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  // Description
-                  Text(
-                    description,
-                    style: TextStyle(
-                      fontSize: 12,
-                      height: 1.4,
-                      color: AppColors.primaryDark.withValues(alpha: 0.7),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Status widget (if any)
-                  if (statusWidget != null) statusWidget!,
-                  // Action button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 44,
-                    child: ElevatedButton(
-                      onPressed: onTap,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: customActionColor ?? AppColors.accent,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            actionLabel,
-                            style: const TextStyle(
+                        const SizedBox(height: 2),
+                        StickerBadge(
+                          rotateAngle: 0.04,
+                          backgroundColor: AppColors.surfaceTint,
+                          borderColor: AppColors.primaryDark,
+                          borderWidth: 1.8,
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          child: Text(
+                            tag,
+                            style: GoogleFonts.fredoka(
+                              fontSize: 9,
                               fontWeight: FontWeight.w700,
-                              fontSize: 14,
+                              color: AppColors.primaryDark,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Icon(actionIcon, size: 16),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
-        ),
+              const SizedBox(height: 12),
+              Text(
+                description,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.primaryDark.withValues(alpha: 0.75),
+                  height: 1.3,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 14),
+              statusWidget,
+              const SizedBox(height: 6),
+              Align(
+                alignment: Alignment.centerRight,
+                child: GestureDetector(
+                  onTap: onTap,
+                  child: StickerBadge(
+                    rotateAngle: 0.04,
+                    backgroundColor: customActionColor,
+                    borderColor: AppColors.primaryDark,
+                    borderWidth: 2.2,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          actionLabel,
+                          style: GoogleFonts.fredoka(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const Icon(Icons.arrow_forward_rounded, size: 16, color: Colors.white),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -588,73 +558,63 @@ class _PathCard extends StatelessWidget {
 
 class _FreePlayCard extends StatelessWidget {
   const _FreePlayCard({required this.onTap});
-
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppColors.accent,
-              AppColors.primaryDark.withValues(alpha: 0.85),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    return TornPaperCard(
+      backgroundColor: AppColors.surfaceTint.withValues(alpha: 0.5),
+      shadowColor: AppColors.surfaceTint,
+      borderWidth: 2.8,
+      tornPosition: TornEdgePosition.both,
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          StickerBadge(
+            rotateAngle: -0.05,
+            backgroundColor: AppColors.accent,
+            borderColor: AppColors.primaryDark,
+            borderWidth: 2.2,
+            padding: const EdgeInsets.all(10),
+            child: const Icon(Icons.piano_rounded, color: Colors.white, size: 24),
           ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.accent.withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.piano_rounded,
-                  color: Colors.white, size: 26),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Main Bebas',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'FREE PLAY PIANO',
+                  style: GoogleFonts.fredoka(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primaryDark,
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Mainkan piano sesuka hati tanpa tantangan.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white.withValues(alpha: 0.8),
-                    ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Mainkan nada bebas tanpa batas.',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: AppColors.primaryDark.withValues(alpha: 0.75),
+                    fontWeight: FontWeight.w600,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            Icon(Icons.arrow_forward_ios_rounded,
-                size: 16, color: Colors.white.withValues(alpha: 0.6)),
-          ],
-        ),
+          ),
+          GestureDetector(
+            onTap: onTap,
+            child: StickerBadge(
+              rotateAngle: 0.04,
+              backgroundColor: AppColors.primaryDark,
+              borderColor: Colors.white,
+              borderWidth: 2.0,
+              padding: const EdgeInsets.all(10),
+              child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 20),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -662,37 +622,48 @@ class _FreePlayCard extends StatelessWidget {
 
 class _StreakBanner extends StatelessWidget {
   const _StreakBanner({required this.days});
-
   final int days;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.primaryDark,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return TornPaperCard(
+      backgroundColor: AppColors.surfaceWhite,
+      shadowColor: AppColors.surfaceTint,
+      borderWidth: 2.6,
+      tornPosition: TornEdgePosition.bottom,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
         children: [
-          Text(
-            'Daily Streak: $days Days!',
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+          StickerBadge(
+            rotateAngle: -0.06,
+            backgroundColor: Colors.deepOrange,
+            borderColor: AppColors.primaryDark,
+            borderWidth: 2.2,
+            padding: const EdgeInsets.all(8),
+            child: const Icon(Icons.local_fire_department_rounded, color: Colors.white, size: 22),
           ),
-          const SizedBox(height: 4),
-          const Text(
-            'Complete one more challenge to unlock the "Golden Ear" badge.',
-            style: TextStyle(color: Colors.white70, fontSize: 12),
-          ),
-          const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: const LinearProgressIndicator(
-              value: 0.7,
-              minHeight: 6,
-              backgroundColor: Colors.white24,
-              valueColor: AlwaysStoppedAnimation(AppColors.accent),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$days-DAY STREAK',
+                  style: GoogleFonts.fredoka(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primaryDark,
+                  ),
+                ),
+                Text(
+                  'Latihan tiap hari untuk menjaga ritme!',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.primaryDark.withValues(alpha: 0.7),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

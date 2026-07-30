@@ -40,6 +40,7 @@ dependencies:
   flutter_animate: ^4.5.0
   web_socket_channel: ^3.0.1    # WebSocket client untuk ESP32 Smart Piano
   flutter_tts: ^4.2.0           # Text-to-Speech untuk Sense Mode (Aksesibilitas)
+  google_fonts: ^6.2.1          # Typography display playful (Baloo 2 / Fredoka)
 
 
 dev_dependencies:

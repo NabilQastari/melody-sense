@@ -1,15 +1,34 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'package:melody_sense/core/theme/app_colors.dart';
+import 'package:melody_sense/core/theme/app_theme_data.dart';
+import 'package:melody_sense/core/providers/theme_providers.dart';
+import 'package:melody_sense/core/widgets/pattern_painters.dart';
 import 'package:melody_sense/core/widgets/settings_screen.dart';
+import 'package:melody_sense/core/widgets/sticker_badge.dart';
+import 'package:melody_sense/core/widgets/torn_paper_card.dart';
+import 'package:melody_sense/core/widgets/whisker_banner_header.dart';
+import 'package:melody_sense/features/practice/presentation/screens/practice_screen.dart';
 import 'package:melody_sense/features/stats/presentation/providers/stats_providers.dart';
 
+/// State notifier untuk menyimpan status klaim Mystery Chest Level 40.
+final claimedChestsProvider =
+    StateNotifierProvider<ClaimedChestsNotifier, Set<int>>((ref) {
+  return ClaimedChestsNotifier();
+});
+
+class ClaimedChestsNotifier extends StateNotifier<Set<int>> {
+  ClaimedChestsNotifier() : super({});
+
+  void claim(int chestLevel) {
+    state = {...state, chestLevel};
+  }
+}
+
 /// Progression Screen - Sesi 8 (Peta Level / Progression Path)
-///
-/// Menampilkan peta petualangan nada (Roadmap/Path) berdasarkan level user.
-/// Menampilkan Day Streak dan Total XP aktual dari database di bagian atas.
+/// Diperbarui dengan Design System v3 & Mystery Chest Spesial Level 40.
 class ProgressionScreen extends ConsumerWidget {
   const ProgressionScreen({super.key});
 
@@ -18,94 +37,133 @@ class ProgressionScreen extends ConsumerWidget {
     final levelInfoAsync = ref.watch(levelInfoProvider);
     final streakAsync = ref.watch(streakProvider);
 
-    return Column(
-      children: [
-        // ── Shared App Bar Header ──
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-          child: Row(
-            children: [
-              const CircleAvatar(
-                radius: 16,
-                backgroundColor: AppColors.surfaceTint,
-                child: Icon(Icons.person, size: 18, color: AppColors.primaryDark),
-              ),
-              const SizedBox(width: 10),
-              const Text(
-                'Melody Sense',
-                style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryDark),
-              ),
-              const Spacer(),
-              GestureDetector(
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                ),
-                child: Icon(Icons.settings_outlined, color: AppColors.primaryDark.withValues(alpha: 0.6)),
-              ),
-            ],
-          ),
-        ),
-
-        // ── Main Body ──
-        Expanded(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-            child: Column(
-              children: [
-                // ── Top Stats (Streak & XP Cards) ──
-                Row(
-                  children: [
-                    Expanded(
-                      child: _StatCard(
-                        value: streakAsync.maybeWhen(
-                          data: (days) => days.toString(),
-                          orElse: () => '0',
-                        ),
-                        label: 'DAY STREAK',
-                        icon: Icons.local_fire_department_rounded,
-                        iconColor: Colors.orange.shade700,
-                        cardBgColor: Colors.white,
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // ── Shared App Bar Header ──
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceTint,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.primaryDark, width: 2.5),
+                    ),
+                    child: CircleAvatar(
+                      radius: 14,
+                      backgroundColor: AppColors.surfaceWhite,
+                      child: Icon(Icons.person, size: 18, color: AppColors.primaryDark),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const WhiskerBannerHeader(
+                    title: 'PROGRESSION',
+                    fontSize: 15,
+                    rotateAngle: -0.03,
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceWhite,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.primaryDark, width: 2.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primaryDark.withValues(alpha: 0.2),
+                            offset: const Offset(2, 2),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.settings_outlined,
+                        color: AppColors.primaryDark,
+                        size: 18,
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _StatCard(
-                        value: levelInfoAsync.maybeWhen(
-                          data: (info) {
-                            if (info.totalXp >= 1000) {
-                              return '${(info.totalXp / 1000).toStringAsFixed(1)}k';
-                            }
-                            return info.totalXp.toString();
-                          },
-                          orElse: () => '0',
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Main Body ──
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                child: Column(
+                  children: [
+                    // ── Top Stats (Streak & XP Cards) ──
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _StatCard(
+                            value: streakAsync.maybeWhen(
+                              data: (days) => days.toString(),
+                              orElse: () => '0',
+                            ),
+                            label: 'DAY STREAK',
+                            icon: Icons.local_fire_department_rounded,
+                            iconColor: Colors.deepOrange,
+                          ),
                         ),
-                        label: 'TOTAL XP',
-                        icon: Icons.stars_rounded,
-                        iconColor: AppColors.primaryDark,
-                        cardBgColor: Colors.white,
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: _StatCard(
+                            value: levelInfoAsync.maybeWhen(
+                              data: (info) {
+                                if (info.totalXp >= 1000) {
+                                  return '${(info.totalXp / 1000).toStringAsFixed(1)}k';
+                                }
+                                return info.totalXp.toString();
+                              },
+                              orElse: () => '0',
+                            ),
+                            label: 'TOTAL XP',
+                            icon: Icons.stars_rounded,
+                            iconColor: AppColors.accent,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 22),
+
+                    const WhiskerBannerHeader(
+                      title: 'LEVEL ROADMAP',
+                      fontSize: 16,
+                      rotateAngle: -0.04,
+                      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── Winding Path Map ──
+                    levelInfoAsync.when(
+                      loading: () => Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 60.0),
+                          child: CircularProgressIndicator(color: AppColors.accent),
+                        ),
                       ),
+                      error: (err, _) => Center(child: Text('Error: $err')),
+                      data: (levelInfo) => _LevelPathMap(currentLevel: levelInfo.level),
                     ),
                   ],
                 ),
-                const SizedBox(height: 32),
-
-                // ── Winding Path map ──
-                levelInfoAsync.when(
-                  loading: () => const Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 60.0),
-                      child: CircularProgressIndicator(color: AppColors.accent),
-                    ),
-                  ),
-                  error: (err, _) => Center(child: Text('Error: $err')),
-                  data: (levelInfo) => _LevelPathMap(currentLevel: levelInfo.level),
-                ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
@@ -116,49 +174,47 @@ class _StatCard extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.iconColor,
-    required this.cardBgColor,
   });
 
   final String value;
   final String label;
   final IconData icon;
   final Color iconColor;
-  final Color cardBgColor;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return TornPaperCard(
+      backgroundColor: AppColors.surfaceWhite,
+      shadowColor: AppColors.surfaceTint,
+      borderWidth: 2.6,
+      tornPosition: TornEdgePosition.bottom,
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-      decoration: BoxDecoration(
-        color: cardBgColor,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade100,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
       child: Column(
         children: [
-          Icon(icon, size: 28, color: iconColor),
+          StickerBadge(
+            rotateAngle: -0.04,
+            backgroundColor: AppColors.surfaceTint,
+            borderColor: AppColors.primaryDark,
+            borderWidth: 2.0,
+            padding: const EdgeInsets.all(8),
+            child: Icon(icon, size: 24, color: iconColor),
+          ),
           const SizedBox(height: 8),
           Text(
             value,
-            style: const TextStyle(
+            style: GoogleFonts.fredoka(
               fontSize: 22,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w700,
               color: AppColors.primaryDark,
             ),
           ),
           const SizedBox(height: 2),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 9,
+            style: GoogleFonts.fredoka(
+              fontSize: 10,
               fontWeight: FontWeight.w700,
-              color: AppColors.primaryDark.withValues(alpha: 0.5),
+              color: AppColors.primaryDark.withValues(alpha: 0.65),
               letterSpacing: 0.5,
             ),
           ),
@@ -168,335 +224,700 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-/// Node data class for Level Map
-class _PathNodeData {
+enum _PathNodeType { level, chest }
+
+class _PathItemData {
+  final _PathNodeType type;
   final int minLevel;
   final int maxLevel;
   final String title;
+  final String description;
   final IconData icon;
 
-  const _PathNodeData({
+  const _PathItemData({
+    required this.type,
     required this.minLevel,
     required this.maxLevel,
     required this.title,
+    required this.description,
     required this.icon,
   });
 }
 
-class _LevelPathMap extends StatelessWidget {
+class _LevelPathMap extends ConsumerWidget {
   const _LevelPathMap({required this.currentLevel});
 
   final int currentLevel;
 
-  static const List<_PathNodeData> nodes = [
-    _PathNodeData(
+  static const List<_PathItemData> items = [
+    _PathItemData(
+      type: _PathNodeType.level,
       minLevel: 1,
       maxLevel: 9,
       title: 'Beginner',
+      description: 'Latihan dasar pengenalan nada tunggal dan pendengaran awal (Level 1–9).',
       icon: Icons.star_rounded,
     ),
-    _PathNodeData(
+    _PathItemData(
+      type: _PathNodeType.level,
       minLevel: 10,
       maxLevel: 19,
       title: 'Scale Master',
+      description: 'Menguasai susunan tangga nada kromatik 14 nada B3–C5 (Level 10–19).',
       icon: Icons.keyboard_rounded,
     ),
-    _PathNodeData(
+    _PathItemData(
+      type: _PathNodeType.level,
       minLevel: 20,
       maxLevel: 29,
       title: 'Interval Hero',
+      description: 'Mengenali jarak interval nada Semitones, Major & Minor (Level 20–29).',
       icon: Icons.headphones_rounded,
     ),
-    _PathNodeData(
+    _PathItemData(
+      type: _PathNodeType.level,
       minLevel: 30,
       maxLevel: 39,
       title: 'Melody Maestro',
+      description: 'Tingkat tertinggi keahlian pendengaran melodi & ritme lagu (Level 30–39).',
       icon: Icons.music_note_rounded,
+    ),
+    _PathItemData(
+      type: _PathNodeType.chest,
+      minLevel: 40,
+      maxLevel: 40,
+      title: 'Mystery Chest 🎁',
+      description: 'Peti Rahasia Spesial! Capai Level 40 untuk membuka Mystery Chest ini.',
+      icon: Icons.card_giftcard_rounded,
     ),
   ];
 
   @override
-  Widget build(BuildContext context) {
-    const double mapHeight = 520.0;
+  Widget build(BuildContext context, WidgetRef ref) {
+    const double mapHeight = 580.0;
+    final claimedSet = ref.watch(claimedChestsProvider);
 
-    return SizedBox(
-      height: mapHeight + 180, // Tambah space agar chest/text di bawah tidak terpotong
-      width: double.infinity,
-      child: Stack(
-        alignment: Alignment.topCenter,
-        children: [
-          // ── The Winding Dashed Line ──
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _WindingPathPainter(),
-            ),
-          ),
-
-          // ── Level Nodes positioned along the curve ──
-          ...List.generate(nodes.length, (index) {
-            final node = nodes[index];
-            final double relativeY = index / (nodes.length); // 0.0 to 0.75
-            final double yPos = relativeY * mapHeight + 40;
-
-            // X offset calculated from sine wave to match the custom painter path
-            final double xOffset = math.sin(relativeY * 2.5 * math.pi) * 60;
-
-            // Logika Range Level:
-            // - Completed: Level user sudah melewati batas maksimal range node ini.
-            // - Active: Level user masuk dalam range [minLevel, maxLevel] node ini.
-            // - Locked: Level user belum mencapai batas minimal range node ini.
-            final isCompleted = currentLevel > node.maxLevel;
-            final isActive = currentLevel >= node.minLevel && currentLevel <= node.maxLevel;
-            final isLocked = currentLevel < node.minLevel;
-
-            return Positioned(
-              top: yPos,
-              left: 0,
-              right: 0,
-              child: _buildNodeWidget(node, xOffset, isCompleted, isActive, isLocked),
-            );
-          }),
-
-          // ── Node 5: Dash Mystery Gift at the very end ──
-          Positioned(
-            top: mapHeight + 30,
-            left: 0,
-            right: 0,
-            child: Transform.translate(
-              offset: Offset(math.sin(2.5 * math.pi) * 60, 0),
-              child: Column(
-                children: [
-                  Container(
-                    width: 76,
-                    height: 76,
-                    decoration: BoxDecoration(
-                      color: AppColors.background,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.grey.shade400,
-                        width: 2.5,
-                        style: BorderStyle.solid,
-                      ),
-                    ),
-                    padding: const EdgeInsets.all(4),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.grey.shade300,
-                          width: 2,
-                          style: BorderStyle.solid,
+    return TornPaperCard(
+      backgroundColor: AppColors.surfaceWhite,
+      shadowColor: AppColors.surfaceTint,
+      borderWidth: 2.8,
+      tornPosition: TornEdgePosition.both,
+      padding: const EdgeInsets.all(16),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final mapWidth = constraints.maxWidth;
+          return Stack(
+            children: [
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: HalftonePatternPainter(
+                    color: AppColors.surfaceTint,
+                    opacity: 0.2,
+                  ),
+                ),
+              ),
+              SizedBox(
+                height: mapHeight,
+                width: double.infinity,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _WindingPathPainter(
+                          nodesCount: items.length,
+                          currentLevel: currentLevel,
                         ),
                       ),
-                      child: Icon(
-                        Icons.card_giftcard_rounded,
-                        size: 32,
-                        color: Colors.grey.shade400,
-                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'UNLOCK LEVEL 40 TO REVEAL',
-                    style: TextStyle(
-                      fontSize: 8.5,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.grey.shade500,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
+                    ...List.generate(items.length, (index) {
+                      final item = items[index];
+                      final isUnlocked = currentLevel >= item.minLevel;
+                      final isCurrent = currentLevel >= item.minLevel && currentLevel <= item.maxLevel;
+                      final isClaimed = claimedSet.contains(item.minLevel);
+
+                      final point = _calculateNodePosition(index, items.length, mapHeight, mapWidth);
+
+                      return Positioned(
+                        left: point.dx - 48,
+                        top: point.dy - 48,
+                        child: GestureDetector(
+                          onTap: () => _onNodeTapped(context, ref, item, isUnlocked, isCurrent, isClaimed),
+                          child: _MapNodeWidget(
+                            item: item,
+                            isUnlocked: isUnlocked,
+                            isCurrent: isCurrent,
+                            isClaimed: isClaimed,
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _onNodeTapped(
+    BuildContext context,
+    WidgetRef ref,
+    _PathItemData item,
+    bool isUnlocked,
+    bool isCurrent,
+    bool isClaimed,
+  ) {
+    if (item.type == _PathNodeType.chest) {
+      showDialog(
+        context: context,
+        builder: (_) => _ChestDialog(
+          item: item,
+          isUnlocked: isUnlocked,
+          isClaimed: isClaimed,
+          onClaim: () {
+            ref.read(claimedChestsProvider.notifier).claim(item.minLevel);
+            ref.read(unlockedThemesProvider.notifier).unlockThemes(AppThemes.chestUnlockIds);
+            Navigator.pop(context);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('🎉 Selamat! 4 Tema Warna Eksklusif berhasil di-unlock! Pilih tema di Pengaturan.'),
+                backgroundColor: AppColors.primaryDark,
+                duration: Duration(seconds: 4),
+              ),
+            );
+          },
+        ),
+      );
+    } else {
+      showDialog(
+        context: context,
+        builder: (_) => _LevelDetailsDialog(
+          item: item,
+          isUnlocked: isUnlocked,
+          isCurrent: isCurrent,
+          currentLevel: currentLevel,
+        ),
+      );
+    }
+  }
+
+  static Offset _calculateNodePosition(int index, int totalNodes, double height, double width) {
+    final double segmentHeight = (height - 90) / (totalNodes - 1);
+    final double y = (height - 45) - (index * segmentHeight);
+
+    const double amplitude = 65.0;
+    final double centerX = width / 2;
+    final double x = centerX + (index % 2 == 0 ? -amplitude : amplitude);
+
+    return Offset(x, y);
+  }
+}
+
+class _WindingPathPainter extends CustomPainter {
+  _WindingPathPainter({required this.nodesCount, required this.currentLevel});
+
+  final int nodesCount;
+  final int currentLevel;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path();
+    final unlockedPath = Path();
+
+    final points = <Offset>[];
+    for (int i = 0; i < nodesCount; i++) {
+      points.add(_LevelPathMap._calculateNodePosition(i, nodesCount, size.height, size.width));
+    }
+
+    if (points.isNotEmpty) {
+      path.moveTo(points[0].dx, points[0].dy);
+      unlockedPath.moveTo(points[0].dx, points[0].dy);
+
+      for (int i = 0; i < points.length - 1; i++) {
+        final p1 = points[i];
+        final p2 = points[i + 1];
+
+        final controlPoint1 = Offset(p1.dx, (p1.dy + p2.dy) / 2);
+        final controlPoint2 = Offset(p2.dx, (p1.dy + p2.dy) / 2);
+
+        path.cubicTo(
+          controlPoint1.dx,
+          controlPoint1.dy,
+          controlPoint2.dx,
+          controlPoint2.dy,
+          p2.dx,
+          p2.dy,
+        );
+
+        if (currentLevel >= _LevelPathMap.items[i + 1].minLevel) {
+          unlockedPath.cubicTo(
+            controlPoint1.dx,
+            controlPoint1.dy,
+            controlPoint2.dx,
+            controlPoint2.dy,
+            p2.dx,
+            p2.dy,
+          );
+        }
+      }
+    }
+
+    final dashPaint = Paint()
+      ..color = AppColors.surfaceTint
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 6.0
+      ..strokeCap = StrokeCap.round;
+    canvas.drawPath(path, dashPaint);
+
+    final outlinePaint = Paint()
+      ..color = AppColors.primaryDark
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 6.0
+      ..strokeCap = StrokeCap.round;
+    canvas.drawPath(unlockedPath, outlinePaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _WindingPathPainter oldDelegate) =>
+      oldDelegate.currentLevel != currentLevel;
+}
+
+class _MapNodeWidget extends StatelessWidget {
+  const _MapNodeWidget({
+    required this.item,
+    required this.isUnlocked,
+    required this.isCurrent,
+    required this.isClaimed,
+  });
+
+  final _PathItemData item;
+  final bool isUnlocked;
+  final bool isCurrent;
+  final bool isClaimed;
+
+  @override
+  Widget build(BuildContext context) {
+    if (item.type == _PathNodeType.chest) {
+      final chestBg = isUnlocked
+          ? (isClaimed ? Colors.grey.shade400 : Colors.amber.shade600)
+          : AppColors.surfaceTint;
+
+      final chestWidget = Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          StickerBadge(
+            rotateAngle: isUnlocked && !isClaimed ? -0.06 : 0.04,
+            backgroundColor: chestBg,
+            borderColor: AppColors.primaryDark,
+            borderWidth: 2.6,
+            padding: const EdgeInsets.all(12),
+            child: Icon(
+              isClaimed ? Icons.check_circle_rounded : item.icon,
+              color: isUnlocked ? Colors.white : AppColors.primaryDark.withValues(alpha: 0.4),
+              size: 26,
+            ),
+          ),
+          const SizedBox(height: 4),
+          StickerBadge(
+            rotateAngle: 0.03,
+            backgroundColor: isClaimed ? Colors.grey.shade200 : Colors.amber.shade100,
+            borderColor: AppColors.primaryDark,
+            borderWidth: 1.8,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            child: Text(
+              isClaimed ? 'CLAIMED' : 'MYSTERY CHEST (LVL 40)',
+              style: GoogleFonts.fredoka(
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primaryDark,
+              ),
+            ),
+          ),
+        ],
+      );
+
+      return _PulsingWrapper(
+        shouldPulse: isUnlocked && !isClaimed,
+        child: chestWidget,
+      );
+    }
+
+    final bgColor = isUnlocked
+        ? (isCurrent ? AppColors.accent : AppColors.primaryDark)
+        : AppColors.surfaceTint;
+
+    final iconColor = isUnlocked ? Colors.white : AppColors.primaryDark.withValues(alpha: 0.4);
+
+    final nodeWidget = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        StickerBadge(
+          rotateAngle: isCurrent ? -0.06 : 0.04,
+          backgroundColor: bgColor,
+          borderColor: AppColors.primaryDark,
+          borderWidth: 2.6,
+          padding: const EdgeInsets.all(12),
+          child: Icon(
+            isUnlocked ? item.icon : Icons.lock_outline_rounded,
+            color: iconColor,
+            size: 26,
+          ),
+        ),
+        const SizedBox(height: 4),
+        StickerBadge(
+          rotateAngle: 0.03,
+          backgroundColor: AppColors.surfaceWhite,
+          borderColor: AppColors.primaryDark,
+          borderWidth: 1.8,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          child: Text(
+            item.title.toUpperCase(),
+            style: GoogleFonts.fredoka(
+              fontSize: 9.5,
+              fontWeight: FontWeight.w700,
+              color: AppColors.primaryDark,
+            ),
+          ),
+        ),
+      ],
+    );
+
+    return _PulsingWrapper(
+      shouldPulse: isCurrent,
+      child: nodeWidget,
+    );
+  }
+}
+
+/// A simple pulsing animation wrapper using built-in Flutter animation.
+class _PulsingWrapper extends StatefulWidget {
+  const _PulsingWrapper({
+    required this.shouldPulse,
+    required this.child,
+  });
+
+  final bool shouldPulse;
+  final Widget child;
+
+  @override
+  State<_PulsingWrapper> createState() => _PulsingWrapperState();
+}
+
+class _PulsingWrapperState extends State<_PulsingWrapper>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.06).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+    if (widget.shouldPulse) {
+      _controller.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _PulsingWrapper oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.shouldPulse && !oldWidget.shouldPulse) {
+      _controller.repeat(reverse: true);
+    } else if (!widget.shouldPulse && oldWidget.shouldPulse) {
+      _controller.stop();
+      _controller.value = 0.0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaleTransition(
+      scale: _scaleAnimation,
+      child: widget.child,
+    );
+  }
+}
+
+class _ChestDialog extends StatelessWidget {
+  const _ChestDialog({
+    required this.item,
+    required this.isUnlocked,
+    required this.isClaimed,
+    required this.onClaim,
+  });
+
+  final _PathItemData item;
+  final bool isUnlocked;
+  final bool isClaimed;
+  final VoidCallback onClaim;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(24),
+      child: TornPaperCard(
+        backgroundColor: AppColors.surfaceWhite,
+        shadowColor: AppColors.surfaceTint,
+        borderWidth: 3.0,
+        tornPosition: TornEdgePosition.both,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            StickerBadge(
+              rotateAngle: -0.05,
+              backgroundColor: isUnlocked
+                  ? (isClaimed ? Colors.grey : Colors.amber.shade700)
+                  : AppColors.surfaceTint,
+              borderColor: AppColors.primaryDark,
+              borderWidth: 2.5,
+              padding: const EdgeInsets.all(16),
+              child: Icon(
+                isClaimed ? Icons.check_circle_rounded : item.icon,
+                size: 48,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 16),
+            WhiskerBannerHeader(
+              title: item.title.toUpperCase(),
+              fontSize: 16,
+              rotateAngle: -0.03,
+              backgroundColor: isUnlocked ? Colors.amber.shade700 : Colors.grey.shade400,
+              textColor: Colors.white,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              isUnlocked
+                  ? 'Selamat! Kamu telah mencapai Level 40 dan berhasil membuka Mystery Chest ini! Kamu meng-unlock 4 Tema Warna Eksklusif:'
+                  : item.description,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12.5,
+                height: 1.4,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primaryDark.withValues(alpha: 0.75),
+              ),
+            ),
+            const SizedBox(height: 14),
+            if (isUnlocked) ...[
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.center,
+                children: [
+                  _buildThemeBadge(AppThemes.whiskerDark),
+                  _buildThemeBadge(AppThemes.oceanBlue),
+                  _buildThemeBadge(AppThemes.forestGreen),
+                  _buildThemeBadge(AppThemes.sunsetOrange),
                 ],
               ),
+              const SizedBox(height: 16),
+            ],
+            if (isUnlocked && !isClaimed)
+              GestureDetector(
+                onTap: onClaim,
+                child: StickerBadge(
+                  rotateAngle: -0.02,
+                  backgroundColor: AppColors.accent,
+                  borderColor: AppColors.primaryDark,
+                  borderWidth: 2.2,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                  child: Text(
+                    'KLAIM & UNLOCK TEMA 🎁',
+                    style: GoogleFonts.fredoka(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              )
+            else
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  isClaimed ? 'SUDAH DIBUKA (CEK PENGATURAN)' : 'TERKUNCI (REACH LEVEL 40)',
+                  style: GoogleFonts.fredoka(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primaryDark,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThemeBadge(AppThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: theme.surfaceWhite,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: theme.primaryDark, width: 1.8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(
+              color: theme.background,
+              shape: BoxShape.circle,
+              border: Border.all(color: theme.primaryDark, width: 0.8),
+            ),
+          ),
+          const SizedBox(width: 3),
+          Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(
+              color: theme.accent,
+              shape: BoxShape.circle,
+              border: Border.all(color: theme.primaryDark, width: 0.8),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            theme.name,
+            style: GoogleFonts.fredoka(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w700,
+              color: theme.primaryDark,
             ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildNodeWidget(
-    _PathNodeData node,
-    double xOffset,
-    bool isCompleted,
-    bool isActive,
-    bool isLocked,
-  ) {
-    Color nodeBgColor;
-    Color iconColor;
-    Border? border;
-    List<BoxShadow>? shadow;
+class _LevelDetailsDialog extends StatelessWidget {
+  const _LevelDetailsDialog({
+    required this.item,
+    required this.isUnlocked,
+    required this.isCurrent,
+    required this.currentLevel,
+  });
 
-    if (isCompleted) {
-      nodeBgColor = AppColors.accent;
-      iconColor = Colors.white;
-      shadow = [
-        BoxShadow(
-          color: AppColors.accent.withValues(alpha: 0.3),
-          blurRadius: 8,
-          offset: const Offset(0, 4),
-        )
-      ];
-    } else if (isActive) {
-      nodeBgColor = AppColors.accent;
-      iconColor = Colors.white;
-      border = Border.all(color: Colors.white, width: 3);
-      shadow = [
-        BoxShadow(
-          color: AppColors.accent.withValues(alpha: 0.4),
-          blurRadius: 14,
-          offset: const Offset(0, 4),
-        )
-      ];
-    } else {
-      // Locked
-      nodeBgColor = Colors.grey.shade300;
-      iconColor = Colors.grey.shade500;
-    }
+  final _PathItemData item;
+  final bool isUnlocked;
+  final bool isCurrent;
+  final int currentLevel;
 
-    return Transform.translate(
-      offset: Offset(xOffset, 0),
-      child: Center(
+  @override
+  Widget build(BuildContext context) {
+    final statusText = isCurrent
+        ? 'CURRENT TARGET'
+        : (isUnlocked ? 'COMPLETED' : 'LOCKED (LEVEL ${item.minLevel})');
+
+    final statusBg = isCurrent
+        ? AppColors.accent
+        : (isUnlocked ? Colors.green.shade600 : Colors.grey.shade400);
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(24),
+      child: TornPaperCard(
+        backgroundColor: AppColors.surfaceWhite,
+        shadowColor: AppColors.surfaceTint,
+        borderWidth: 3.0,
+        tornPosition: TornEdgePosition.both,
+        padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: nodeBgColor,
-                    shape: BoxShape.circle,
-                    border: border,
-                    boxShadow: shadow,
-                  ),
-                  child: Icon(
-                    isLocked ? Icons.lock_outline_rounded : node.icon,
-                    color: iconColor,
-                    size: 26,
-                  ),
-                ),
-                // Play badge for Active Node
-                if (isActive)
-                  Positioned(
-                    top: 0,
-                    right: -2,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.play_arrow_rounded,
-                        color: Colors.white,
-                        size: 10,
-                      ),
-                    ),
-                  ),
-                // Completed label banner next to Completed node
-                if (isCompleted)
-                  Positioned(
-                    left: -70,
-                    top: 18,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryDark.withValues(alpha: 0.85),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text(
-                        'Completed',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+            StickerBadge(
+              rotateAngle: -0.05,
+              backgroundColor: isUnlocked ? AppColors.primaryDark : AppColors.surfaceTint,
+              borderColor: AppColors.primaryDark,
+              borderWidth: 2.5,
+              padding: const EdgeInsets.all(16),
+              child: Icon(
+                isUnlocked ? item.icon : Icons.lock_outline_rounded,
+                size: 44,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 16),
+            WhiskerBannerHeader(
+              title: item.title.toUpperCase(),
+              fontSize: 16,
+              rotateAngle: -0.03,
             ),
             const SizedBox(height: 8),
-            Text(
-              node.title,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: isLocked ? Colors.grey.shade500 : AppColors.primaryDark,
-              ),
-            ),
-            if (isActive) ...[
-              const SizedBox(height: 2),
-              Text(
-                'CURRENT UNIT',
-                style: TextStyle(
-                  fontSize: 8.5,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.primaryDark.withValues(alpha: 0.6),
-                  letterSpacing: 0.5,
+            StickerBadge(
+              rotateAngle: 0.03,
+              backgroundColor: statusBg,
+              borderColor: AppColors.primaryDark,
+              borderWidth: 1.8,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              child: Text(
+                statusText,
+                style: GoogleFonts.fredoka(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
                 ),
               ),
-            ],
+            ),
+            const SizedBox(height: 14),
+            Text(
+              item.description,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12.5,
+                height: 1.4,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primaryDark.withValues(alpha: 0.75),
+              ),
+            ),
+            const SizedBox(height: 20),
+            GestureDetector(
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const PracticeScreen()),
+                );
+              },
+              child: StickerBadge(
+                rotateAngle: -0.02,
+                backgroundColor: AppColors.primaryDark,
+                borderColor: AppColors.primaryDark,
+                borderWidth: 2.2,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                child: Text(
+                  'START PRACTICE NOW 🎮',
+                  style: GoogleFonts.fredoka(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
-}
-
-/// Custom Painter to draw winding dashed line path matching the sine wave positions.
-class _WindingPathPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppColors.surfaceTint.withValues(alpha: 0.6)
-      ..strokeWidth = 6.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final path = Path();
-    const double mapHeight = 520.0;
-    
-    // Draw path using exact same sine math formula as node positioning
-    for (double y = 40; y <= mapHeight + 70; y += 4) {
-      final double relativeY = (y - 40) / mapHeight;
-      final double x = size.width / 2 + math.sin(relativeY * 2.5 * math.pi) * 60;
-      
-      if (y == 40) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-
-    // Convert solid path to dashed line
-    final dashPath = _buildDashedPath(path, 12, 10);
-    canvas.drawPath(dashPath, paint);
-  }
-
-  Path _buildDashedPath(Path source, double dashWidth, double dashGap) {
-    final dest = Path();
-    for (final metric in source.computeMetrics()) {
-      double distance = 0.0;
-      bool draw = true;
-      while (distance < metric.length) {
-        final length = draw ? dashWidth : dashGap;
-        if (draw) {
-          dest.addPath(
-            metric.extractPath(distance, distance + length),
-            Offset.zero,
-          );
-        }
-        distance += length;
-        draw = !draw;
-      }
-    }
-    return dest;
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

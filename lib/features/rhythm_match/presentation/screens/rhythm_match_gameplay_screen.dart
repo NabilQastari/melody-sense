@@ -11,6 +11,8 @@ import 'package:melody_sense/core/providers/tts_providers.dart';
 import 'package:melody_sense/core/providers/websocket_providers.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/session_result_screen.dart';
+import 'package:melody_sense/core/widgets/sticker_badge.dart';
+import 'package:melody_sense/core/widgets/torn_paper_card.dart';
 import 'package:melody_sense/core/widgets/virtual_piano.dart';
 
 import '../../domain/entities/song_entity.dart';
@@ -81,7 +83,15 @@ class _RhythmMatchGameplayScreenState
     super.dispose();
   }
 
+  int _lastNotePressedMs = 0;
+
   void _handleNotePressed(String note) {
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    if (nowMs - _lastNotePressedMs < 150) {
+      return; // Ignore accidental double tap within 150ms
+    }
+    _lastNotePressedMs = nowMs;
+
     _clearHighlightTimer?.cancel();
     setState(() => _activeHighlightNote = note);
 
@@ -110,9 +120,9 @@ class _RhythmMatchGameplayScreenState
     final state = ref.watch(rhythmMatchControllerProvider(_args));
 
     if (state == null || audioReady.isLoading) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: AppColors.background,
-        body: Center(child: CircularProgressIndicator()),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -164,7 +174,7 @@ class _RhythmMatchGameplayScreenState
                         color: AppColors.surfaceTint.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.close_rounded,
+                      child: Icon(Icons.close_rounded,
                           size: 20, color: AppColors.primaryDark),
                     ),
                   ),
@@ -208,12 +218,12 @@ class _RhythmMatchGameplayScreenState
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.timer_outlined,
+                        Icon(Icons.timer_outlined,
                             color: AppColors.surfaceWhite, size: 14),
                         const SizedBox(width: 4),
                         Text(
                           _formatTime(_elapsedMs),
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: AppColors.surfaceWhite,
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
@@ -237,7 +247,7 @@ class _RhythmMatchGameplayScreenState
                   value: state.progress,
                   minHeight: 6,
                   backgroundColor: AppColors.surfaceTint,
-                  valueColor: const AlwaysStoppedAnimation(AppColors.accent),
+                  valueColor: AlwaysStoppedAnimation(AppColors.accent),
                 ),
               ),
             ),
@@ -251,7 +261,7 @@ class _RhythmMatchGameplayScreenState
                   children: [
                     Text(
                       _formatDisplayNote(targetNote),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 36,
                         fontWeight: FontWeight.w900,
                         color: AppColors.primaryDark,
@@ -283,28 +293,29 @@ class _RhythmMatchGameplayScreenState
                         ),
                       ),
                       const SizedBox(height: 12),
-                      Container(
-                        width: 110,
-                        height: 110,
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceWhite,
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: [
-                            BoxShadow(
-                              color:
-                                  AppColors.primaryDark.withValues(alpha: 0.08),
-                              blurRadius: 14,
-                              offset: const Offset(0, 6),
+                      TornPaperCard(
+                        width: 120,
+                        height: 120,
+                        backgroundColor: AppColors.surfaceWhite,
+                        shadowColor: AppColors.surfaceTint,
+                        borderWidth: 2.8,
+                        tornPosition: TornEdgePosition.bottom,
+                        padding: const EdgeInsets.all(12),
+                        child: Center(
+                          child: StickerBadge(
+                            rotateAngle: -0.04,
+                            backgroundColor: AppColors.accent,
+                            borderColor: AppColors.primaryDark,
+                            borderWidth: 2.2,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            child: Text(
+                              _formatDisplayNote(targetNote),
+                              style: const TextStyle(
+                                fontSize: 40,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                              ),
                             ),
-                          ],
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          _formatDisplayNote(targetNote),
-                          style: const TextStyle(
-                            fontSize: 48,
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.primaryDark,
                           ),
                         ),
                       ),

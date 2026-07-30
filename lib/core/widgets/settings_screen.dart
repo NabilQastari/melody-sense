@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_soloud/flutter_soloud.dart';
 
 import 'package:melody_sense/core/theme/app_colors.dart';
+import 'package:melody_sense/core/theme/app_theme_data.dart';
 import 'package:melody_sense/core/providers/database_providers.dart';
 import 'package:melody_sense/core/providers/education_progress_provider.dart';
+import 'package:melody_sense/core/providers/theme_providers.dart';
 import 'package:melody_sense/core/providers/tts_providers.dart';
+import 'package:melody_sense/core/widgets/pattern_painters.dart';
+import 'package:melody_sense/core/widgets/whisker_banner_header.dart';
 
 /// Settings Screen - Sesi 9 (Pengaturan Aplikasi)
-///
-/// Mengatur volume audio piano, mengaktifkan Sense Mode (aksesibilitas),
-/// serta menyediakan opsi untuk mereset seluruh histori latihan.
+/// Menggunakan TornDivider dan WhiskerBannerHeader sesuai Desain.md.
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
@@ -41,8 +44,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     setState(() => _volume = value);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble('piano_volume', value);
-    // Ubah volume output SoLoud secara real-time
-    SoLoud.instance.setGlobalVolume(value * 1.8); // Skala boost 1.8x
+    SoLoud.instance.setGlobalVolume(value * 1.8);
   }
 
   Future<void> _updateSenseMode(bool value) async {
@@ -56,7 +58,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Hapus seluruh histori & pencapaian dari SQLite
       await db.transaction(() async {
         await db.delete(db.attempts).go();
         await db.delete(db.sessions).go();
@@ -64,11 +65,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         await db.delete(db.achievements).go();
       });
 
-      // Seeding ulang default achievements agar data kembali bersih tapi siap pakai
       await repo.seedDefaultAchievementsIfEmpty();
-
-      // Reset status kelulusan submode Introduce
       await ref.read(educationProgressProvider.notifier).resetAll();
+      await ref.read(unlockedThemesProvider.notifier).resetAll();
+      await ref.read(themeProvider.notifier).setTheme(AppThemes.defaultTheme);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -95,7 +95,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // ── App Bar ──
+            // ── App Bar Header (Whisker Style) ──
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
               child: Row(
@@ -105,47 +105,54 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppColors.surfaceTint.withValues(alpha: 0.5),
+                        color: AppColors.surfaceWhite,
                         borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.primaryDark, width: 2.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primaryDark.withValues(alpha: 0.15),
+                            offset: const Offset(2, 2),
+                          ),
+                        ],
                       ),
-                      child: const Icon(Icons.arrow_back_rounded,
+                      child: Icon(Icons.arrow_back_rounded,
                           size: 20, color: AppColors.primaryDark),
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
-                    'Settings',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primaryDark,
-                    ),
+                  const WhiskerBannerHeader(
+                    title: 'PENGATURAN',
+                    fontSize: 15,
+                    rotateAngle: -0.03,
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   ),
                 ],
               ),
             ),
+            const SizedBox(height: 16),
 
-            // ── Setting Items List ──
+            // ── Body Scrollable ──
             Expanded(
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator(color: AppColors.accent))
+                  ? Center(child: CircularProgressIndicator(color: AppColors.accent))
                   : ListView(
-                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
                       children: [
                         // ── Audio Section ──
-                        _buildSectionHeader('AUDIO'),
+                        _buildSectionHeader('AUDIO & VOLUMEN'),
+                        const SizedBox(height: 10),
                         _buildCard([
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            padding: const EdgeInsets.all(16),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text(
-                                      'Piano Volume',
-                                      style: TextStyle(
+                                    Text(
+                                      'Volume Suara Piano',
+                                      style: GoogleFonts.fredoka(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w700,
                                         color: AppColors.primaryDark,
@@ -153,10 +160,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                     ),
                                     Text(
                                       '${(_volume * 100).toInt()}%',
-                                      style: TextStyle(
+                                      style: GoogleFonts.fredoka(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w700,
-                                        color: AppColors.primaryDark.withValues(alpha: 0.6),
+                                        color: AppColors.primaryDark.withValues(alpha: 0.7),
                                       ),
                                     ),
                                   ],
@@ -182,47 +189,210 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ),
                           ),
                         ]),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
+                        const TornDivider(opacity: 0.35),
+                        const SizedBox(height: 16),
+
+                        // ── Theme Selector Section ──
+                        _buildSectionHeader('TEMA WARNA'),
+                        const SizedBox(height: 10),
+                        _buildCard([
+                          Padding(
+                            padding: const EdgeInsets.all(14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Pilih Tema Palette Aplikasi',
+                                  style: GoogleFonts.fredoka(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.primaryDark,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Buka Mystery Chest Level 40 di Roadmap untuk meng-unlock tema eksklusif!',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primaryDark.withValues(alpha: 0.7),
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                Consumer(
+                                  builder: (context, ref, _) {
+                                    final activeTheme = ref.watch(themeProvider);
+                                    final unlockedSet = ref.watch(unlockedThemesProvider);
+
+                                    return Wrap(
+                                      spacing: 10,
+                                      runSpacing: 10,
+                                      children: AppThemes.all.map((theme) {
+                                        final isUnlocked = unlockedSet.contains(theme.id);
+                                        final isSelected = activeTheme.id == theme.id;
+
+                                        return GestureDetector(
+                                          onTap: isUnlocked
+                                              ? () => ref.read(themeProvider.notifier).setTheme(theme)
+                                              : () {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    const SnackBar(
+                                                      content: Text(
+                                                          'Tema ini terkunci! Capai Level 40 dan buka Mystery Chest.'),
+                                                      duration: Duration(seconds: 2),
+                                                    ),
+                                                  );
+                                                },
+                                          child: Opacity(
+                                            opacity: isUnlocked ? 1.0 : 0.55,
+                                            child: Container(
+                                              width: 140,
+                                              padding: const EdgeInsets.all(10),
+                                              decoration: BoxDecoration(
+                                                color: theme.surfaceWhite,
+                                                borderRadius: BorderRadius.circular(14),
+                                                border: Border.all(
+                                                  color: isSelected ? theme.accent : theme.primaryDark,
+                                                  width: isSelected ? 3.0 : 1.8,
+                                                ),
+                                                boxShadow: [
+                                                  if (isSelected)
+                                                    BoxShadow(
+                                                      color: theme.accent.withValues(alpha: 0.3),
+                                                      blurRadius: 6,
+                                                      offset: const Offset(0, 2),
+                                                    ),
+                                                ],
+                                              ),
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      // Palette Dots
+                                                      Container(
+                                                        width: 14,
+                                                        height: 14,
+                                                        decoration: BoxDecoration(
+                                                          color: theme.background,
+                                                          shape: BoxShape.circle,
+                                                          border:
+                                                              Border.all(color: theme.primaryDark, width: 1),
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 4),
+                                                      Container(
+                                                        width: 14,
+                                                        height: 14,
+                                                        decoration: BoxDecoration(
+                                                          color: theme.surfaceTint,
+                                                          shape: BoxShape.circle,
+                                                          border:
+                                                              Border.all(color: theme.primaryDark, width: 1),
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 4),
+                                                      Container(
+                                                        width: 14,
+                                                        height: 14,
+                                                        decoration: BoxDecoration(
+                                                          color: theme.accent,
+                                                          shape: BoxShape.circle,
+                                                          border:
+                                                              Border.all(color: theme.primaryDark, width: 1),
+                                                        ),
+                                                      ),
+                                                      const Spacer(),
+                                                      if (!isUnlocked)
+                                                        Icon(Icons.lock_outline_rounded,
+                                                            size: 14, color: theme.primaryDark)
+                                                      else if (isSelected)
+                                                        Icon(Icons.check_circle_rounded,
+                                                            size: 16, color: theme.accent),
+                                                    ],
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                  Text(
+                                                    theme.name,
+                                                    style: GoogleFonts.fredoka(
+                                                      fontSize: 12,
+                                                      fontWeight: FontWeight.w700,
+                                                      color: theme.primaryDark,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ]),
+                        const SizedBox(height: 16),
+                        const TornDivider(opacity: 0.35),
+                        const SizedBox(height: 16),
 
                         // ── Accessibility Section ──
                         _buildSectionHeader('ACCESSIBILITY'),
+                        const SizedBox(height: 10),
                         _buildCard([
                           SwitchListTile(
                             value: ref.watch(senseModeProvider),
                             onChanged: _updateSenseMode,
-                            title: const Text(
+                            title: Text(
                               'Sense Mode',
-                              style: TextStyle(
+                              style: GoogleFonts.fredoka(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.primaryDark,
                               ),
                             ),
-                            subtitle: const Text(
+                            subtitle: Text(
                               'Mengaktifkan panduan suara (TTS) & getaran taktil untuk tunanetra.',
-                              style: TextStyle(fontSize: 11, color: Colors.grey),
+                              style: TextStyle(fontSize: 11.5, color: AppColors.primaryDark),
                             ),
                             activeTrackColor: AppColors.accent,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                           ),
                         ]),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
+                        const TornDivider(opacity: 0.35),
+                        const SizedBox(height: 16),
 
-                        // ── Maintenance Section ──
+                        // ── Danger Zone ──
                         _buildSectionHeader('DANGER ZONE'),
+                        const SizedBox(height: 10),
                         _buildCard([
                           ListTile(
                             onTap: () {
                               showDialog(
                                 context: context,
                                 builder: (_) => AlertDialog(
-                                  title: const Text('Reset Histori Latihan?'),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(18),
+                                    side: BorderSide(color: AppColors.primaryDark, width: 2.4),
+                                  ),
+                                  title: Text(
+                                    'Reset Histori Latihan?',
+                                    style: GoogleFonts.fredoka(
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primaryDark,
+                                    ),
+                                  ),
                                   content: const Text(
-                                      'Seluruh histori latihan, statistik akurasi nada, XP, level, dan badge pencapaian Anda akan dihapus secara permanen.'),
+                                      'Seluruh histori latihan, statistik akurasi nada, XP, level, dan tema unlocked Anda akan dihapus secara permanen.'),
                                   actions: [
                                     TextButton(
                                       onPressed: () => Navigator.pop(context),
-                                      child: const Text('Batal'),
+                                      child: Text('Batal',
+                                          style: GoogleFonts.fredoka(
+                                              color: AppColors.primaryDark, fontWeight: FontWeight.w600)),
                                     ),
                                     ElevatedButton(
                                       onPressed: () {
@@ -230,29 +400,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                         _resetProgress();
                                       },
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.red,
+                                        backgroundColor: Colors.red.shade600,
                                         foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(10),
+                                          side: BorderSide(color: AppColors.primaryDark, width: 2),
+                                        ),
                                       ),
-                                      child: const Text('Reset Data'),
+                                      child: Text('Reset Data',
+                                          style: GoogleFonts.fredoka(fontWeight: FontWeight.w700)),
                                     ),
                                   ],
                                 ),
                               );
                             },
-                            title: const Text(
+                            title: Text(
                               'Reset Progress Latihan',
-                              style: TextStyle(
+                              style: GoogleFonts.fredoka(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
-                                color: Colors.red,
+                                color: Colors.red.shade700,
                               ),
                             ),
                             subtitle: const Text(
-                              'Menghapus seluruh histori permainan, level, dan streak.',
-                              style: TextStyle(fontSize: 11, color: Colors.grey),
+                              'Hapus seluruh statistik, XP, level, dan pencapaian.',
+                              style: TextStyle(fontSize: 11, color: Colors.redAccent),
                             ),
-                            trailing: const Icon(Icons.delete_outline_rounded, color: Colors.red),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            trailing: const Icon(Icons.delete_forever_rounded, color: Colors.red),
                           ),
                         ]),
                       ],
@@ -265,17 +439,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
-          color: AppColors.primaryDark.withValues(alpha: 0.5),
-          letterSpacing: 0.8,
-        ),
-      ),
+    return WhiskerBannerHeader(
+      title: title,
+      fontSize: 13,
+      rotateAngle: -0.02,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
     );
   }
 
@@ -284,15 +452,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primaryDark, width: 2.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade100,
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+            color: AppColors.primaryDark.withValues(alpha: 0.1),
+            offset: const Offset(3, 3),
           ),
         ],
       ),
-      child: Column(children: children),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
     );
   }
 }

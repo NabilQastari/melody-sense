@@ -142,14 +142,14 @@ class _PlaceholderAppBar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
       child: Row(
         children: [
-          const CircleAvatar(
+          CircleAvatar(
             radius: 16,
             backgroundColor: AppColors.surfaceTint,
             child:
                 Icon(Icons.person, size: 18, color: AppColors.primaryDark),
           ),
           const SizedBox(width: 10),
-          const Text(
+          Text(
             'Melody Sense',
             style: TextStyle(
               fontWeight: FontWeight.w700,
@@ -186,7 +186,7 @@ class _PlaceholderBody extends StatelessWidget {
         const SizedBox(height: 16),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.w800,
             color: AppColors.primaryDark,
