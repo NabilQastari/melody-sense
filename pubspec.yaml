@@ -48,6 +48,15 @@ dev_dependencies:
     sdk: flutter
   build_runner: ^2.4.13
   drift_dev: ^2.20.0
+  flutter_launcher_icons: ^0.14.3
+
+# ── Flutter Launcher Icons Configuration ──
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/images/logo_lavender.png"
+  adaptive_icon_background: "#F2F5FF"
+  adaptive_icon_foreground: "assets/images/logo_lavender.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -55,7 +64,8 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
   assets:
-  - assets/audio/notes/
+    - assets/audio/notes/
+    - assets/images/
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.

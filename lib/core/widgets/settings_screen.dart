@@ -196,150 +196,164 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         const TornDivider(opacity: 0.35),
                         const SizedBox(height: 16),
 
-                        // ── Theme Selector Section ──
-                        _buildSectionHeader('TEMA WARNA'),
-                        const SizedBox(height: 10),
-                        _buildCard([
-                          Padding(
-                            padding: const EdgeInsets.all(14),
-                            child: Column(
+                        // ── Theme Selector Section (hidden until Mystery Chest opened) ──
+                        Consumer(
+                          builder: (context, ref, _) {
+                            final claimedSet = ref.watch(claimedChestsProvider);
+                            final hasOpenedChest = claimedSet.contains(40);
+
+                            if (!hasOpenedChest) return const SizedBox.shrink();
+
+                            return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  'Pilih Tema Palette Aplikasi',
-                                  style: GoogleFonts.fredoka(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.primaryDark,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Buka Mystery Chest Level 40 di Roadmap untuk meng-unlock tema eksklusif!',
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.primaryDark.withValues(alpha: 0.7),
-                                  ),
-                                ),
-                                const SizedBox(height: 14),
-                                Consumer(
-                                  builder: (context, ref, _) {
-                                    final activeTheme = ref.watch(themeProvider);
-                                    final unlockedSet = ref.watch(unlockedThemesProvider);
-
-                                    return Wrap(
-                                      spacing: 10,
-                                      runSpacing: 10,
-                                      children: AppThemes.all.map((theme) {
-                                        final isUnlocked = unlockedSet.contains(theme.id);
-                                        final isSelected = activeTheme.id == theme.id;
-
-                                        return GestureDetector(
-                                          onTap: isUnlocked
-                                              ? () => ref.read(themeProvider.notifier).setTheme(theme)
-                                              : () {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    const SnackBar(
-                                                      content: Text(
-                                                          'Tema ini terkunci! Capai Level 40 dan buka Mystery Chest.'),
-                                                      duration: Duration(seconds: 2),
-                                                    ),
-                                                  );
-                                                },
-                                          child: Opacity(
-                                            opacity: isUnlocked ? 1.0 : 0.55,
-                                            child: Container(
-                                              width: 140,
-                                              padding: const EdgeInsets.all(10),
-                                              decoration: BoxDecoration(
-                                                color: theme.surfaceWhite,
-                                                borderRadius: BorderRadius.circular(14),
-                                                border: Border.all(
-                                                  color: isSelected ? theme.accent : theme.primaryDark,
-                                                  width: isSelected ? 3.0 : 1.8,
-                                                ),
-                                                boxShadow: [
-                                                  if (isSelected)
-                                                    BoxShadow(
-                                                      color: theme.accent.withValues(alpha: 0.3),
-                                                      blurRadius: 6,
-                                                      offset: const Offset(0, 2),
-                                                    ),
-                                                ],
-                                              ),
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Row(
-                                                    children: [
-                                                      // Palette Dots
-                                                      Container(
-                                                        width: 14,
-                                                        height: 14,
-                                                        decoration: BoxDecoration(
-                                                          color: theme.background,
-                                                          shape: BoxShape.circle,
-                                                          border:
-                                                              Border.all(color: theme.primaryDark, width: 1),
-                                                        ),
-                                                      ),
-                                                      const SizedBox(width: 4),
-                                                      Container(
-                                                        width: 14,
-                                                        height: 14,
-                                                        decoration: BoxDecoration(
-                                                          color: theme.surfaceTint,
-                                                          shape: BoxShape.circle,
-                                                          border:
-                                                              Border.all(color: theme.primaryDark, width: 1),
-                                                        ),
-                                                      ),
-                                                      const SizedBox(width: 4),
-                                                      Container(
-                                                        width: 14,
-                                                        height: 14,
-                                                        decoration: BoxDecoration(
-                                                          color: theme.accent,
-                                                          shape: BoxShape.circle,
-                                                          border:
-                                                              Border.all(color: theme.primaryDark, width: 1),
-                                                        ),
-                                                      ),
-                                                      const Spacer(),
-                                                      if (!isUnlocked)
-                                                        Icon(Icons.lock_outline_rounded,
-                                                            size: 14, color: theme.primaryDark)
-                                                      else if (isSelected)
-                                                        Icon(Icons.check_circle_rounded,
-                                                            size: 16, color: theme.accent),
-                                                    ],
-                                                  ),
-                                                  const SizedBox(height: 8),
-                                                  Text(
-                                                    theme.name,
-                                                    style: GoogleFonts.fredoka(
-                                                      fontSize: 12,
-                                                      fontWeight: FontWeight.w700,
-                                                      color: theme.primaryDark,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
+                                _buildSectionHeader('TEMA WARNA'),
+                                const SizedBox(height: 10),
+                                _buildCard([
+                                  Padding(
+                                    padding: const EdgeInsets.all(14),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Pilih Tema Palette Aplikasi',
+                                          style: GoogleFonts.fredoka(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppColors.primaryDark,
                                           ),
-                                        );
-                                      }).toList(),
-                                    );
-                                  },
-                                ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Tema eksklusif dari Mystery Chest Level 40!',
+                                          style: TextStyle(
+                                            fontSize: 11.5,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.primaryDark.withValues(alpha: 0.7),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 14),
+                                        Consumer(
+                                          builder: (context, ref, _) {
+                                            final activeTheme = ref.watch(themeProvider);
+                                            final unlockedSet = ref.watch(unlockedThemesProvider);
+
+                                            return Wrap(
+                                              spacing: 10,
+                                              runSpacing: 10,
+                                              children: AppThemes.all.map((theme) {
+                                                final isUnlocked = unlockedSet.contains(theme.id);
+                                                final isSelected = activeTheme.id == theme.id;
+
+                                                return GestureDetector(
+                                                  onTap: isUnlocked
+                                                      ? () => ref.read(themeProvider.notifier).setTheme(theme)
+                                                      : () {
+                                                          ScaffoldMessenger.of(context).showSnackBar(
+                                                            const SnackBar(
+                                                              content: Text(
+                                                                  'Tema ini terkunci! Capai Level 40 dan buka Mystery Chest.'),
+                                                              duration: Duration(seconds: 2),
+                                                            ),
+                                                          );
+                                                        },
+                                                  child: Opacity(
+                                                    opacity: isUnlocked ? 1.0 : 0.55,
+                                                    child: Container(
+                                                      width: 140,
+                                                      padding: const EdgeInsets.all(10),
+                                                      decoration: BoxDecoration(
+                                                        color: theme.surfaceWhite,
+                                                        borderRadius: BorderRadius.circular(14),
+                                                        border: Border.all(
+                                                          color: isSelected ? theme.accent : theme.primaryDark,
+                                                          width: isSelected ? 3.0 : 1.8,
+                                                        ),
+                                                        boxShadow: [
+                                                          if (isSelected)
+                                                            BoxShadow(
+                                                              color: theme.accent.withValues(alpha: 0.3),
+                                                              blurRadius: 6,
+                                                              offset: const Offset(0, 2),
+                                                            ),
+                                                        ],
+                                                      ),
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                          Row(
+                                                            children: [
+                                                              // Palette Dots
+                                                              Container(
+                                                                width: 14,
+                                                                height: 14,
+                                                                decoration: BoxDecoration(
+                                                                  color: theme.background,
+                                                                  shape: BoxShape.circle,
+                                                                  border:
+                                                                      Border.all(color: theme.primaryDark, width: 1),
+                                                                ),
+                                                              ),
+                                                              const SizedBox(width: 4),
+                                                              Container(
+                                                                width: 14,
+                                                                height: 14,
+                                                                decoration: BoxDecoration(
+                                                                  color: theme.surfaceTint,
+                                                                  shape: BoxShape.circle,
+                                                                  border:
+                                                                      Border.all(color: theme.primaryDark, width: 1),
+                                                                ),
+                                                              ),
+                                                              const SizedBox(width: 4),
+                                                              Container(
+                                                                width: 14,
+                                                                height: 14,
+                                                                decoration: BoxDecoration(
+                                                                  color: theme.accent,
+                                                                  shape: BoxShape.circle,
+                                                                  border:
+                                                                      Border.all(color: theme.primaryDark, width: 1),
+                                                                ),
+                                                              ),
+                                                              const Spacer(),
+                                                              if (!isUnlocked)
+                                                                Icon(Icons.lock_outline_rounded,
+                                                                    size: 14, color: theme.primaryDark)
+                                                              else if (isSelected)
+                                                                Icon(Icons.check_circle_rounded,
+                                                                    size: 16, color: theme.accent),
+                                                            ],
+                                                          ),
+                                                          const SizedBox(height: 8),
+                                                          Text(
+                                                            theme.name,
+                                                            style: GoogleFonts.fredoka(
+                                                              fontSize: 12,
+                                                              fontWeight: FontWeight.w700,
+                                                              color: theme.primaryDark,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                );
+                                              }).toList(),
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ]),
+                                const SizedBox(height: 16),
+                                const TornDivider(opacity: 0.35),
+                                const SizedBox(height: 16),
                               ],
-                            ),
-                          ),
-                        ]),
-                        const SizedBox(height: 16),
-                        const TornDivider(opacity: 0.35),
-                        const SizedBox(height: 16),
+                            );
+                          },
+                        ),
 
                         // ── Accessibility Section ──
                         _buildSectionHeader('ACCESSIBILITY'),

@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:melody_sense/core/domain/entities/practice_entities.dart';
 import 'package:melody_sense/core/domain/entities/progression_entities.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
+import 'package:melody_sense/core/widgets/app_logo_avatar.dart';
 import 'package:melody_sense/core/widgets/pattern_painters.dart';
 import 'package:melody_sense/core/widgets/settings_screen.dart';
 import 'package:melody_sense/core/widgets/sticker_badge.dart';
@@ -30,19 +31,7 @@ class StatsScreen extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
               child: Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceTint,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.primaryDark, width: 2.5),
-                    ),
-                    child: CircleAvatar(
-                      radius: 14,
-                      backgroundColor: AppColors.surfaceWhite,
-                      child: Icon(Icons.person, size: 18, color: AppColors.primaryDark),
-                    ),
-                  ),
+                  const AppLogoAvatar(),
                   const SizedBox(width: 10),
                   const WhiskerBannerHeader(
                     title: 'STATISTICS',

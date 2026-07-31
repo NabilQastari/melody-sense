@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-
 import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/app_bottom_nav.dart';
+import 'package:melody_sense/core/widgets/app_logo_avatar.dart';
 
 /// Placeholder Dashboard screen — konten belum dirancang (lihat Sesi 9
 /// di context file). Untuk sekarang menampilkan pesan placeholder supaya
@@ -142,12 +142,7 @@ class _PlaceholderAppBar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: AppColors.surfaceTint,
-            child:
-                Icon(Icons.person, size: 18, color: AppColors.primaryDark),
-          ),
+          const AppLogoAvatar(),
           const SizedBox(width: 10),
           Text(
             'Melody Sense',

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
-import 'package:melody_sense/core/widgets/home_screen.dart';
+import 'package:melody_sense/core/widgets/splash_screen.dart';
 import 'package:melody_sense/core/providers/education_progress_provider.dart';
 import 'package:melody_sense/core/providers/theme_providers.dart';
 
@@ -39,7 +39,7 @@ class MelodySenseApp extends ConsumerWidget {
           primary: activeTheme.primaryDark,
         ),
       ),
-      home: const HomeScreen(),
+      home: const SplashScreen(),
     );
   }
 }
