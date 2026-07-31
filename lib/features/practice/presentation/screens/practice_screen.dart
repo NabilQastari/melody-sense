@@ -52,20 +52,20 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         builder: (_) => const IntervalTrainingSubmodePickerScreen(),
       ),
       ChallengeInfo(
-        title: 'Melody Echo',
-        subtitle: 'Repeat the melody played.',
-        icon: Icons.person_rounded,
-        difficulty: ChallengeDifficulty.intermediate,
-        enabled: true,
-        builder: (_) => const MelodyEchoSubmodePickerScreen(),
-      ),
-      ChallengeInfo(
         title: 'Rhythm Match',
         subtitle: 'Tap along to the song rhythm.',
         icon: Icons.timer_rounded,
-        difficulty: ChallengeDifficulty.advanced,
+        difficulty: ChallengeDifficulty.intermediate,
         enabled: true,
         builder: (_) => const RhythmMatchSubmodeScreen(),
+      ),
+      ChallengeInfo(
+        title: 'Melody Echo',
+        subtitle: 'Repeat the melody played.',
+        icon: Icons.person_rounded,
+        difficulty: ChallengeDifficulty.advanced,
+        enabled: true,
+        builder: (_) => const MelodyEchoSubmodePickerScreen(),
       ),
     ];
   }
@@ -226,12 +226,14 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                 'Sambungkan Smart Piano via Wi-Fi. Jalankan tantangan menggunakan instrumen fisik milikmu.',
             icon: Icons.piano_rounded,
             iconColor: Colors.white,
-            iconBgColor: AppColors.primaryDark,
+            iconBgColor: AppColors.darkContainer,
             actionLabel: 'START MAESTRO',
-            customActionColor: AppColors.primaryDark,
+            customActionColor: AppColors.darkContainer,
             statusWidget: StickerBadge(
               rotateAngle: 0.03,
-              backgroundColor: isConnected ? Colors.green.shade100 : Colors.red.shade100,
+              backgroundColor: isConnected
+                  ? (AppColors.isDark ? const Color(0xFF1B3E2B) : Colors.green.shade100)
+                  : (AppColors.isDark ? const Color(0xFF3E1B1B) : Colors.red.shade100),
               borderColor: AppColors.primaryDark,
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               child: Row(
@@ -239,14 +241,18 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                 children: [
                   Icon(Icons.wifi_rounded,
                       size: 14,
-                      color: isConnected ? Colors.green.shade900 : Colors.red.shade900),
+                      color: isConnected
+                          ? (AppColors.isDark ? const Color(0xFF81C784) : Colors.green.shade900)
+                          : (AppColors.isDark ? const Color(0xFFEF9A9A) : Colors.red.shade900)),
                   const SizedBox(width: 6),
                   Text(
                     isConnected ? 'ESP32 Connected' : 'ESP32 Offline (Connect via Dashboard)',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: isConnected ? Colors.green.shade900 : Colors.red.shade900,
+                      color: isConnected
+                          ? (AppColors.isDark ? const Color(0xFF81C784) : Colors.green.shade900)
+                          : (AppColors.isDark ? const Color(0xFFEF9A9A) : Colors.red.shade900),
                     ),
                   ),
                 ],
@@ -328,7 +334,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
 
     if (mode == AppOperatingMode.maestro) {
       modeTitle = 'MAESTRO MODE';
-      modeColor = AppColors.primaryDark;
+      modeColor = AppColors.darkContainer;
     } else if (mode == AppOperatingMode.sense) {
       modeTitle = 'SENSE MODE';
       modeColor = Colors.orange.shade800;
@@ -346,7 +352,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                 padding: const EdgeInsets.all(8),
                 margin: const EdgeInsets.only(right: 12),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.surfaceWhite,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: AppColors.primaryDark, width: 2.2),
                   boxShadow: [
@@ -607,7 +613,7 @@ class _FreePlayCard extends StatelessWidget {
             onTap: onTap,
             child: StickerBadge(
               rotateAngle: 0.04,
-              backgroundColor: AppColors.primaryDark,
+              backgroundColor: AppColors.accent,
               borderColor: Colors.white,
               borderWidth: 2.0,
               padding: const EdgeInsets.all(10),

@@ -14,6 +14,7 @@ abstract class ProgressionRepository {
 
   Future<PersonalBestEntry?> getPersonalBest(TrainingMode mode);
   Stream<PersonalBestEntry?> watchPersonalBest(TrainingMode mode);
+  Stream<PersonalBestEntry?> watchTopPersonalBest();
 
   /// Mengembalikan true kalau skor ini jadi rekor baru untuk mode tsb.
   Future<bool> submitScore({required TrainingMode mode, required int score});

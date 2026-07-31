@@ -168,10 +168,13 @@ class _IntervalTrainingScreenState extends ConsumerState<IntervalTrainingScreen>
       _resetHintTimers(state);
       _startSenseAutoPlayTimer();
       if (mode == AppOperatingMode.sense) {
-        ref.read(ttsServiceProvider).speakSequence([
+        final tts = ref.read(ttsServiceProvider);
+        final spokenRoot = tts.formatNoteForSpeech(state.rootNote);
+        final spokenTarget = tts.formatNoteForSpeech(state.targetNote);
+        tts.speakSequence([
           'Ronde ${state.roundIndex + 1}',
           '${state.intervalName}',
-          'Dari ${state.rootNote}, tekan note ${state.targetNote}',
+          'Dari $spokenRoot, tekan nada $spokenTarget',
         ]);
       }
     }
@@ -181,10 +184,12 @@ class _IntervalTrainingScreenState extends ConsumerState<IntervalTrainingScreen>
       _lastFeedback = state.feedback;
       _senseAutoPlayTimer?.cancel();
       if (mode == AppOperatingMode.sense) {
+        final tts = ref.read(ttsServiceProvider);
+        final spokenTarget = tts.formatNoteForSpeech(state.targetNote);
         if (state.feedback == RoundFeedback.correct) {
-          ref.read(ttsServiceProvider).speak('Benar! ${state.targetNote}');
+          tts.speak('Benar! $spokenTarget');
         } else if (state.feedback == RoundFeedback.wrong) {
-          ref.read(ttsServiceProvider).speak('Salah. Jawaban yang benar adalah ${state.targetNote}');
+          tts.speak('Salah. Jawaban yang benar adalah $spokenTarget');
         }
       }
     } else if (state.feedback == RoundFeedback.none) {

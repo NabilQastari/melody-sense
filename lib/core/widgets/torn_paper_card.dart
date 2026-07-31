@@ -43,18 +43,20 @@ class TornPaperCard extends StatelessWidget {
       margin: margin,
       width: width,
       height: height,
-      child: CustomPaint(
-        painter: _TornPaperPainter(
-          fillColor: bgColor,
-          shadowColor: sColor,
-          borderColor: bColor,
-          borderWidth: borderWidth,
-          tornPosition: tornPosition,
-          elevationOffset: elevationOffset,
-        ),
-        child: Padding(
-          padding: padding,
-          child: child,
+      child: RepaintBoundary(
+        child: CustomPaint(
+          painter: _TornPaperPainter(
+            fillColor: bgColor,
+            shadowColor: sColor,
+            borderColor: bColor,
+            borderWidth: borderWidth,
+            tornPosition: tornPosition,
+            elevationOffset: elevationOffset,
+          ),
+          child: Padding(
+            padding: padding,
+            child: child,
+          ),
         ),
       ),
     );
@@ -77,6 +79,20 @@ class _TornPaperPainter extends CustomPainter {
   final double borderWidth;
   final TornEdgePosition tornPosition;
   final Offset elevationOffset;
+
+  Path? _cachedPath;
+  Path? _cachedShadowPath;
+  Size? _cachedSize;
+
+  Path _getPath(Size size) {
+    if (_cachedPath != null && _cachedSize == size) {
+      return _cachedPath!;
+    }
+    _cachedSize = size;
+    _cachedPath = _createTornPath(size);
+    _cachedShadowPath = _cachedPath!.shift(elevationOffset);
+    return _cachedPath!;
+  }
 
   Path _createTornPath(Size size) {
     final path = Path();
@@ -156,10 +172,10 @@ class _TornPaperPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final path = _createTornPath(size);
+    final path = _getPath(size);
+    final shadowPath = _cachedShadowPath ?? path.shift(elevationOffset);
 
     // 1. Shadow/Paper Stack Duplicate Layer
-    final shadowPath = path.shift(elevationOffset);
     final shadowPaint = Paint()
       ..color = shadowColor
       ..style = PaintingStyle.fill;

@@ -160,7 +160,7 @@ class _LevelCard extends StatelessWidget {
     final streakAsync = ref.watch(streakProvider);
 
     return TornPaperCard(
-      backgroundColor: AppColors.primaryDark,
+      backgroundColor: AppColors.darkContainer,
       shadowColor: AppColors.surfaceTint,
       borderWidth: 2.8,
       tornPosition: TornEdgePosition.both,

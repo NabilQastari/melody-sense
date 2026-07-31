@@ -1,16 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import 'package:melody_sense/core/domain/entities/operating_mode.dart';
 import 'package:melody_sense/core/domain/entities/practice_entities.dart';
 import 'package:melody_sense/core/providers/education_progress_provider.dart';
+import 'package:melody_sense/core/providers/operating_mode_providers.dart';
+import 'package:melody_sense/core/providers/tts_providers.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/whisker_submode_card.dart';
 
 import 'rhythm_match_introduce_screen.dart';
 import 'rhythm_match_song_select_screen.dart';
 
-class RhythmMatchSubmodeScreen extends ConsumerWidget {
+class RhythmMatchSubmodeScreen extends ConsumerStatefulWidget {
   const RhythmMatchSubmodeScreen({super.key});
+
+  @override
+  ConsumerState<RhythmMatchSubmodeScreen> createState() =>
+      _RhythmMatchSubmodeScreenState();
+}
+
+class _RhythmMatchSubmodeScreenState extends ConsumerState<RhythmMatchSubmodeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final mode = ref.read(operatingModeProvider);
+      final isSenseMode = mode == AppOperatingMode.sense || ref.read(senseModeProvider);
+      if (isSenseMode) {
+        ref.read(ttsServiceProvider).speak(
+              'Submode latihan Rhythm Match. Pilih Introduce Perkenalan, Start Training, atau Guided Practice.',
+              force: true,
+            );
+      }
+    });
+  }
 
   void _onSelectIntroduce(BuildContext context) {
     Navigator.of(context).push(
@@ -43,7 +66,7 @@ class RhythmMatchSubmodeScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final hasCompletedIntroduce =
         ref.watch(educationProgressProvider)['rhythm_match'] ?? false;
 

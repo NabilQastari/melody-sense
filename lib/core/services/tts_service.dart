@@ -83,6 +83,42 @@ class TTSService {
     }
   }
 
+  /// Mengubah notasi ilmiah (mis. C#4, D4) menjadi ucapan bahasa Indonesia yang ramah (solfège + nama nada).
+  String formatNoteForSpeech(String note) {
+    switch (note) {
+      case 'B3':
+        return 'Si, B3';
+      case 'C4':
+        return 'Do, C4';
+      case 'C#4':
+        return 'Do Kres, C Sharp 4';
+      case 'D4':
+        return 'Re, D4';
+      case 'D#4':
+        return 'Re Kres, D Sharp 4';
+      case 'E4':
+        return 'Mi, E4';
+      case 'F4':
+        return 'Fa, F4';
+      case 'F#4':
+        return 'Fa Kres, F Sharp 4';
+      case 'G4':
+        return 'Sol, G4';
+      case 'G#4':
+        return 'Sol Kres, G Sharp 4';
+      case 'A4':
+        return 'La, A4';
+      case 'A#4':
+        return 'La Kres, A Sharp 4';
+      case 'B4':
+        return 'Si, B4';
+      case 'C5':
+        return 'Do tinggi, C5';
+      default:
+        return note.replaceAll('#', ' Kres ');
+    }
+  }
+
   /// Hentikan suara TTS
   Future<void> stop() async {
     try {

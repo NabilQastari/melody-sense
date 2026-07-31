@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'package:melody_sense/core/domain/entities/operating_mode.dart';
 import 'package:melody_sense/core/providers/audio_providers.dart';
 import 'package:melody_sense/core/providers/education_progress_provider.dart';
+import 'package:melody_sense/core/providers/operating_mode_providers.dart';
+import 'package:melody_sense/core/providers/tts_providers.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/pattern_painters.dart';
 import 'package:melody_sense/core/widgets/sticker_badge.dart';
@@ -38,7 +41,44 @@ class _IntervalTrainingIntroduceScreenState
   };
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _speakCurrentSlide();
+    });
+  }
+
+  void _speakCurrentSlide() {
+    final mode = ref.read(operatingModeProvider);
+    final isSenseMode = mode == AppOperatingMode.sense || ref.read(senseModeProvider);
+    if (!isSenseMode) return;
+
+    final tts = ref.read(ttsServiceProvider);
+    switch (_currentPage) {
+      case 0:
+        tts.speak(
+          'Slide 1 dari 3. Apa itu interval nada. Interval adalah jarak ketinggian nada antara 2 nada yang dibunyikan. Diukur berdasarkan jumlah langkah nada atau semitones.',
+          force: true,
+        );
+        break;
+      case 1:
+        tts.speak(
+          'Slide 2 dari 3. Jenis-jenis interval. Ada interval minor, mayor, dan perfect. Setiap interval menghasilkan karakter warna suara khas tersendiri.',
+          force: true,
+        );
+        break;
+      case 2:
+        tts.speak(
+          'Slide 3 dari 3. Modul dengarkan contoh interval. Tekan tombol nama interval untuk mendengarkan contoh perbandingan bunyinya.',
+          force: true,
+        );
+        break;
+    }
+  }
+
+  @override
   void dispose() {
+    ref.read(ttsServiceProvider).stop();
     _pageController.dispose();
     super.dispose();
   }
@@ -49,6 +89,12 @@ class _IntervalTrainingIntroduceScreenState
       _selectedIntervalName = intervalName;
       _isPlayingSample = true;
     });
+
+    final mode = ref.read(operatingModeProvider);
+    final isSenseMode = mode == AppOperatingMode.sense || ref.read(senseModeProvider);
+    if (isSenseMode) {
+      ref.read(ttsServiceProvider).speak('Interval $intervalName', force: true);
+    }
 
     final notes = _intervalSamples[intervalName] ?? ['C4', 'E4'];
     final audio = ref.read(audioServiceProvider);
@@ -100,7 +146,7 @@ class _IntervalTrainingIntroduceScreenState
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.surfaceWhite,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: AppColors.primaryDark, width: 2.5),
                         boxShadow: [
@@ -147,6 +193,7 @@ class _IntervalTrainingIntroduceScreenState
                 controller: _pageController,
                 onPageChanged: (index) {
                   setState(() => _currentPage = index);
+                  _speakCurrentSlide();
                 },
                 children: [
                   _buildSlide1(),
@@ -190,8 +237,8 @@ class _IntervalTrainingIntroduceScreenState
                     onTap: _nextPage,
                     child: StickerBadge(
                       rotateAngle: -0.02,
-                      backgroundColor: AppColors.primaryDark,
-                      borderColor: AppColors.primaryDark,
+                      backgroundColor: AppColors.accent,
+                      borderColor: AppColors.isDark ? Colors.black : AppColors.primaryDark,
                       borderWidth: 2.2,
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                       child: Row(
@@ -327,8 +374,8 @@ class _IntervalTrainingIntroduceScreenState
               children: [
                 StickerBadge(
                   rotateAngle: 0.05,
-                  backgroundColor: AppColors.primaryDark,
-                  borderColor: AppColors.primaryDark,
+                  backgroundColor: AppColors.accent,
+                  borderColor: AppColors.isDark ? Colors.black : AppColors.primaryDark,
                   borderWidth: 2.5,
                   padding: const EdgeInsets.all(16),
                   child: const Icon(
@@ -403,7 +450,7 @@ class _IntervalTrainingIntroduceScreenState
                 onTap: () => _playSample(intervalName),
                 child: StickerBadge(
                   rotateAngle: isSelected ? -0.04 : 0.02,
-                  backgroundColor: isSelected ? AppColors.accent : Colors.white,
+                  backgroundColor: isSelected ? AppColors.accent : AppColors.surfaceWhite,
                   borderColor: AppColors.primaryDark,
                   borderWidth: 2.0,
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),

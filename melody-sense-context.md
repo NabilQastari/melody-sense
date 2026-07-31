@@ -1299,6 +1299,14 @@ void loop() {
 - **Session Result Screen**: Menampilkan kartu statistik **Perfect Hits** (`Perfect: X/Total`) dan kartu **Durasi Match** (`Durasi: 24.5s`).
 - **Penjelasan Subtitle**: Menampilkan kalimat penjelasan lengkap di akhir match (misal: *"Match 'Twinkle Twinkle Little Star' berlangsung selama 24.5 detik. 12/12 ketukan Perfect (320ms rata-rata respon)"*).
 
+### 8. Perbaikan Kontras Whisker Dark, Mystery Chest & Dynamic Personal Best
+- **Kalibrasi Palette Whisker Dark**: Memperbaiki masalah teks/ikon tidak kontras (*white-on-white*) pada layar latihan, dialog `AlertDialog`, tombol kembali di 4 layar introduce, serta 14 kartu nada grid Slide 3.
+- **Mystery Chest Persisten**: Status klaim `claimed_chest_levels` tersimpan permanen di `SharedPreferences` sehingga peti rahasia tidak dapat diklaim berulang kali.
+- **Pertukaran Posisi & Difficulty Mode**:
+  - *Rhythm Match*: `INTERMEDIATE` (urutan ke-3).
+  - *Melody Echo*: `ADVANCE` (urutan ke-4).
+- **Dynamic Personal Best Banner**: Mengubah kartu *Personal Best* di Dashboard dari nilai mockup *hardcoded* menjadi *real-time stream* membaca rekor tertinggi dari basis data Drift/SQLite via Riverpod (`topPersonalBestProvider`).
+
 ---
 
 ## 🚀 Status Rencana Selanjutnya (Roadmap)

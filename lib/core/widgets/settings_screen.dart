@@ -13,6 +13,8 @@ import 'package:melody_sense/core/providers/tts_providers.dart';
 import 'package:melody_sense/core/widgets/pattern_painters.dart';
 import 'package:melody_sense/core/widgets/whisker_banner_header.dart';
 
+import 'package:melody_sense/features/progression/presentation/screens/progression_screen.dart';
+
 /// Settings Screen - Sesi 9 (Pengaturan Aplikasi)
 /// Menggunakan TornDivider dan WhiskerBannerHeader sesuai Desain.md.
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -68,6 +70,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       await repo.seedDefaultAchievementsIfEmpty();
       await ref.read(educationProgressProvider.notifier).resetAll();
       await ref.read(unlockedThemesProvider.notifier).resetAll();
+      await ref.read(claimedChestsProvider.notifier).resetAll();
       await ref.read(themeProvider.notifier).setTheme(AppThemes.defaultTheme);
 
       if (mounted) {
@@ -355,7 +358,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ),
                             subtitle: Text(
                               'Mengaktifkan panduan suara (TTS) & getaran taktil untuk tunanetra.',
-                              style: TextStyle(fontSize: 11.5, color: AppColors.primaryDark),
+                              style: TextStyle(fontSize: 11.5, color: AppColors.primaryDark.withValues(alpha: 0.7)),
                             ),
                             activeTrackColor: AppColors.accent,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -374,6 +377,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               showDialog(
                                 context: context,
                                 builder: (_) => AlertDialog(
+                                  backgroundColor: AppColors.surfaceWhite,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(18),
                                     side: BorderSide(color: AppColors.primaryDark, width: 2.4),
@@ -385,8 +389,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                       color: AppColors.primaryDark,
                                     ),
                                   ),
-                                  content: const Text(
-                                      'Seluruh histori latihan, statistik akurasi nada, XP, level, dan tema unlocked Anda akan dihapus secara permanen.'),
+                                  content: Text(
+                                      'Seluruh histori latihan, statistik akurasi nada, XP, level, dan tema unlocked Anda akan dihapus secara permanen.',
+                                      style: TextStyle(color: AppColors.primaryDark.withValues(alpha: 0.85)),
+                                  ),
                                   actions: [
                                     TextButton(
                                       onPressed: () => Navigator.pop(context),
@@ -450,7 +456,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget _buildCard(List<Widget> children) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surfaceWhite,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.primaryDark, width: 2.2),
         boxShadow: [

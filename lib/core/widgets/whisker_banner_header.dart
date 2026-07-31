@@ -26,9 +26,13 @@ class WhiskerBannerHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = backgroundColor ?? AppColors.surfaceWhite;
-    final bColor = borderColor ?? AppColors.primaryDark;
-    final tColor = textColor ?? AppColors.primaryDark;
+    final defaultBg = AppColors.isDark ? AppColors.accent : AppColors.surfaceWhite;
+    final bgColor = backgroundColor ?? defaultBg;
+    final bColor = borderColor ?? (AppColors.isDark ? Colors.black : AppColors.primaryDark);
+    final defaultText = (bgColor == AppColors.accent)
+        ? Colors.white
+        : (AppColors.isDark ? AppColors.primaryDark : AppColors.primaryDark);
+    final tColor = textColor ?? defaultText;
 
     return Transform.rotate(
       angle: rotateAngle,
@@ -40,7 +44,7 @@ class WhiskerBannerHeader extends StatelessWidget {
           border: Border.all(color: bColor, width: 2.8),
           boxShadow: [
             BoxShadow(
-              color: bColor.withValues(alpha: 0.25),
+              color: bColor.withValues(alpha: AppColors.isDark ? 0.4 : 0.25),
               offset: const Offset(3, 3),
             ),
           ],

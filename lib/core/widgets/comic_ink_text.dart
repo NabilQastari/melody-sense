@@ -33,9 +33,14 @@ class ComicInkText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final effectiveTextColor = textColor ?? AppColors.primaryDark;
-    final effectiveOutlineColor = outlineColor ?? AppColors.primaryDark;
-    final effectiveShadowColor =
-        shadowColor ?? AppColors.primaryDark.withValues(alpha: 0.18);
+    final effectiveOutlineColor = outlineColor ??
+        (effectiveTextColor == AppColors.primaryDark && AppColors.isDark
+            ? Colors.black
+            : (AppColors.isDark ? Colors.black : AppColors.primaryDark));
+    final effectiveShadowColor = shadowColor ??
+        (AppColors.isDark
+            ? Colors.black.withValues(alpha: 0.5)
+            : AppColors.primaryDark.withValues(alpha: 0.18));
 
     return Stack(
       children: [

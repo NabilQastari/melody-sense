@@ -39,3 +39,9 @@ final streakProvider = FutureProvider<int>((ref) async {
   final repo = ref.watch(progressionRepositoryProvider);
   return repo.getCurrentStreakDays();
 });
+
+/// ── Top Personal Best ──────────────────────────────────────────
+final topPersonalBestProvider = StreamProvider<PersonalBestEntry?>((ref) {
+  final repo = ref.watch(progressionRepositoryProvider);
+  return repo.watchTopPersonalBest();
+});

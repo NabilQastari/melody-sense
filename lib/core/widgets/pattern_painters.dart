@@ -24,8 +24,9 @@ class StripePatternPainter extends CustomPainter {
       ..strokeWidth = stripeWidth
       ..style = PaintingStyle.stroke;
 
-    final maxDim = math.max(size.width, size.height) * 2;
-    for (double x = -maxDim; x < maxDim; x += spacing) {
+    final startX = -size.height;
+    final endX = size.width + size.height;
+    for (double x = startX; x < endX; x += spacing) {
       canvas.drawLine(
         Offset(x, 0),
         Offset(x + size.height, size.height),
@@ -62,10 +63,13 @@ class HalftonePatternPainter extends CustomPainter {
     final effectiveColor = color ?? AppColors.surfaceTint;
     final paint = Paint()..style = PaintingStyle.fill;
 
+    final maxDist = math.sqrt(size.width * size.width + size.height * size.height);
+    if (maxDist == 0) return;
+
     for (double y = spacing / 2; y < size.height; y += spacing) {
+      final ySq = y * y;
       for (double x = spacing / 2; x < size.width; x += spacing) {
-        final distFromCorner = math.sqrt(x * x + y * y);
-        final maxDist = math.sqrt(size.width * size.width + size.height * size.height);
+        final distFromCorner = math.sqrt(x * x + ySq);
         final factor = (1.0 - (distFromCorner / maxDist)).clamp(0.1, 1.0);
 
         final radius = maxRadius * factor;

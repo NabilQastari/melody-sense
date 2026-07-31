@@ -20,6 +20,13 @@ class PersonalBestDao extends DatabaseAccessor<AppDatabase>
         .watchSingleOrNull();
   }
 
+  Stream<PersonalBest?> watchTopBest() {
+    return (select(personalBests)
+          ..orderBy([(p) => OrderingTerm.desc(p.bestScore)])
+          ..limit(1))
+        .watchSingleOrNull();
+  }
+
   /// Hanya menimpa record kalau skor baru lebih tinggi dari yang tersimpan.
   /// Mengembalikan true kalau berhasil jadi rekor baru.
   Future<bool> submitScore({required String mode, required int score}) async {

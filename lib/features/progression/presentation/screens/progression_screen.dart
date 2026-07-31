@@ -13,17 +13,45 @@ import 'package:melody_sense/core/widgets/whisker_banner_header.dart';
 import 'package:melody_sense/features/practice/presentation/screens/practice_screen.dart';
 import 'package:melody_sense/features/stats/presentation/providers/stats_providers.dart';
 
-/// State notifier untuk menyimpan status klaim Mystery Chest Level 40.
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:melody_sense/core/providers/education_progress_provider.dart';
+
+/// State notifier untuk menyimpan status klaim Mystery Chest Level 40 secara permanen.
 final claimedChestsProvider =
     StateNotifierProvider<ClaimedChestsNotifier, Set<int>>((ref) {
-  return ClaimedChestsNotifier();
+  final prefs = ref.watch(sharedPreferencesProvider);
+  return ClaimedChestsNotifier(prefs);
 });
 
 class ClaimedChestsNotifier extends StateNotifier<Set<int>> {
-  ClaimedChestsNotifier() : super({});
+  ClaimedChestsNotifier(this._prefs) : super(_loadInitialState(_prefs));
 
-  void claim(int chestLevel) {
-    state = {...state, chestLevel};
+  final SharedPreferences _prefs;
+
+  static Set<int> _loadInitialState(SharedPreferences prefs) {
+    final list = prefs.getStringList('claimed_chest_levels') ?? [];
+    final claimed = list.map((e) => int.tryParse(e) ?? 40).toSet();
+
+    // Jika tema eksklusif sudah terbuka di prefs, otomatis anggap chest Level 40 sudah terklaim
+    final unlockedThemes = prefs.getStringList('unlocked_theme_ids') ?? [];
+    if (unlockedThemes.contains(AppThemes.whiskerDarkId)) {
+      claimed.add(40);
+    }
+    return claimed;
+  }
+
+  Future<void> claim(int chestLevel) async {
+    final updated = {...state, chestLevel};
+    await _prefs.setStringList(
+      'claimed_chest_levels',
+      updated.map((e) => e.toString()).toList(),
+    );
+    state = updated;
+  }
+
+  Future<void> resetAll() async {
+    await _prefs.remove('claimed_chest_levels');
+    state = {};
   }
 }
 
@@ -371,6 +399,15 @@ class _LevelPathMap extends ConsumerWidget {
     bool isClaimed,
   ) {
     if (item.type == _PathNodeType.chest) {
+      if (isClaimed) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('🎁 Mystery Chest Level 40 sudah kamu buka! Cek pilihan tema di Pengaturan.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+        return;
+      }
       showDialog(
         context: context,
         builder: (_) => _ChestDialog(
@@ -384,7 +421,7 @@ class _LevelPathMap extends ConsumerWidget {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('🎉 Selamat! 4 Tema Warna Eksklusif berhasil di-unlock! Pilih tema di Pengaturan.'),
-                backgroundColor: AppColors.primaryDark,
+                backgroundColor: AppColors.darkContainer,
                 duration: Duration(seconds: 4),
               ),
             );
@@ -523,7 +560,7 @@ class _MapNodeWidget extends StatelessWidget {
           const SizedBox(height: 4),
           StickerBadge(
             rotateAngle: 0.03,
-            backgroundColor: isClaimed ? Colors.grey.shade200 : Colors.amber.shade100,
+            backgroundColor: isClaimed ? Colors.grey.shade400 : Colors.amber.shade600,
             borderColor: AppColors.primaryDark,
             borderWidth: 1.8,
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -532,7 +569,7 @@ class _MapNodeWidget extends StatelessWidget {
               style: GoogleFonts.fredoka(
                 fontSize: 9,
                 fontWeight: FontWeight.w700,
-                color: AppColors.primaryDark,
+                color: Colors.white,
               ),
             ),
           ),
@@ -546,7 +583,7 @@ class _MapNodeWidget extends StatelessWidget {
     }
 
     final bgColor = isUnlocked
-        ? (isCurrent ? AppColors.accent : AppColors.primaryDark)
+        ? (isCurrent ? AppColors.accent : AppColors.darkContainer)
         : AppColors.surfaceTint;
 
     final iconColor = isUnlocked ? Colors.white : AppColors.primaryDark.withValues(alpha: 0.4);
@@ -569,8 +606,8 @@ class _MapNodeWidget extends StatelessWidget {
         const SizedBox(height: 4),
         StickerBadge(
           rotateAngle: 0.03,
-          backgroundColor: AppColors.surfaceWhite,
-          borderColor: AppColors.primaryDark,
+          backgroundColor: AppColors.isDark ? AppColors.paperWhite : AppColors.surfaceWhite,
+          borderColor: AppColors.isDark ? Colors.black : AppColors.primaryDark,
           borderWidth: 1.8,
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
           child: Text(
@@ -578,7 +615,7 @@ class _MapNodeWidget extends StatelessWidget {
             style: GoogleFonts.fredoka(
               fontSize: 9.5,
               fontWeight: FontWeight.w700,
-              color: AppColors.primaryDark,
+              color: AppColors.isDark ? AppColors.paperText : AppColors.primaryDark,
             ),
           ),
         ),
@@ -901,8 +938,8 @@ class _LevelDetailsDialog extends StatelessWidget {
               },
               child: StickerBadge(
                 rotateAngle: -0.02,
-                backgroundColor: AppColors.primaryDark,
-                borderColor: AppColors.primaryDark,
+                backgroundColor: AppColors.accent,
+                borderColor: AppColors.isDark ? Colors.black : AppColors.primaryDark,
                 borderWidth: 2.2,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                 child: Text(

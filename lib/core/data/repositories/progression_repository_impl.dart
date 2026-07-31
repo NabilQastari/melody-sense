@@ -40,6 +40,13 @@ class ProgressionRepositoryImpl implements ProgressionRepository {
   }
 
   @override
+  Stream<PersonalBestEntry?> watchTopPersonalBest() {
+    return _db.personalBestDao
+        .watchTopBest()
+        .map((row) => row == null ? null : _mapPersonalBest(row));
+  }
+
+  @override
   Future<bool> submitScore({
     required TrainingMode mode,
     required int score,

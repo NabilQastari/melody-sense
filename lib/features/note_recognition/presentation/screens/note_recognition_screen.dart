@@ -95,19 +95,21 @@ class _NoteRecognitionScreenState extends ConsumerState<NoteRecognitionScreen> {
   /// 3. Audio nada target diputar oleh controller
   void _speakRoundIntro(int roundIndex, String targetNote) {
     final tts = ref.read(ttsServiceProvider);
+    final spokenNote = tts.formatNoteForSpeech(targetNote);
     tts.speakSequence([
       'Ronde ${roundIndex + 1}',
-      'Tekan note $targetNote',
+      'Tekan nada $spokenNote',
     ]);
   }
 
   /// Narasi TTS saat feedback diberikan (benar/salah)
   void _speakFeedback(RoundFeedback feedback, String? pressedNote, String targetNote) {
     final tts = ref.read(ttsServiceProvider);
+    final spokenTarget = tts.formatNoteForSpeech(targetNote);
     if (feedback == RoundFeedback.correct) {
-      tts.speak('Benar! $targetNote');
+      tts.speak('Benar! $spokenTarget');
     } else if (feedback == RoundFeedback.wrong) {
-      tts.speak('Salah. Jawaban yang benar adalah $targetNote');
+      tts.speak('Salah. Jawaban yang benar adalah $spokenTarget');
     }
   }
 

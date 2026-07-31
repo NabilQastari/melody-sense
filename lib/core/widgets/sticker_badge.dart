@@ -25,7 +25,10 @@ class StickerBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bgColor = backgroundColor ?? AppColors.accent;
-    final borderCol = borderColor ?? AppColors.primaryDark;
+    final borderCol = borderColor ??
+        (AppColors.isDark && bgColor == AppColors.accent
+            ? Colors.black
+            : AppColors.primaryDark);
 
     return Transform.rotate(
       angle: rotateAngle,
@@ -40,7 +43,8 @@ class StickerBadge extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primaryDark.withValues(alpha: 0.15),
+              color: (AppColors.isDark ? Colors.black : AppColors.primaryDark)
+                  .withValues(alpha: AppColors.isDark ? 0.35 : 0.15),
               offset: const Offset(2, 2),
             ),
           ],

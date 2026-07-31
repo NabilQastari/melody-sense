@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'package:melody_sense/core/domain/entities/operating_mode.dart';
+import 'package:melody_sense/core/providers/operating_mode_providers.dart';
+import 'package:melody_sense/core/providers/tts_providers.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/pattern_painters.dart';
 import 'package:melody_sense/core/widgets/sticker_badge.dart';
@@ -10,7 +13,7 @@ import 'package:melody_sense/core/widgets/whisker_banner_header.dart';
 
 /// Shell UI untuk layar hasil sesi (desain "06 - Session Results")
 /// Diperbarui dengan Whisker-Inspired Design System v3.
-class SessionResultScreen extends StatelessWidget {
+class SessionResultScreen extends ConsumerStatefulWidget {
   const SessionResultScreen({
     super.key,
     required this.isWin,
@@ -40,14 +43,39 @@ class SessionResultScreen extends StatelessWidget {
 
   final WidgetBuilder? retryScreenBuilder;
 
+  @override
+  ConsumerState<SessionResultScreen> createState() => _SessionResultScreenState();
+}
+
+class _SessionResultScreenState extends ConsumerState<SessionResultScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final mode = ref.read(operatingModeProvider);
+      final isSenseMode = mode == AppOperatingMode.sense || ref.read(senseModeProvider);
+      if (isSenseMode) {
+        final accPercent = (widget.accuracy * 100).toInt();
+        final statusText = widget.isWin ? 'Sesi berhasil' : 'Sesi selesai';
+        final streakText = widget.streakDays > 0 ? '. Streak ${widget.streakDays} hari' : '';
+        final levelText = widget.leveledUp ? '. Selamat, kamu naik level!' : '';
+
+        ref.read(ttsServiceProvider).speak(
+              '$statusText. Akurasi $accPercent persen. Memperoleh ${widget.xpEarned} XP$streakText$levelText.',
+              force: true,
+            );
+      }
+    });
+  }
+
   String get _headline {
-    if (!isWin) return 'KEEP PRACTICING!';
-    return accuracy >= 0.9 ? 'PERFECT PITCH!' : 'NICE JOB!';
+    if (!widget.isWin) return 'KEEP PRACTICING!';
+    return widget.accuracy >= 0.9 ? 'PERFECT PITCH!' : 'NICE JOB!';
   }
 
   String get _subtitle {
-    if (customSubtitle != null) return customSubtitle!;
-    if (!isWin) return 'Out of hearts — every miss is a step closer.';
+    if (widget.customSubtitle != null) return widget.customSubtitle!;
+    if (!widget.isWin) return 'Out of hearts — every miss is a step closer.';
     return "You're mastering the 9-key piano!";
   }
 
@@ -63,7 +91,7 @@ class SessionResultScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accentColor = isWin ? AppColors.accent : Colors.grey.shade600;
+    final accentColor = widget.isWin ? AppColors.accent : Colors.grey.shade600;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -122,11 +150,11 @@ class SessionResultScreen extends StatelessWidget {
                             ),
                             Column(
                               children: [
-                                if (stars != null && stars! > 0) ...[
+                                if (widget.stars != null && widget.stars! > 0) ...[
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: List.generate(3, (index) {
-                                      final isFilled = index < stars!;
+                                      final isFilled = index < widget.stars!;
                                       return Padding(
                                         padding:
                                             const EdgeInsets.symmetric(horizontal: 4),
@@ -153,7 +181,7 @@ class SessionResultScreen extends StatelessWidget {
                                     borderColor: AppColors.primaryDark,
                                     padding: const EdgeInsets.all(12),
                                     child: Icon(
-                                      isWin
+                                      widget.isWin
                                           ? Icons.emoji_events_rounded
                                           : Icons.favorite_border_rounded,
                                       color: Colors.white,
@@ -170,8 +198,8 @@ class SessionResultScreen extends StatelessWidget {
                                   title: _headline,
                                   fontSize: 18,
                                   rotateAngle: -0.03,
-                                  backgroundColor: isWin ? AppColors.accent : Colors.grey.shade300,
-                                  textColor: isWin ? Colors.white : AppColors.primaryDark,
+                                  backgroundColor: widget.isWin ? AppColors.accent : Colors.grey.shade300,
+                                  textColor: widget.isWin ? Colors.white : AppColors.primaryDark,
                                 ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.2, end: 0),
 
                                 const SizedBox(height: 10),
@@ -187,14 +215,14 @@ class SessionResultScreen extends StatelessWidget {
                                 ).animate().fadeIn(delay: 150.ms, duration: 400.ms).slideY(begin: 0.2, end: 0),
 
                                 const SizedBox(height: 24),
-                                _AccuracyRing(accuracy: accuracy, color: accentColor)
+                                _AccuracyRing(accuracy: widget.accuracy, color: accentColor)
                                     .animate().scale(delay: 300.ms, duration: 500.ms, curve: Curves.easeOutCubic),
 
-                                if (isWin && leveledUp) ...[
+                                if (widget.isWin && widget.leveledUp) ...[
                                   const SizedBox(height: 14),
                                   StickerBadge(
                                     rotateAngle: 0.05,
-                                    backgroundColor: AppColors.primaryDark,
+                                    backgroundColor: AppColors.accent,
                                     borderColor: Colors.white,
                                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                                     child: Text(
@@ -215,28 +243,28 @@ class SessionResultScreen extends StatelessWidget {
                                       child: _StatCard(
                                         icon: Icons.monetization_on_rounded,
                                         iconColor: Colors.amber.shade700,
-                                        value: '+$xpEarned',
+                                        value: '+${widget.xpEarned}',
                                         label: 'XP Earned',
                                       ).animate().fadeIn(delay: 450.ms, duration: 400.ms).slideX(begin: -0.1, end: 0),
                                     ),
-                                    if (perfectCount != null) ...[
+                                    if (widget.perfectCount != null) ...[
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: _StatCard(
                                           icon: Icons.stars_rounded,
                                           iconColor: Colors.purpleAccent,
-                                          value: '$perfectCount/${totalNotes ?? 0}',
+                                          value: '${widget.perfectCount}/${widget.totalNotes ?? 0}',
                                           label: 'Perfect',
                                         ).animate().fadeIn(delay: 450.ms, duration: 400.ms).slideY(begin: 0.1, end: 0),
                                       ),
                                     ],
-                                    if (timeSpentMs != null) ...[
+                                    if (widget.timeSpentMs != null) ...[
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: _StatCard(
                                           icon: Icons.timer_outlined,
                                           iconColor: Colors.blue.shade700,
-                                          value: _formatDuration(timeSpentMs!),
+                                          value: _formatDuration(widget.timeSpentMs!),
                                           label: 'Durasi',
                                         ).animate().fadeIn(delay: 450.ms, duration: 400.ms).slideY(begin: 0.1, end: 0),
                                       ),
@@ -246,7 +274,7 @@ class SessionResultScreen extends StatelessWidget {
                                       child: _StatCard(
                                         icon: Icons.local_fire_department_rounded,
                                         iconColor: Colors.deepOrange,
-                                        value: '$streakDays-Day',
+                                        value: '${widget.streakDays}-Day',
                                         label: 'Streak',
                                       ).animate().fadeIn(delay: 450.ms, duration: 400.ms).slideX(begin: 0.1, end: 0),
                                     ),
@@ -266,13 +294,13 @@ class SessionResultScreen extends StatelessWidget {
                 label: 'CONTINUE',
                 onTap: () => Navigator.of(context).pop(),
               ),
-              if (retryScreenBuilder != null) ...[
+              if (widget.retryScreenBuilder != null) ...[
                 const SizedBox(height: 10),
                 _SecondaryButton(
                   label: 'RETRY',
                   onTap: () {
                     Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: retryScreenBuilder!),
+                      MaterialPageRoute(builder: widget.retryScreenBuilder!),
                     );
                   },
                 ),
@@ -425,8 +453,8 @@ class _PrimaryButton extends StatelessWidget {
         onTap: onTap,
         child: StickerBadge(
           rotateAngle: -0.01,
-          backgroundColor: AppColors.primaryDark,
-          borderColor: AppColors.primaryDark,
+          backgroundColor: AppColors.darkContainer,
+          borderColor: AppColors.isDark ? Colors.black : AppColors.primaryDark,
           borderWidth: 2.5,
           padding: EdgeInsets.zero,
           child: Center(

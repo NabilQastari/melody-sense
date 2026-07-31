@@ -54,7 +54,9 @@ class AppBottomNav extends StatelessWidget {
   }
 
   Widget _buildItem(_NavItem item, bool active) {
-    final color = active ? AppColors.primaryDark : Colors.grey.shade400;
+    final color = active
+        ? (AppColors.isDark ? AppColors.accent : AppColors.primaryDark)
+        : (AppColors.isDark ? const Color(0xFF8E8D9F) : Colors.grey.shade400);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -100,7 +102,9 @@ class AppBottomNav extends StatelessWidget {
               height: 3,
               width: active ? 28 : 0,
               decoration: BoxDecoration(
-                color: AppColors.primaryDark,
+                color: active
+                    ? (AppColors.isDark ? AppColors.accent : AppColors.primaryDark)
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

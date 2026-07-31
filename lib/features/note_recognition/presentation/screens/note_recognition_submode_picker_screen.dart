@@ -1,18 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:melody_sense/core/domain/entities/operating_mode.dart';
 import 'package:melody_sense/core/domain/entities/practice_entities.dart';
 import 'package:melody_sense/core/providers/education_progress_provider.dart';
+import 'package:melody_sense/core/providers/operating_mode_providers.dart';
+import 'package:melody_sense/core/providers/tts_providers.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/whisker_submode_card.dart';
 
 import 'note_recognition_introduce_screen.dart';
 import 'note_recognition_screen.dart';
 
-class NoteRecognitionSubmodePickerScreen extends ConsumerWidget {
+class NoteRecognitionSubmodePickerScreen extends ConsumerStatefulWidget {
   const NoteRecognitionSubmodePickerScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NoteRecognitionSubmodePickerScreen> createState() =>
+      _NoteRecognitionSubmodePickerScreenState();
+}
+
+class _NoteRecognitionSubmodePickerScreenState
+    extends ConsumerState<NoteRecognitionSubmodePickerScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final mode = ref.read(operatingModeProvider);
+      final isSenseMode = mode == AppOperatingMode.sense || ref.read(senseModeProvider);
+      if (isSenseMode) {
+        ref.read(ttsServiceProvider).speak(
+              'Submode latihan Note Recognition. Pilih Introduce Perkenalan, Start Training 10 Ronde, atau Guided Practice.',
+              force: true,
+            );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final progress = ref.watch(educationProgressProvider);
     final isIntroduceRead = progress['note_recognition'] ?? false;
 

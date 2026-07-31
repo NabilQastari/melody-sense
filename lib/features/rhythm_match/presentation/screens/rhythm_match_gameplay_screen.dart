@@ -68,11 +68,20 @@ class _RhythmMatchGameplayScreenState
       final wsService = ref.read(webSocketServiceProvider);
       _noteSub = wsService.noteStream.listen((note) {
         if (mode == AppOperatingMode.sense) {
-          ref.read(ttsServiceProvider).speak('Nada $note');
+          final spoken = ref.read(ttsServiceProvider).formatNoteForSpeech(note);
+          ref.read(ttsServiceProvider).speak('Nada $spoken');
         }
         _handleNotePressed(note);
       });
     }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mode == AppOperatingMode.sense && widget.song.notes.isNotEmpty) {
+        final tts = ref.read(ttsServiceProvider);
+        final targetSpoken = tts.formatNoteForSpeech(widget.song.notes.first);
+        tts.speak('Rhythm Match. Lagu ${widget.song.title}. Tekan nada pertama $targetSpoken');
+      }
+    });
   }
 
   @override

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:melody_sense/core/domain/entities/operating_mode.dart';
 import 'package:melody_sense/core/providers/audio_providers.dart';
 import 'package:melody_sense/core/providers/education_progress_provider.dart';
+import 'package:melody_sense/core/providers/operating_mode_providers.dart';
+import 'package:melody_sense/core/providers/tts_providers.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/pattern_painters.dart';
 import 'package:melody_sense/core/widgets/sticker_badge.dart';
@@ -41,7 +44,44 @@ class _NoteRecognitionIntroduceScreenState
   ];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _speakCurrentSlide();
+    });
+  }
+
+  void _speakCurrentSlide() {
+    final mode = ref.read(operatingModeProvider);
+    final isSenseMode = mode == AppOperatingMode.sense || ref.read(senseModeProvider);
+    if (!isSenseMode) return;
+
+    final tts = ref.read(ttsServiceProvider);
+    switch (_currentPage) {
+      case 0:
+        tts.speak(
+          'Slide 1 dari 3. Apa itu nada. Nada adalah getaran suara teratur yang memiliki tinggi rendah tertentu. Ditulis dalam notasi C4, D4, dan E4.',
+          force: true,
+        );
+        break;
+      case 1:
+        tts.speak(
+          'Slide 2 dari 3. Mengenal oktaf. Oktaf adalah jarak antar nada sejenis yang frekuensinya tepat 2 kali lipat. C5 beroktaf lebih tinggi dari C4.',
+          force: true,
+        );
+        break;
+      case 2:
+        tts.speak(
+          'Slide 3 dari 3. Sentuh dan dengarkan nada. Tekan tombol nada di layar untuk membiasakan telinga sebelum latihan.',
+          force: true,
+        );
+        break;
+    }
+  }
+
+  @override
   void dispose() {
+    ref.read(ttsServiceProvider).stop();
     _pageController.dispose();
     super.dispose();
   }
@@ -49,6 +89,14 @@ class _NoteRecognitionIntroduceScreenState
   void _playNote(String note) {
     setState(() => _playingNote = note);
     ref.read(audioServiceProvider).playNote(note);
+
+    final mode = ref.read(operatingModeProvider);
+    final isSenseMode = mode == AppOperatingMode.sense || ref.read(senseModeProvider);
+    if (isSenseMode) {
+      final spokenNote = ref.read(ttsServiceProvider).formatNoteForSpeech(note);
+      ref.read(ttsServiceProvider).speak(spokenNote, force: true);
+    }
+
     Future.delayed(const Duration(milliseconds: 400), () {
       if (mounted && _playingNote == note) {
         setState(() => _playingNote = null);
@@ -93,7 +141,7 @@ class _NoteRecognitionIntroduceScreenState
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.surfaceWhite,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: AppColors.primaryDark, width: 2.5),
                         boxShadow: [
@@ -140,6 +188,7 @@ class _NoteRecognitionIntroduceScreenState
                 controller: _pageController,
                 onPageChanged: (index) {
                   setState(() => _currentPage = index);
+                  _speakCurrentSlide();
                 },
                 children: [
                   _buildSlide1(),
@@ -184,8 +233,8 @@ class _NoteRecognitionIntroduceScreenState
                     onTap: _nextPage,
                     child: StickerBadge(
                       rotateAngle: -0.02,
-                      backgroundColor: AppColors.primaryDark,
-                      borderColor: AppColors.primaryDark,
+                      backgroundColor: AppColors.accent,
+                      borderColor: AppColors.isDark ? Colors.black : AppColors.primaryDark,
                       borderWidth: 2.2,
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                       child: Row(
@@ -321,8 +370,8 @@ class _NoteRecognitionIntroduceScreenState
               children: [
                 StickerBadge(
                   rotateAngle: 0.05,
-                  backgroundColor: AppColors.primaryDark,
-                  borderColor: AppColors.primaryDark,
+                  backgroundColor: AppColors.accent,
+                  borderColor: AppColors.isDark ? Colors.black : AppColors.primaryDark,
                   borderWidth: 2.5,
                   padding: const EdgeInsets.all(16),
                   child: const Icon(
@@ -406,7 +455,7 @@ class _NoteRecognitionIntroduceScreenState
                 onTap: () => _playNote(note),
                 child: StickerBadge(
                   rotateAngle: isPlaying ? -0.04 : 0.02,
-                  backgroundColor: isPlaying ? AppColors.accent : Colors.white,
+                  backgroundColor: isPlaying ? AppColors.accent : AppColors.surfaceWhite,
                   borderColor: AppColors.primaryDark,
                   borderWidth: 2.2,
                   padding: const EdgeInsets.all(8),

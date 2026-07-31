@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'package:melody_sense/core/domain/entities/operating_mode.dart';
 import 'package:melody_sense/core/providers/audio_providers.dart';
 import 'package:melody_sense/core/providers/education_progress_provider.dart';
+import 'package:melody_sense/core/providers/operating_mode_providers.dart';
+import 'package:melody_sense/core/providers/tts_providers.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/pattern_painters.dart';
 import 'package:melody_sense/core/widgets/sticker_badge.dart';
@@ -28,13 +31,58 @@ class _RhythmMatchIntroduceScreenState
   final List<String> _demoNotes = ['C4', 'C4', 'G4', 'G4'];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _speakCurrentSlide();
+    });
+  }
+
+  void _speakCurrentSlide() {
+    final mode = ref.read(operatingModeProvider);
+    final isSenseMode = mode == AppOperatingMode.sense || ref.read(senseModeProvider);
+    if (!isSenseMode) return;
+
+    final tts = ref.read(ttsServiceProvider);
+    switch (_currentPage) {
+      case 0:
+        tts.speak(
+          'Slide 1 dari 3. Apa itu Rhythm Match. Mode ini melatih ketepatan waktu dan ritme saat memainkan lagu populer.',
+          force: true,
+        );
+        break;
+      case 1:
+        tts.speak(
+          'Slide 2 dari 3. Sistem penilaian ritme. Tekan tuts sesuai tempo lagu untuk memperoleh predikat Perfect atau Good.',
+          force: true,
+        );
+        break;
+      case 2:
+        tts.speak(
+          'Slide 3 dari 3. Modul latihan tempo. Tekan tombol nada secara ritmis mengikuti ketukan lagu Twinkle Twinkle Little Star.',
+          force: true,
+        );
+        break;
+    }
+  }
+
+  @override
   void dispose() {
+    ref.read(ttsServiceProvider).stop();
     _pageController.dispose();
     super.dispose();
   }
 
   void _playDemoNote(String note) {
     ref.read(audioServiceProvider).playNote(note);
+
+    final mode = ref.read(operatingModeProvider);
+    final isSenseMode = mode == AppOperatingMode.sense || ref.read(senseModeProvider);
+    if (isSenseMode) {
+      final spokenNote = ref.read(ttsServiceProvider).formatNoteForSpeech(note);
+      ref.read(ttsServiceProvider).speak(spokenNote, force: true);
+    }
+
     setState(() {
       _demoStep = (_demoStep + 1) % _demoNotes.length;
     });
@@ -77,7 +125,7 @@ class _RhythmMatchIntroduceScreenState
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.surfaceWhite,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: AppColors.primaryDark, width: 2.5),
                         boxShadow: [
@@ -122,7 +170,10 @@ class _RhythmMatchIntroduceScreenState
             Expanded(
               child: PageView(
                 controller: _pageController,
-                onPageChanged: (idx) => setState(() => _currentPage = idx),
+                onPageChanged: (idx) {
+                  setState(() => _currentPage = idx);
+                  _speakCurrentSlide();
+                },
                 children: [
                   _buildSlide1(),
                   _buildSlide2(),
@@ -165,8 +216,8 @@ class _RhythmMatchIntroduceScreenState
                     onTap: _nextPage,
                     child: StickerBadge(
                       rotateAngle: -0.02,
-                      backgroundColor: AppColors.primaryDark,
-                      borderColor: AppColors.primaryDark,
+                      backgroundColor: AppColors.accent,
+                      borderColor: AppColors.isDark ? Colors.black : AppColors.primaryDark,
                       borderWidth: 2.2,
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                       child: Row(
@@ -300,8 +351,8 @@ class _RhythmMatchIntroduceScreenState
               children: [
                 StickerBadge(
                   rotateAngle: 0.05,
-                  backgroundColor: AppColors.primaryDark,
-                  borderColor: AppColors.primaryDark,
+                  backgroundColor: AppColors.accent,
+                  borderColor: AppColors.isDark ? Colors.black : AppColors.primaryDark,
                   borderWidth: 2.5,
                   padding: const EdgeInsets.all(16),
                   child: const Icon(

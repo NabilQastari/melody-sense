@@ -313,6 +313,9 @@ class _PianoKey extends StatelessWidget {
     this.isRoot = false,
   });
 
+  static final RegExp _nonDigitRegex = RegExp(r'[^0-9]');
+  static final RegExp _digitRegex = RegExp(r'[0-9]');
+
   final String note;
   final bool isBlack;
   final bool isActive;
@@ -323,7 +326,7 @@ class _PianoKey extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final int octave = int.tryParse(note.replaceAll(RegExp(r'[^0-9]'), '')) ?? 4;
+    final int octave = int.tryParse(note.replaceAll(_nonDigitRegex, '')) ?? 4;
 
     Color keyColor;
     Color textColor;
@@ -331,25 +334,25 @@ class _PianoKey extends StatelessWidget {
 
     if (isBlack) {
       if (octave == 3) {
-        keyColor = const Color(0xFF141722); // Oktaf 3: nada bass (lebih gelap)
-        textColor = AppColors.surfaceWhite.withValues(alpha: 0.9);
+        keyColor = AppColors.isDark ? const Color(0xFF0D0D11) : const Color(0xFF141722);
+        textColor = const Color(0xFFFFF8EE).withValues(alpha: 0.9);
       } else if (octave == 5) {
-        keyColor = const Color(0xFF2C2A4A); // Oktaf 5: nada tinggi (tinted indigo)
-        textColor = AppColors.surfaceWhite;
+        keyColor = AppColors.isDark ? const Color(0xFF242236) : const Color(0xFF2C2A4A);
+        textColor = const Color(0xFFFFF8EE);
       } else {
-        keyColor = const Color(0xFF1E222D); // Oktaf 4: normal piano black
-        textColor = AppColors.surfaceWhite;
+        keyColor = AppColors.pianoBlackKey;
+        textColor = const Color(0xFFFFF8EE);
       }
     } else {
       if (octave == 3) {
-        keyColor = const Color(0xFFE0E4F5); // Oktaf 3: nada bass (shade lebih gelap)
-        textColor = AppColors.primaryDark;
+        keyColor = AppColors.isDark ? const Color(0xFFE5E0D8) : const Color(0xFFE0E4F5);
+        textColor = const Color(0xFF101014);
       } else if (octave == 5) {
-        keyColor = const Color(0xFFEFF2FF); // Oktaf 5: nada tinggi (soft bright tint)
-        textColor = AppColors.primaryDark;
+        keyColor = AppColors.isDark ? const Color(0xFFFFFDF8) : const Color(0xFFEFF2FF);
+        textColor = const Color(0xFF101014);
       } else {
-        keyColor = AppColors.surfaceWhite; // Oktaf 4: normal piano white
-        textColor = AppColors.primaryDarkFaded;
+        keyColor = AppColors.pianoWhiteKey;
+        textColor = AppColors.isDark ? const Color(0xFF101014) : AppColors.primaryDarkFaded;
       }
     }
 
@@ -369,14 +372,15 @@ class _PianoKey extends StatelessWidget {
     }
 
     final String displayLabel =
-        isBlack ? note.replaceAll(RegExp(r'[0-9]'), '') : note;
+        isBlack ? note.replaceAll(_digitRegex, '') : note;
 
-    return AnimatedScale(
-      scale: isActive ? 0.94 : 1.0,
-      duration: const Duration(milliseconds: 90),
-      curve: Curves.easeOut,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 100),
+    return RepaintBoundary(
+      child: AnimatedScale(
+        scale: isActive ? 0.94 : 1.0,
+        duration: const Duration(milliseconds: 90),
+        curve: Curves.easeOut,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 100),
         curve: Curves.easeOut,
         decoration: BoxDecoration(
           color: keyColor,
@@ -434,8 +438,9 @@ class _PianoKey extends StatelessWidget {
               )
             : null,
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class _PianoBridgePainter extends CustomPainter {

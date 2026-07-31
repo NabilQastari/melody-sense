@@ -14,6 +14,7 @@ import 'package:melody_sense/features/interval_training/presentation/screens/int
 import 'package:melody_sense/features/melody_echo/presentation/screens/melody_echo_submode_picker_screen.dart';
 import 'package:melody_sense/features/note_recognition/presentation/screens/note_recognition_submode_picker_screen.dart';
 import 'package:melody_sense/features/rhythm_match/presentation/screens/rhythm_match_submode_screen.dart';
+import 'package:melody_sense/core/domain/entities/practice_entities.dart';
 import 'package:melody_sense/features/stats/presentation/providers/stats_providers.dart';
 
 /// Dashboard Screen - Refactored 100% berdasarkan referensi visual "The Whisker Watch" (Desain.md)
@@ -284,18 +285,6 @@ class DashboardScreen extends ConsumerWidget {
                           ),
                         ),
                         _ChallengeGridCard(
-                          title: 'Melody Echo',
-                          subtitle: 'Repeat what you hear',
-                          tag: 'EAR',
-                          icon: Icons.record_voice_over_rounded,
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  const MelodyEchoSubmodePickerScreen(),
-                            ),
-                          ),
-                        ),
-                        _ChallengeGridCard(
                           title: 'Rhythm Match',
                           subtitle: 'Master the timing',
                           tag: 'RHYTHM',
@@ -307,12 +296,24 @@ class DashboardScreen extends ConsumerWidget {
                             ),
                           ),
                         ),
+                        _ChallengeGridCard(
+                          title: 'Melody Echo',
+                          subtitle: 'Repeat what you hear',
+                          tag: 'EAR',
+                          icon: Icons.record_voice_over_rounded,
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  const MelodyEchoSubmodePickerScreen(),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 22),
 
                     // ── Personal Best Banner (Whisker Header + Halftone) ──
-                    _buildPersonalBestBanner(),
+                    _buildPersonalBestBanner(ref),
                   ],
                 ),
               ),
@@ -524,12 +525,26 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPersonalBestBanner() {
+  Widget _buildPersonalBestBanner(WidgetRef ref) {
+    final bestAsync = ref.watch(topPersonalBestProvider);
+
+    final String modeTitle = bestAsync.maybeWhen(
+      data: (entry) => entry != null ? entry.mode.displayName : 'Melody Echo',
+      orElse: () => 'Melody Echo',
+    );
+
+    final int scorePercent = bestAsync.maybeWhen(
+      data: (entry) => entry != null ? entry.bestScore : 98,
+      orElse: () => 98,
+    );
+
+    final double progressValue = (scorePercent / 100.0).clamp(0.0, 1.0);
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
         TornPaperCard(
-          backgroundColor: AppColors.primaryDark,
+          backgroundColor: AppColors.darkContainer,
           shadowColor: AppColors.surfaceTint,
           borderWidth: 2.8,
           tornPosition: TornEdgePosition.both,
@@ -558,7 +573,7 @@ class DashboardScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        'Melody Echo',
+                        modeTitle,
                         style: GoogleFonts.fredoka(
                           fontSize: 22,
                           fontWeight: FontWeight.w700,
@@ -570,7 +585,7 @@ class DashboardScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            '98%',
+                            '$scorePercent%',
                             style: GoogleFonts.fredoka(
                               fontSize: 24,
                               fontWeight: FontWeight.w700,
@@ -600,7 +615,7 @@ class DashboardScreen extends ConsumerWidget {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(5),
                       child: LinearProgressIndicator(
-                        value: 0.98,
+                        value: progressValue,
                         backgroundColor: Colors.transparent,
                         valueColor: AlwaysStoppedAnimation(AppColors.accent),
                       ),
@@ -769,5 +784,20 @@ class _ChallengeGridCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+extension _TrainingModeDisplayName on TrainingMode {
+  String get displayName {
+    switch (this) {
+      case TrainingMode.noteRecognition:
+        return 'Note Recognition';
+      case TrainingMode.intervalTraining:
+        return 'Interval Training';
+      case TrainingMode.melodyEcho:
+        return 'Melody Echo';
+      case TrainingMode.rhythmMatch:
+        return 'Rhythm Match';
+    }
   }
 }

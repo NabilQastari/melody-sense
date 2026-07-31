@@ -75,20 +75,29 @@ class WhiskerSubmodeCard extends StatelessWidget {
                         if (isCompleted)
                           StickerBadge(
                             rotateAngle: 0.05,
-                            backgroundColor: Colors.green.shade100,
-                            borderColor: Colors.green.shade700,
+                            backgroundColor: AppColors.isDark
+                                ? const Color(0xFF1B3E2B)
+                                : Colors.green.shade100,
+                            borderColor: AppColors.isDark
+                                ? const Color(0xFF4CAF50)
+                                : Colors.green.shade700,
                             borderWidth: 1.8,
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(Icons.check_circle_rounded,
-                                    color: Colors.green.shade700, size: 10),
+                                    color: AppColors.isDark
+                                        ? const Color(0xFF81C784)
+                                        : Colors.green.shade700,
+                                    size: 10),
                                 const SizedBox(width: 3),
                                 Text(
                                   'SELESAI',
                                   style: GoogleFonts.fredoka(
-                                    color: Colors.green.shade700,
+                                    color: AppColors.isDark
+                                        ? const Color(0xFF81C784)
+                                        : Colors.green.shade700,
                                     fontSize: 8,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -147,7 +156,7 @@ class WhiskerSubmodeAppBar extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.surfaceWhite,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: AppColors.primaryDark, width: 2.5),
                     boxShadow: [

@@ -54,6 +54,10 @@ class _MelodyEchoScreenState extends ConsumerState<MelodyEchoScreen> {
       if (mode != AppOperatingMode.explorer) {
         final wsService = ref.read(webSocketServiceProvider);
         _noteSub = wsService.noteStream.listen((note) {
+          if (mode == AppOperatingMode.sense) {
+            final spoken = ref.read(ttsServiceProvider).formatNoteForSpeech(note);
+            ref.read(ttsServiceProvider).speak('Nada $spoken');
+          }
           ref.read(melodyEchoControllerProvider(widget.submode).notifier).submitNote(note);
           _hardwareHighlightTimer?.cancel();
           setState(() => _activeHardwareNote = note);

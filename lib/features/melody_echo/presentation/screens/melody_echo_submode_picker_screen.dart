@@ -1,18 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:melody_sense/core/domain/entities/operating_mode.dart';
 import 'package:melody_sense/core/domain/entities/practice_entities.dart';
 import 'package:melody_sense/core/providers/education_progress_provider.dart';
+import 'package:melody_sense/core/providers/operating_mode_providers.dart';
+import 'package:melody_sense/core/providers/tts_providers.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/whisker_submode_card.dart';
 
 import 'melody_echo_introduce_screen.dart';
 import 'melody_echo_screen.dart';
 
-class MelodyEchoSubmodePickerScreen extends ConsumerWidget {
+class MelodyEchoSubmodePickerScreen extends ConsumerStatefulWidget {
   const MelodyEchoSubmodePickerScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MelodyEchoSubmodePickerScreen> createState() =>
+      _MelodyEchoSubmodePickerScreenState();
+}
+
+class _MelodyEchoSubmodePickerScreenState
+    extends ConsumerState<MelodyEchoSubmodePickerScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final mode = ref.read(operatingModeProvider);
+      final isSenseMode = mode == AppOperatingMode.sense || ref.read(senseModeProvider);
+      if (isSenseMode) {
+        ref.read(ttsServiceProvider).speak(
+              'Submode latihan Melody Echo. Pilih Introduce Perkenalan, Start Training 8 Ronde, atau Guided Practice.',
+              force: true,
+            );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final progress = ref.watch(educationProgressProvider);
     final isIntroduceRead = progress['melody_echo'] ?? false;
 
