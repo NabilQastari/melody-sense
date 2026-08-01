@@ -8,6 +8,20 @@ enum TrainingMode {
   melodyEcho,
   rhythmMatch;
 
+  /// Nama tampilan resmi di UI.
+  String get displayName {
+    switch (this) {
+      case TrainingMode.noteRecognition:
+        return 'Note Recognition';
+      case TrainingMode.intervalTraining:
+        return 'Interval Training';
+      case TrainingMode.melodyEcho:
+        return 'Melody Echo';
+      case TrainingMode.rhythmMatch:
+        return 'Rhythm Match';
+    }
+  }
+
   /// String yang disimpan di kolom `mode` pada tabel Sessions/PersonalBests.
   String get storageKey {
     switch (this) {
@@ -23,7 +37,10 @@ enum TrainingMode {
   }
 
   static TrainingMode fromStorageKey(String key) {
-    return TrainingMode.values.firstWhere((m) => m.storageKey == key);
+    return TrainingMode.values.firstWhere(
+      (m) => m.storageKey == key,
+      orElse: () => TrainingMode.noteRecognition,
+    );
   }
 }
 

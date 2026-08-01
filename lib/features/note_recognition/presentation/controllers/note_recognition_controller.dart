@@ -11,8 +11,6 @@ import 'package:melody_sense/core/providers/database_providers.dart';
 
 import '../state/note_recognition_state.dart';
 
-const _xpPerCorrect = 10;
-
 /// Domain logic Note Recognition dengan dukungan multi submode.
 class NoteRecognitionController extends StateNotifier<NoteRecognitionState?> {
   NoteRecognitionController(this._ref, this.submode) : super(null) {
@@ -104,13 +102,16 @@ class NoteRecognitionController extends StateNotifier<NoteRecognitionState?> {
 
     await _practiceRepo.logAttempt(
       sessionId: current.sessionId,
-      note: note,
+      note: current.targetNote,
       isCorrect: isCorrect,
       responseTimeMs: responseTimeMs,
     );
 
     final isMystery = current.roundIndex == current.mysteryRoundIndex;
-    final addedXp = isCorrect ? (isMystery ? _xpPerCorrect * 2 : _xpPerCorrect) : 0;
+    final baseXp = submode == PracticeSubmode.guided ? 8 : 12;
+    final roundBaseXp = isMystery ? baseXp * 2 : baseXp;
+    final reflexBonus = (isCorrect && responseTimeMs > 0 && responseTimeMs < 2000) ? 4 : 0;
+    final addedXp = isCorrect ? (roundBaseXp + reflexBonus) : 0;
     final nextXp = current.xp + addedXp;
 
     final nextLives = current.livesRemaining != null
@@ -142,8 +143,16 @@ class NoteRecognitionController extends StateNotifier<NoteRecognitionState?> {
     if (!mounted) return;
 
     if (sessionOver) {
-      state = state?.copyWith(isSessionOver: true);
-      await _finishSession(xpEarned: nextXp);
+      final isWin = nextLives == null || nextLives > 0;
+      final completionBonus = isWin ? 20 : 0;
+      final flawlessBonus = (isWin && submode == PracticeSubmode.practice && nextLives == current.livesTotal) ? 30 : 0;
+      final finalXp = nextXp + completionBonus + flawlessBonus;
+
+      state = state?.copyWith(
+        xp: finalXp,
+        isSessionOver: true,
+      );
+      await _finishSession(xpEarned: finalXp);
     } else {
       final nextRoundIndex = current.roundIndex + 1;
       final nextNote = _pickNextNote(current.targetNote);

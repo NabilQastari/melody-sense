@@ -12,14 +12,12 @@ import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/app_logo_avatar.dart';
 import 'package:melody_sense/core/widgets/home_screen.dart';
 import 'package:melody_sense/core/widgets/pattern_painters.dart';
-import 'package:melody_sense/core/widgets/sticker_badge.dart';
-import 'package:melody_sense/core/widgets/torn_paper_card.dart';
 import 'package:melody_sense/core/widgets/whisker_banner_header.dart';
 
-/// Splash Screen — Layar Pembuka Melody Sense dengan Whisker Design System.
+/// Splash Screen — Layar Pembuka Melody Sense dengan Desain Premium & Smooth.
 ///
-/// Menyajikan animasi branding, logo dinamis bertema, audio engine loading indicator,
-/// serta dukungan narasi suara Sense Mode saat aplikasi dibuka.
+/// Menyajikan logo hero tanpa border kaku, efek aksen mengambang, animasi loading
+/// bergaris komik ink, serta narasi suara Sense Mode saat pembukaan aplikasi.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -43,14 +41,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       final isSenseMode = mode == AppOperatingMode.sense || ref.read(senseModeProvider);
       if (isSenseMode) {
         ref.read(ttsServiceProvider).speak(
-              'Melody Sense. Selamat datang. Memuat aplikasi.',
+              'Melody Sense. Memuat aplikasi.',
               force: true,
             );
       }
     });
 
-    // Pindah ke HomeScreen setelah 2.5 detik animasi splash
-    _navigationTimer = Timer(const Duration(milliseconds: 2500), () {
+    // Pindah ke HomeScreen setelah 2.4 detik animasi splash
+    _navigationTimer = Timer(const Duration(milliseconds: 2400), () {
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
@@ -61,7 +59,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               child: child,
             );
           },
-          transitionDuration: const Duration(milliseconds: 500),
+          transitionDuration: const Duration(milliseconds: 450),
         ),
       );
     });
@@ -79,12 +77,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          // ── Pattern Background Accent ──
+          // ── Pattern Background Accents ──
           Positioned(
-            left: -40,
-            top: -40,
-            width: 200,
-            height: 200,
+            left: -30,
+            top: -30,
+            width: 180,
+            height: 180,
             child: CustomPaint(
               painter: HalftonePatternPainter(
                 color: AppColors.surfaceTint,
@@ -93,132 +91,194 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             ),
           ),
           Positioned(
-            right: -50,
-            bottom: -50,
-            width: 240,
-            height: 240,
+            right: -40,
+            bottom: -40,
+            width: 220,
+            height: 220,
             child: CustomPaint(
               painter: StripePatternPainter(
                 color: AppColors.surfaceTint,
-                stripeWidth: 6,
-                spacing: 8.0,
+                stripeWidth: 5,
+                spacing: 9.0,
               ),
             ),
           ),
 
-          // ── Center Content ──
+          // ── Floating Decorative Music Badges ──
+          Positioned(
+            left: 36,
+            top: 120,
+            child: _buildFloatingBadge(
+              icon: Icons.music_note_rounded,
+              angle: -0.12,
+            )
+                .animate()
+                .scale(delay: 200.ms, duration: 600.ms, curve: Curves.elasticOut)
+                .shake(delay: 800.ms, duration: 2.seconds, hz: 1),
+          ),
+          Positioned(
+            right: 36,
+            top: 160,
+            child: _buildFloatingBadge(
+              icon: Icons.headphones_rounded,
+              angle: 0.15,
+            )
+                .animate()
+                .scale(delay: 350.ms, duration: 600.ms, curve: Curves.elasticOut)
+                .shake(delay: 1.seconds, duration: 2.seconds, hz: 1),
+          ),
+          Positioned(
+            left: 48,
+            bottom: 180,
+            child: _buildFloatingBadge(
+              icon: Icons.graphic_eq_rounded,
+              angle: 0.08,
+            )
+                .animate()
+                .scale(delay: 450.ms, duration: 600.ms, curve: Curves.elasticOut),
+          ),
+
+          // ── Main Content Container ──
           SafeArea(
             child: Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 28),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Spacer(),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Spacer(flex: 2),
 
-                    // 1. Logo Badge Card dengan Torn Paper & Shadow
-                    TornPaperCard(
-                      backgroundColor: AppColors.surfaceWhite,
-                      shadowColor: AppColors.surfaceTint,
-                      borderWidth: 3.2,
-                      tornPosition: TornEdgePosition.both,
-                      padding: const EdgeInsets.all(28),
-                      child: Column(
-                        children: [
-                          StickerBadge(
-                            rotateAngle: -0.04,
-                            backgroundColor: AppColors.surfaceTint,
-                            borderColor: AppColors.primaryDark,
-                            borderWidth: 2.8,
-                            padding: const EdgeInsets.all(16),
-                            child: const AppLogoAvatar(size: 80),
-                          )
-                              .animate()
-                              .scale(
-                                duration: 600.ms,
-                                curve: Curves.elasticOut,
-                              )
-                              .shake(
-                                delay: 600.ms,
-                                duration: 400.ms,
-                                hz: 2,
-                              ),
-                          const SizedBox(height: 20),
-
-                          // Header Banner "MELODY SENSE"
-                          const WhiskerBannerHeader(
-                            title: 'MELODY SENSE',
-                            fontSize: 22,
-                            rotateAngle: -0.02,
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 18,
-                              vertical: 6,
-                            ),
-                          )
-                              .animate()
-                              .fadeIn(delay: 200.ms, duration: 400.ms)
-                              .slideY(begin: 0.2, end: 0),
-
-                          const SizedBox(height: 12),
-
-                          // Subtitle playful
-                          Text(
-                            'SMART PIANO & EAR TRAINING',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.fredoka(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1.2,
-                              color: AppColors.primaryDark.withValues(alpha: 0.8),
-                            ),
-                          )
-                              .animate()
-                              .fadeIn(delay: 350.ms, duration: 400.ms),
-                        ],
-                      ),
-                    )
-                        .animate()
-                        .fadeIn(duration: 500.ms)
-                        .scale(begin: const Offset(0.9, 0.9), end: const Offset(1, 1)),
-
-                    const Spacer(),
-
-                    // 2. Bottom Loading Indicator & Status Text
-                    Column(
-                      children: [
-                        SizedBox(
-                          width: 140,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: LinearProgressIndicator(
-                              minHeight: 6,
-                              backgroundColor: AppColors.surfaceTint,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                AppColors.accent,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'FEEL THE RHYTHM • SENSE THE MELODY',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.8,
-                            color: AppColors.primaryDark.withValues(alpha: 0.6),
-                          ),
+                  // 1. Large Hero Logo (tanpa border kaku)
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primaryDark.withValues(alpha: 0.12),
+                          blurRadius: 28,
+                          spreadRadius: 4,
+                          offset: const Offset(0, 8),
                         ),
                       ],
-                    ).animate().fadeIn(delay: 500.ms, duration: 400.ms),
+                    ),
+                    child: const AppLogoAvatar(size: 115),
+                  )
+                      .animate()
+                      .scale(
+                        duration: 700.ms,
+                        curve: Curves.elasticOut,
+                      )
+                      .fadeIn(duration: 400.ms),
 
-                    const SizedBox(height: 32),
-                  ],
-                ),
+                  const SizedBox(height: 28),
+
+                  // 2. Header Banner Title "MELODY SENSE"
+                  const WhiskerBannerHeader(
+                    title: 'MELODY SENSE',
+                    fontSize: 24,
+                    rotateAngle: -0.02,
+                    padding: EdgeInsets.symmetric(horizontal: 22, vertical: 7),
+                  )
+                      .animate()
+                      .fadeIn(delay: 250.ms, duration: 500.ms)
+                      .slideY(begin: 0.25, end: 0, curve: Curves.easeOutBack),
+
+                  const SizedBox(height: 14),
+
+                  // 3. Subtitle Pill Tag
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceWhite,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppColors.primaryDark, width: 1.8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primaryDark.withValues(alpha: 0.1),
+                          offset: const Offset(2, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      'SMART PIANO & EAR TRAINING',
+                      style: GoogleFonts.fredoka(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.1,
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
+                  )
+                      .animate()
+                      .fadeIn(delay: 400.ms, duration: 400.ms)
+                      .scale(begin: const Offset(0.85, 0.85), end: const Offset(1, 1)),
+
+                  const Spacer(flex: 3),
+
+                  // 4. Bottom Loading Bar & Tagline
+                  Column(
+                    children: [
+                      Container(
+                        width: 150,
+                        height: 10,
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceWhite,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.primaryDark, width: 2),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: LinearProgressIndicator(
+                            backgroundColor: AppColors.surfaceTint,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.accent,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'FEEL THE RHYTHM • SENSE THE MELODY',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.0,
+                          color: AppColors.primaryDark.withValues(alpha: 0.65),
+                        ),
+                      ),
+                    ],
+                  ).animate().fadeIn(delay: 550.ms, duration: 400.ms),
+
+                  const SizedBox(height: 40),
+                ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFloatingBadge({required IconData icon, required double angle}) {
+    return Transform.rotate(
+      angle: angle,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceWhite,
+          shape: BoxShape.circle,
+          border: Border.all(color: AppColors.primaryDark, width: 2.2),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primaryDark.withValues(alpha: 0.12),
+              offset: const Offset(3, 3),
+            ),
+          ],
+        ),
+        child: Icon(
+          icon,
+          size: 20,
+          color: AppColors.primaryDark,
+        ),
       ),
     );
   }

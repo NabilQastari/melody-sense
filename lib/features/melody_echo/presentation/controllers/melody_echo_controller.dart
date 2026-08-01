@@ -11,8 +11,6 @@ import 'package:melody_sense/core/providers/database_providers.dart';
 
 import '../state/melody_echo_state.dart';
 
-const _xpPerCorrectRound = 10;
-
 /// Panjang melodi awal (ronde 1) dan pertambahan per 2 ronde.
 const _initialMelodyLength = 3;
 const _melodyGrowEveryNRounds = 2;
@@ -33,6 +31,7 @@ class MelodyEchoController extends StateNotifier<MelodyEchoState?> {
   final PracticeSubmode submode;
   final _random = Random();
   bool _isTransitioning = false;
+  bool _replayedThisRound = false;
 
   PracticeRepository get _practiceRepo =>
       _ref.read(practiceRepositoryProvider);
@@ -66,6 +65,7 @@ class MelodyEchoController extends StateNotifier<MelodyEchoState?> {
 
   Future<void> _start() async {
     _isTransitioning = false;
+    _replayedThisRound = false;
     await _progressionRepo.seedDefaultAchievementsIfEmpty();
 
     final sessionId = await _practiceRepo.startSession(
@@ -130,6 +130,7 @@ class MelodyEchoController extends StateNotifier<MelodyEchoState?> {
     if (current == null || _isTransitioning) return;
     if (current.phase == MelodyEchoPhase.feedback) return;
 
+    _replayedThisRound = true;
     await _playMelody();
   }
 
@@ -154,7 +155,7 @@ class MelodyEchoController extends StateNotifier<MelodyEchoState?> {
     // Log attempt untuk statistik per nada
     await _practiceRepo.logAttempt(
       sessionId: current.sessionId,
-      note: note,
+      note: expectedNote,
       isCorrect: isCorrect,
       responseTimeMs: 0, // Melody Echo tidak mengukur response time per nada
     );
@@ -166,7 +167,12 @@ class MelodyEchoController extends StateNotifier<MelodyEchoState?> {
       if (newInputs.length >= current.melody.length) {
         // Ronde selesai — BENAR
         _isTransitioning = true;
-        final addedXp = _xpPerCorrectRound;
+        final melodyLength = current.melody.length;
+        final baseRoundXp = 12 + (melodyLength * 4);
+        final recallBonus = !_replayedThisRound ? 5 : 0;
+        final submodeMultiplier = submode == PracticeSubmode.guided ? 0.65 : 1.0;
+
+        final addedXp = ((baseRoundXp + recallBonus) * submodeMultiplier).round();
         final nextXp = current.xp + addedXp;
         final nextCorrectCount = current.correctCount + 1;
 
@@ -225,17 +231,26 @@ class MelodyEchoController extends StateNotifier<MelodyEchoState?> {
 
     // Cek apakah semua ronde selesai
     if (nextRoundIndex >= current.totalRounds) {
+      final completionBonus = 40;
+      final flawlessBonus = (submode == PracticeSubmode.practice &&
+              current.livesRemaining == current.livesTotal)
+          ? 30
+          : 0;
+      final finalXp = currentXp + completionBonus + flawlessBonus;
+
       state = current.copyWith(
         roundIndex: nextRoundIndex,
+        xp: finalXp,
         isSessionOver: true,
       );
-      _finishSession(xpEarned: currentXp);
+      _finishSession(xpEarned: finalXp);
       return;
     }
 
     // Generate melodi baru untuk ronde berikutnya
     final newLength = _melodyLengthForRound(nextRoundIndex);
     final newMelody = _generateMelody(newLength);
+    _replayedThisRound = false;
 
     state = current.copyWith(
       roundIndex: nextRoundIndex,

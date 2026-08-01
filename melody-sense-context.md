@@ -1259,57 +1259,41 @@ void loop() {
 
 ---
 
-## 📌 Update Sesi Terakhir: Pembaruan Fitur & Refaktorisasi Utama
+### 9. Aksesibilitas TTS Sense Mode Komprehensif
+- **Narasi Per Slide Introduce**: Menambahkan narasi suara otomatis per slide pada 4 layar introduce (`Note Recognition`, `Interval Training`, `Melody Echo`, dan `Rhythm Match`).
+- **Narasi Menu Submode Picker**: Membacakan daftar opsi submode yang tersedia saat pengguna masuk ke layar pemilihan submode di Sense Mode.
+- **Solfège Bahasa Indonesia (`formatNoteForSpeech`)**: Penambahan helper `formatNoteForSpeech` pada `TTSService` untuk menguraikan notasi ilmiah menjadi ucapan Bahasa Indonesia yang alami (misal: `C4` $\rightarrow$ *"Do, C4"*, `C#4` $\rightarrow$ *"Do Kres, C Sharp 4"*, `D4` $\rightarrow$ *"Re, D4"*, dst.).
+- **Ringkasan Hasil Sesi**: `SessionResultScreen` membacakan kelulusan, persentase akurasi, perolehan XP, streak harian, dan pengumuman *Level Up* secara otomatis.
 
-### 1. Pemisahan Arsitektur 3 Mode Utama (Explorer, Maestro, Sense)
-- **Explorer Mode**: Khusus piano virtual sentuh (*touchscreen*), berjalan tanpa perangkat ESP32 & tanpa fitur pengisi suara TTS.
-- **Maestro Mode**: Terhubung dengan tuts fisik ESP32 via WebSocket Server + Visualizer Piano interaktif di layar + Tombol Playback audio (Portrait & Landscape), tanpa TTS.
-- **Sense Mode**: Terhubung dengan tuts fisik ESP32 + Fitur Aksesibilitas TTS (Voice Cues & Audio Feedback) + Auto-Play audio otomatis periodik setiap 5 detik.
+### 10. Branding, Icon App, & Dynamic Logo Widget (`AppLogoAvatar`)
+- **Widget Dynamic Logo**: Membuat [app_logo_avatar.dart](file:///e:/Semester%205/KMIPN/melody_sense/lib/core/widgets/app_logo_avatar.dart) yang secara otomatis memetakan ID tema aktif ke aset gambar PNG (`logo_lavender.png`, `logo_whisker_dark.png`, `logo_ocean_blue.png`, `logo_forest_green.png`, `logo_sunset_orange.png`) di `assets/images/` tanpa border kaku.
+- **Launcher Icon Android**: Mengonfigurasi `flutter_launcher_icons` di `pubspec.yaml` dan meng-generate icon launcher native dari `icon app.jpg`.
+- **Nama Aplikasi**: Mengubah nama tampilan Android di `AndroidManifest.xml` dari `melody_sense` menjadi `Melody Sense`.
 
-### 2. Peningkatan Layar Pemilihan Mode (`PracticeScreen`)
-- Pembaruan visual kartu mode dengan tema warna konsisten:
-  - **Explorer Mode** (Teal Theme) — Status: *Touchscreen Active*.
-  - **Maestro Mode** (Indigo Theme) — Status: *ESP32 Status & IP Info*.
-  - **Sense Mode** (Deep Orange Theme) — Status: *TTS & Haptic Guidance Active*.
+### 11. Redesain Splash Screen
+- **Layar Pembuka**: Membuat [splash_screen.dart](file:///e:/Semester%205/KMIPN/melody_sense/lib/core/widgets/splash_screen.dart) dengan logo hero besar, floating music badges (`music_note`, `headphones`, `graphic_eq`), 3D header banner `MELODY SENSE`, comic ink loading bar, narasi TTS pembuka, dan transisi halus ke `HomeScreen`.
 
-### 3. Urutan Narasi Suara TTS (Sense Mode)
-- Penambahan method `speakSequence()` berurut pada `TTSService` dengan `Completer` awaitable.
-- Urutan pembacaan saat ronde baru:
-  1. *"Ronde {n}"*
-  2. *"Tekan note {targetNote}"* (atau *"Dari C4, tekan nada kedua"* pada Interval Training)
-  3. Audio nada target diputar oleh controller.
-- Narasi feedback saat jawaban benar (*"Benar! C4"*) atau salah (*"Salah. Jawaban yang benar adalah C4"*), serta pengumuman akurasi saat sesi selesai.
+### 12. Fitur Pintas Penilaian Dewan Juri (Easter Egg / Cheat Code)
+- **Ketuk Logo 10x dalam 5 Detik**: Mengaktifkan cheat tersembunyi pada `AppLogoAvatar`:
+  - ⚡ **+40.000 XP Instant** (Melompat ke Level 400+).
+  - 🏆 **Semua Badges & Achievements Terbuka**.
+  - 📊 **Populasi Grafik Note Accuracy 100%**.
+  - 🎁 **Mystery Chest Level 40 Terbuka** (Menu Tema Warna di Pengaturan otomatis aktif).
+  - 🎨 **Popup Whisker AlertDialog**: Menampilkan popup perayaan dengan animasi `TornPaperCard` & `StickerBadge`.
 
-### 4. Visual Aids Interval Training & Note Recognition (Maestro & Sense Mode)
-- **Root Note Badge**: Penanda visual khusus nada acuan (*Root Note*) pada tuts piano virtual.
-- **Target Card**: Menampilkan instruksi nada target yang dinamis.
-- **Semitone Bridge Arc**: Busur penghubung antarnada (*bridgeStartNote*, *bridgeEndNote*, *bridgeLabel* misal: *"2 semitones"*) saat jawaban salah untuk membantu pemahaman visual semitone.
-- **Piano Key Labels**: Nama nada pada tuts piano virtual ditampilkan di Maestro/Sense Mode.
+### 13. Perbaikan Kontras Whisker Dark & Safety Fallback
+- **Kalibrasi Kontras Card**: Mengubah container `targetValue` pada `MaestroGameplayScreen` dan `_NotePromptCard` pada `ExplorerGameplayScreen` menggunakan `AppColors.paperWhite` (`#FFF8EE`) & `AppColors.paperText` (`#101014`) dengan outline komik ink, sehingga teks kontras 100% di semua 5 tema.
+- **Gate Section Tema Warna**: Menyeleksi visibilitas section *Tema Warna* di Pengaturan agar tersembunyi sampai Mystery Chest Level 40 diklaim.
+- **Safety Fallback `TrainingMode.fromStorageKey`**: Menambahkan fallback `orElse: () => TrainingMode.noteRecognition` di `practice_entities.dart` untuk mencegah error `Bad state: No element`.
 
-### 5. Tombol Playback Audio (Portrait & Landscape)
-- **Portrait Mode**: Kartu Playback (`_NotePromptCard`) 120x120 berikon not musik di area tengah.
-- **Landscape Mode**: Tombol `Auto Play` (`_AutoPlayPill`) di baris atas dan tombol lingkaran playback (`_AutoPlayCircle`) di area tengah pada semua mode (Explorer, Maestro, Sense).
-- **Sense Mode Auto-Play**: Timer periodik 5 detik (`Timer.periodic(5s)`) memicu pemutaran kembali audio nada target secara otomatis selama ronde aktif jika pengguna tunanetra belum menjawab.
-
-### 6. Audit & Perbaikan Highlight Piano (Temporary 200ms–250ms Auto-Clear)
-- Memastikan seluruh tuts piano di semua layar (`FreePlayScreen`, `MaestroChallengeScreen`, `RhythmMatchGameplayScreen`, `NoteRecognitionScreen`, `IntervalTrainingScreen`, `MelodyEchoScreen`, dan `ExplorerGameplayScreen`) bersifat **temporary** (menyala sementara selama 200ms–250ms saat ditekan lewat layar sentuh atau tombol fisik ESP32, lalu otomatis padam/clear).
-
-### 7. Statistik Hasil Rhythm Match (Durasi Match & Perfect Timing)
-- **Ketukan Perfect Hits**: Menghitung jumlah ketukan dengan presisi timing $\le 750\text{ms}$ serta rata-rata waktu respons (*Average Response Time*).
-- **Session Result Screen**: Menampilkan kartu statistik **Perfect Hits** (`Perfect: X/Total`) dan kartu **Durasi Match** (`Durasi: 24.5s`).
-- **Penjelasan Subtitle**: Menampilkan kalimat penjelasan lengkap di akhir match (misal: *"Match 'Twinkle Twinkle Little Star' berlangsung selama 24.5 detik. 12/12 ketukan Perfect (320ms rata-rata respon)"*).
-
-### 8. Perbaikan Kontras Whisker Dark, Mystery Chest & Dynamic Personal Best
-- **Kalibrasi Palette Whisker Dark**: Memperbaiki masalah teks/ikon tidak kontras (*white-on-white*) pada layar latihan, dialog `AlertDialog`, tombol kembali di 4 layar introduce, serta 14 kartu nada grid Slide 3.
-- **Mystery Chest Persisten**: Status klaim `claimed_chest_levels` tersimpan permanen di `SharedPreferences` sehingga peti rahasia tidak dapat diklaim berulang kali.
-- **Pertukaran Posisi & Difficulty Mode**:
-  - *Rhythm Match*: `INTERMEDIATE` (urutan ke-3).
-  - *Melody Echo*: `ADVANCE` (urutan ke-4).
-- **Dynamic Personal Best Banner**: Mengubah kartu *Personal Best* di Dashboard dari nilai mockup *hardcoded* menjadi *real-time stream* membaca rekor tertinggi dari basis data Drift/SQLite via Riverpod (`topPersonalBestProvider`).
+### 14. Berkas Pengumpulan & Dokumen Teknis KMIPN VIII 2026
+- **Release APK**: Kompilasi sukses `build/app/outputs/flutter-apk/app-release.apk` (64.9 MB).
+- **Dokumen Teknis**: `technical_and_user_guide.md` (Spesifikasi, Instalasi, User Guide, Fitur Aksesibilitas, Cheat Juri).
+- **Naskah Video Demo**: `video_demo_script.md` (Breakdown 7.5 Menit, Naskah VO, Format Judul YouTube `PERMAINAN_KMIPN2026_[Nama tim]_[Melody Sense]_[NAMA POLITEKNIK LENGKAP]`).
 
 ---
 
 ## 🚀 Status Rencana Selanjutnya (Roadmap)
-- **Fitur Kustomisasi & Reward Peti Rahasia (Piano Skins & Themes)**:
-  - Pembukaan Peti Rahasia (*Secret Chest*) saat menyelesaikan sesi / mencapai akumulasi XP tertentu.
-  - Kustomisasi Tema Visual Piano (*Piano Skins*) & Instrument Soundfonts.
+- **Finalisasi Pengumpulan Babak Penyisihan 2 KMIPN VIII 2026**:
+  - Perekaman & editing video demo sesuai naskah `video_demo_script.md`.
+  - Pengunggahan file APK `app-release.apk` dan Dokumen Teknis `technical_and_user_guide.md` ke portal KMIPN.

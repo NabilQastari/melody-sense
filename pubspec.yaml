@@ -54,9 +54,9 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: false
-  image_path: "assets/images/logo_lavender.png"
+  image_path: "assets/images/icon app.jpg"
   adaptive_icon_background: "#F2F5FF"
-  adaptive_icon_foreground: "assets/images/logo_lavender.png"
+  adaptive_icon_foreground: "assets/images/icon app.jpg"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

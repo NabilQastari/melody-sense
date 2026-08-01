@@ -127,4 +127,12 @@ lib/
 
 ---
 
+## 🏆 Berkas Pengumpulan KMIPN VIII 2026 (Babak Penyisihan 2)
+
+- 📱 **Executable File (Release APK)**: `build/app/outputs/flutter-apk/app-release.apk` (64.9 MB)
+- 📖 **Dokumen Teknis & Petunjuk Penggunaan**: [technical_and_user_guide.md](file:///C:/Users/nmast/.gemini/antigravity-ide/brain/8635ba8b-2899-432f-a235-82bf1ff65e74/technical_and_user_guide.md)
+- 🎬 **Naskah & Panduan Video Demo YouTube**: [video_demo_script.md](file:///C:/Users/nmast/.gemini/antigravity-ide/brain/8635ba8b-2899-432f-a235-82bf1ff65e74/video_demo_script.md)
+
+---
+
 © 2026 Tim **AKU IKUT DIA NGIKUD** — Politeknik Negeri Ujung Pandang.

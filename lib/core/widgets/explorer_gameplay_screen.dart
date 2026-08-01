@@ -710,7 +710,7 @@ class _NotePromptCard extends StatelessWidget {
     Widget card = TornPaperCard(
       width: 140,
       height: 140,
-      backgroundColor: isMystery ? Colors.amber.shade50 : Colors.white,
+      backgroundColor: isMystery ? Colors.amber.shade50 : AppColors.paperWhite,
       shadowColor: AppColors.surfaceTint,
       borderWidth: 2.8,
       borderColor: isMystery ? Colors.amber.shade800 : AppColors.primaryDark,

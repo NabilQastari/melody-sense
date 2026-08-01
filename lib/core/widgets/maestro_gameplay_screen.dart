@@ -158,11 +158,12 @@ class MaestroGameplayScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.paperWhite,
                 borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.primaryDark, width: 2.0),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primaryDark.withValues(alpha: 0.06),
+                    color: AppColors.primaryDark.withValues(alpha: 0.12),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -176,7 +177,7 @@ class MaestroGameplayScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.primaryDark.withValues(alpha: 0.6),
+                        color: AppColors.paperText.withValues(alpha: 0.75),
                       ),
                     ),
                   const SizedBox(height: 2),
@@ -185,7 +186,7 @@ class MaestroGameplayScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.primaryDark,
+                      color: AppColors.paperText,
                     ),
                   ),
                 ],

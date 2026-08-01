@@ -281,7 +281,10 @@ class _NoteAccuracyChart extends StatelessWidget {
   const _NoteAccuracyChart({required this.ref});
   final WidgetRef ref;
 
-  static const _orderedNotes = ['B3', 'C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5'];
+  static const _orderedNotes = [
+    'B3', 'C4', 'C#4', 'D4', 'D#4', 'E4', 'F4',
+    'F#4', 'G4', 'G#4', 'A4', 'A#4', 'B4', 'C5',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -328,15 +331,14 @@ class _NoteAccuracyChart extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 10,
+                runSpacing: 6,
                 children: [
                   _LegendDot(color: Colors.green.shade600, label: '≥ 80%'),
-                  const SizedBox(width: 14),
                   _LegendDot(color: Colors.orange.shade700, label: '50-79%'),
-                  const SizedBox(width: 14),
                   _LegendDot(color: Colors.red.shade600, label: '< 50%'),
-                  const SizedBox(width: 14),
                   _LegendDot(color: Colors.grey.shade300, label: 'Untested'),
                 ],
               ),
@@ -375,37 +377,43 @@ class _BarColumn extends StatelessWidget {
     final barHeightFactor = totalAttempts == 0 ? 0.08 : accuracy.clamp(0.08, 1.0);
     final percentText = totalAttempts == 0 ? '-' : '${(accuracy * 100).round()}%';
 
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Text(
-          percentText,
-          style: GoogleFonts.fredoka(
-            fontSize: 9.5,
-            fontWeight: FontWeight.w700,
-            color: AppColors.primaryDark,
+    // Tampilkan label ringkas: "C4" → "C4", "C#4" → "C#"
+    final isSharp = noteName.contains('#');
+    final displayLabel = isSharp ? noteName.replaceAll(RegExp(r'\d'), '') : noteName;
+
+    return Expanded(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Text(
+            percentText,
+            style: GoogleFonts.fredoka(
+              fontSize: 8,
+              fontWeight: FontWeight.w700,
+              color: AppColors.primaryDark,
+            ),
           ),
-        ),
-        const SizedBox(height: 4),
-        Container(
-          width: 18,
-          height: 85 * barHeightFactor,
-          decoration: BoxDecoration(
-            color: barColor,
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: AppColors.primaryDark, width: 1.5),
+          const SizedBox(height: 3),
+          Container(
+            width: 14,
+            height: 85 * barHeightFactor,
+            decoration: BoxDecoration(
+              color: barColor,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: AppColors.primaryDark, width: 1.2),
+            ),
           ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          noteName,
-          style: GoogleFonts.fredoka(
-            fontSize: 10.5,
-            fontWeight: FontWeight.w700,
-            color: AppColors.primaryDark,
+          const SizedBox(height: 4),
+          Text(
+            displayLabel,
+            style: GoogleFonts.fredoka(
+              fontSize: isSharp ? 7.5 : 8.5,
+              fontWeight: FontWeight.w700,
+              color: isSharp ? AppColors.surfaceTint : AppColors.primaryDark,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

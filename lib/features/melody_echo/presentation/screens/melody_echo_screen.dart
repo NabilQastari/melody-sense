@@ -40,6 +40,8 @@ class _MelodyEchoScreenState extends ConsumerState<MelodyEchoScreen> {
   String? _guidedHintNote;
   String? _activeHardwareNote;
   int _lastRoundIndex = -1;
+  MelodyEchoPhase? _lastPhase;
+  int _lastInputIndex = -1;
 
   @override
   void initState() {
@@ -98,12 +100,19 @@ class _MelodyEchoScreenState extends ConsumerState<MelodyEchoScreen> {
 
     if (widget.submode == PracticeSubmode.guided &&
         state.phase == MelodyEchoPhase.playing &&
-        !state.isSessionOver) {
-      _hintTimer = Timer(const Duration(seconds: 5), () {
-        if (mounted && state.nextExpectedNote != null) {
+        !state.isSessionOver &&
+        state.nextExpectedNote != null) {
+      final targetNote = state.nextExpectedNote;
+      _hintTimer = Timer(const Duration(seconds: 3), () {
+        if (mounted) {
           setState(() {
-            _guidedHintNote = state.nextExpectedNote;
+            _guidedHintNote = targetNote;
           });
+          final mode = ref.read(operatingModeProvider);
+          if (mode == AppOperatingMode.sense && targetNote != null) {
+            final spoken = ref.read(ttsServiceProvider).formatNoteForSpeech(targetNote);
+            ref.read(ttsServiceProvider).speak('Petunjuk: nada $spoken');
+          }
         }
       });
     }
@@ -154,13 +163,22 @@ class _MelodyEchoScreenState extends ConsumerState<MelodyEchoScreen> {
       });
     }
 
-    // Lacak pergantian ronde untuk mereset timer petunjuk (hint) & auto play
-    if (state.roundIndex != _lastRoundIndex) {
+    // Lacak pergantian ronde, fase, atau input index untuk mereset timer petunjuk (hint) & auto play
+    if (state.roundIndex != _lastRoundIndex ||
+        state.phase != _lastPhase ||
+        state.currentInputIndex != _lastInputIndex) {
+      final roundChanged = state.roundIndex != _lastRoundIndex;
       _lastRoundIndex = state.roundIndex;
+      _lastPhase = state.phase;
+      _lastInputIndex = state.currentInputIndex;
+
       _resetHintTimer(state);
-      _startSenseAutoPlayTimer();
-      if (mode == AppOperatingMode.sense) {
-        ref.read(ttsServiceProvider).speak('Ronde ${state.roundIndex + 1}. Dengarkan melodi ${state.melodyLength} nada.');
+
+      if (roundChanged) {
+        _startSenseAutoPlayTimer();
+        if (mode == AppOperatingMode.sense) {
+          ref.read(ttsServiceProvider).speak('Ronde ${state.roundIndex + 1}. Dengarkan melodi ${state.melodyLength} nada.');
+        }
       }
     }
 

@@ -12,8 +12,6 @@ import 'package:melody_sense/core/providers/database_providers.dart';
 
 import '../state/interval_training_state.dart';
 
-const _xpPerCorrect = 10;
-
 class IntervalTrainingController extends StateNotifier<IntervalTrainingState?> {
   IntervalTrainingController(this._ref, this.submode) : super(null) {
     _start();
@@ -112,15 +110,18 @@ class IntervalTrainingController extends StateNotifier<IntervalTrainingState?> {
 
     final isCorrect = note == current.targetNote;
     final isMystery = current.roundIndex == current.mysteryRoundIndex;
-    final xpEarned = isCorrect ? (isMystery ? 20 : _xpPerCorrect) : 0;
-
     final responseTimeMs = _roundStartedAt == null
         ? 0
         : DateTime.now().difference(_roundStartedAt!).inMilliseconds;
 
+    final baseXp = submode == PracticeSubmode.guided ? 10 : 16;
+    final roundBaseXp = isMystery ? baseXp * 2 : baseXp;
+    final reflexBonus = (isCorrect && responseTimeMs > 0 && responseTimeMs < 2500) ? 5 : 0;
+    final xpEarned = isCorrect ? (roundBaseXp + reflexBonus) : 0;
+
     await _practiceRepo.logAttempt(
       sessionId: current.sessionId,
-      note: note,
+      note: current.targetNote,
       isCorrect: isCorrect,
       responseTimeMs: responseTimeMs,
     );
@@ -172,11 +173,17 @@ class IntervalTrainingController extends StateNotifier<IntervalTrainingState?> {
         (current.roundIndex + 1) >= current.totalRounds;
 
     if (sessionOver) {
+      final isWin = current.livesRemaining == null || current.livesRemaining! > 0;
+      final completionBonus = isWin ? 25 : 0;
+      final flawlessBonus = (isWin && submode == PracticeSubmode.practice && current.livesRemaining == current.livesTotal) ? 35 : 0;
+      final finalXp = current.xp + completionBonus + flawlessBonus;
+
       state = state?.copyWith(
         roundIndex: current.roundIndex + 1,
+        xp: finalXp,
         isSessionOver: true,
       );
-      await _finishSession(xpEarned: current.xp);
+      await _finishSession(xpEarned: finalXp);
     } else {
       final nextRound = _pickNextRound(current.currentRound);
       state = state?.copyWith(

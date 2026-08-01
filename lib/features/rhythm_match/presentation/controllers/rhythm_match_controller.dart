@@ -88,7 +88,7 @@ class RhythmMatchController extends StateNotifier<RhythmMatchState?> {
 
     await _practiceRepo.logAttempt(
       sessionId: current.sessionId,
-      note: note,
+      note: target,
       isCorrect: isCorrect,
       responseTimeMs: responseTimeMs,
     );
@@ -112,7 +112,16 @@ class RhythmMatchController extends StateNotifier<RhythmMatchState?> {
         stars = 2;
       }
 
-      final xpEarned = (20 + (accuracy * 30).round() + (stars * 10) + (nextPerfect * 2));
+      final diffMultiplier = current.selectedSong.difficulty == SongDifficulty.hard
+          ? 1.6
+          : (current.selectedSong.difficulty == SongDifficulty.medium ? 1.3 : 1.0);
+      final submodeMultiplier = current.submode == PracticeSubmode.guided ? 0.7 : 1.0;
+
+      final baseCalculation = 25 + (accuracy * 40).round() + (stars * 15) + (nextPerfect * 3);
+      final isFullPerfect = nextPerfect >= current.selectedSong.totalNotes;
+      final perfectComboBonus = isFullPerfect ? 30 : 0;
+
+      final xpEarned = ((baseCalculation + perfectComboBonus) * diffMultiplier * submodeMultiplier).round();
 
       state = current.copyWith(
         currentNoteIndex: nextIndex,
