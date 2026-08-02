@@ -1,137 +1,173 @@
-# Melody Sense 🎵
+# Melody Sense 🎵 — Web Platform
 
-> **MELODY SENSE: APLIKASI PERMAINAN EDUKASI UNTUK PEMBELAJARAN NADA MENGGUNAKAN SMART PIANO BERBASIS ESP32**
+> **MELODY SENSE: PLATFORM WEB EDUKASI PEMBELAJARAN NADA & INTERACTIVE EAR TRAINING BERBASIS MULTISENSORI**
 > 
-> *Kompetisi KMIPN — Kategori Pengembangan Aplikasi Permainan*  
+> *Kompetisi KMIPN — Kategori Pengembangan Aplikasi Permainan & Platform Edukasi Web*  
 > *Politeknik Negeri Ujung Pandang | Tim: "AKU IKUT DIA NGIKUD"*
 
 ---
 
-## 📌 Tentang Proyek
+## 📌 Tentang Website Melody Sense
 
-**Melody Sense** bukan sekadar piano digital biasa, melainkan sebuah **ekosistem pembelajaran musik berbasis gamifikasi** yang menghubungkan aplikasi Android (Flutter) dengan perangkat fisik **Smart Piano berbasis ESP32** via jaringan Wi-Fi / WebSocket.
+**Melody Sense Web** adalah platform web interaktif untuk **pembelajaran musik dan latihan pendengaran (*ear training*) berbasis gamifikasi** yang dapat diakses langsung melalui peramban web (*web browser*) modern tanpa perlu menginstal aplikasi tambahan.
 
-Aplikasi ini dirancang untuk membantu pengguna belajar dan mengenali nada dasar (*ear training*) dengan cara yang menyenangkan, intuitif, dan tidak terasa seperti belajar teori musik formal.
-
----
-
-## ✨ Fitur Utama Aplikasi
-
-### 🎮 Mode Latihan (Ear Training)
-- **🎵 Note Recognition**: Latihan mengenali nada tunggal. Dilengkapi mekanik Ronde Misteri (+20 XP), *Compare Playback* saat salah, dan 3 nyawa.
-- **🎼 Interval Training**: Latihan mengenali jarak antara dua nada dan jumlah semitone. Dilengkapi visual jembatan jarak (*Distance Bridge curve*), tombol *Next Round*, dan *Compare Playback* adaptif.
-- **🥁 Rhythm Match**: Mode permainan ritme lagu (*Song-Based Playback*) tanpa timeout auto-advance. Menyediakan pilihan lagu (*Mary Had a Little Lamb*, *Happy Birthday*, *Ode to Joy*) dengan kalkulasi Waktu Penyelesaian (detik), Akurasi (%), dan Rating 3 Bintang (⭐⭐⭐).
-- **🎹 Free Play**: Sandbox piano bebas 14 tuts (`B3–C5` kromatik) tanpa batas waktu dan tanpa nyawa.
+Website ini menghadirkan pengalaman belajar nada dasar (*pitch recognition*), interval musik, ingatan melodi, dan ritme lagu dengan antarmuka web yang responsif, visual yang menarik, serta sistem aksesibilitas inklusif (**Sense Mode Web**) yang ramah bagi penyandang disabilitas netra.
 
 ---
 
-### 📚 Sistem Submode Edukatif
-Setiap mode latihan inti dilengkapi 3 submode bertahap:
-1. **📖 Introduce**: Slide Carousel (`PageView`) interaktif yang menjelaskan teori dasar dan modul sampel audio aktif sebelum memulai latihan.
-2. **🎮 Start Practice**: Mode latihan utama berstruktur 10 ronde dengan nyawa, skor, dan akumulasi XP.
-3. **🎯 Guided Practice**: Mode latihan terbimbing tanpa penalti nyawa, dilengkapi petunjuk visual (*key highlight*) otomatis.
+## ✨ Fitur Utama Website
+
+### 🎮 Modul Latihan Pendengaran (Web Ear Training)
+- **🎵 Note Recognition (Tebak Nada Web)**: Latihan mendeteksi tinggi-rendah nada tunggal (`C4–C5`). Dilengkapi mekanik *Mystery Round* (Bonus +20 XP), *Compare Playback* saat jawaban kurang tepat, dan indikator nyawa interaktif.
+- **🎼 Interval Training (Jembatan Jarak Nada)**: Latihan mengenali jarak antara dua nada dan jumlah semitone. Antarmuka web menampilkan kurva visual *Distance Bridge*, petunjuk nama interval, dan audio perbandingan adaptif.
+- **🎙️ Melody Echo (Ingatan Melodi)**: Melatih memori pendengaran (*auditory memory*) dengan menebak sekuens melodi bertahap (3 hingga 7 nada).
+- **🥁 Rhythm Match (Permainan Ketukan & Tempo)**: Latihan ketepatan ritme berbasis lagu (*Song-Based Rhythm Playback*) seperti *Mary Had a Little Lamb*, *Happy Birthday*, dan *Ode to Joy* dengan kalkulasi persentase akurasi, waktu penyelesaian, dan skor 3 Bintang (⭐⭐⭐).
+- **🎹 Free Play Web Piano**: Mode sandbox piano virtual 14 tuts (`B3–C5` kromatik) tanpa batas waktu yang dapat dimainkan menggunakan klik mouse, *touchscreen*, maupun **Pintasan Keyboard (Hotkeys)**.
 
 ---
 
-## 🎨 Layar & Sistem UI
-
-- **🏠 Dashboard**: Layar utama berisi info level & XP pengguna, dialog status koneksi Smart Piano ESP32, grid 2x2 challenge mode, dan rekor *Personal Best*.
-- **🗺️ Progression Path**: Peta jalur level berliku (*CustomPainter winding path*) dengan simpul level adaptif (*completed*, *active*, *locked*, *mystery chest*).
-- **📊 Stats & Badges**: Grafik bar akurasi 14 nada (`B3–C5`), 6 badge/achievement otomatis, dan riwayat sesi latihan.
-- **⚙️ Settings & Sense Mode**: Pengaturan volume audio, toggle aksesibilitas disabilitas (*Sense Mode* — TTS & Braille fisik), serta opsi reset database.
-
----
-
-## ♿ Sense Mode (Aksesibilitas Disabilitas)
-
-Sense Mode adalah fitur terintegrasi yang dirancang khusus untuk mendukung pengguna tunanetra dan *low vision*:
-- **Hardware**: Label Braille pada tombol fisik Smart Piano ESP32.
-- **Software**: Feedback narasi TTS penuh (`flutter_tts`), earcon bunyi pembeda, haptic feedback, dan opsi *high-contrast*.
+### 📚 Sistem Submode Edukatif Web
+Setiap modul latihan di website dilengkapi dengan 3 submode berjenjang:
+1. **📖 Introduce (Perkenalan Teori)**: Slide Carousel interaktif berbasis web untuk mempelajari teori dasar musik dan mendengarkan sampel nada sebelum latihan.
+2. **🎮 Start Practice (Sesi Ujian Utama)**: Mode latihan utama berstruktur 8–10 ronde dengan sistem nyawa, skor, dan akumulasi XP.
+3. **🎯 Guided Practice (Latihan Terbimbing)**: Mode latihan bebas risiko penalti nyawa dengan petunjuk visual otomatis (*Key Highlight*) pada tuts piano web.
 
 ---
 
-## 🛠️ Arsitektur & Tech Stack
+## ♿ Sense Mode Web (Aksesibilitas Inklusif)
 
-Aplikasi dibangun menggunakan **Clean Architecture (Feature-First)**:
+Website Melody Sense dirancang inklusif agar dapat diakses secara mandiri oleh pengguna penyandang disabilitas netra (*visually impaired*) langsung dari peramban web:
+- **🔊 Web Speech API / TTS**: Pembacaan naskah, nama nada, dan navigasi antarmuka web secara otomatis menggunakan sintetis suara *Text-to-Speech*.
+- **🎵 Earcon & Audio Feedback**: Efek suara pembeda untuk setiap aksi (jawaban benar, salah, perpindahan menu, dan petunjuk).
+- **⌨️ Screen Reader & Keyboard Friendly**: Dukungan navigasi penuh menggunakan keyboard tanpa tergantung pada tetikus (*mouse*).
+- **👁️ High-Contrast Web Theme**: Mode tampilan visual kontras tinggi untuk kenyamanan pengguna *low vision*.
 
-| Layer | Teknologi / Package | Kegunaan |
+---
+
+## ⌨️ Kontrol Web & Pintasan Keyboard (Hotkeys)
+
+Di website Melody Sense, Anda dapat memainkan tuts piano virtual menggunakan keyboard komputer:
+
+| Tuts Nada | Tangga Nada | Tombol Keyboard |
 |---|---|---|
-| **Framework** | Flutter (Dart SDK ^3.11) | Cross-platform mobile development |
-| **State Management** | `flutter_riverpod` (^2.5.1) | Reactive state & dependency injection |
-| **Audio Engine** | `flutter_soloud` (^3.4.6) | Native C++ low-latency audio engine dengan polyphony |
-| **Database** | `drift` (^2.20.0) + `sqlite3_flutter_libs` | Local SQLite database untuk histori sesi, attempt, & progression |
-| **Preferences** | `shared_preferences` (^2.3.2) | Penyimpanan setting & progress edukasi |
-| **Animations** | `flutter_animate` (^4.5.0) | Animasi UI deklaratif & micro-interactions |
-| **Navigation** | `go_router` (^14.2.7) | Declarative routing |
+| **B3** | Diatonik | `Z` |
+| **C4** | Diatonik | `A` |
+| **C#4 / Db4** | Kromatik | `W` |
+| **D4** | Diatonik | `S` |
+| **D#4 / Eb4** | Kromatik | `E` |
+| **E4** | Diatonik | `D` |
+| **F4** | Diatonik | `F` |
+| **F#4 / Gb4** | Kromatik | `T` |
+| **G4** | Diatonik | `G` |
+| **G#4 / Ab4** | Kromatik | `Y` |
+| **A4** | Diatonik | `H` |
+| **A#4 / Bb4** | Kromatik | `U` |
+| **B4** | Diatonik | `J` |
+| **C5** | Diatonik | `K` |
 
 ---
 
-## 🎹 Perangkat Fisik (Smart Piano ESP32)
+## 🎨 Tampilan & Navigation Web
 
-- **Mikrokontroler**: ESP32 dengan Wi-Fi built-in.
-- **Tuts Fisik**: 13 push button (1 oktaf kromatik penuh `C4–C5`).
-- **Komunikasi**: Protocol **WebSocket** persisten dua arah untuk pengiriman event nada secara real-time (`{"note": "C4", "velocity": 100}`).
-- **Output Suara**: 2 Passive Buzzer pada breadboard prototipe.
+- **🏠 Web Dashboard**: Pusat kendali utama yang menampilkan informasi profil, statistik level & XP, tantangan latihan 2x2, serta status mode operasional.
+- **🗺️ Progression Path**: Peta jalur level berliku interaktif (*Interactive Winding Path*) untuk memantau progres pembelajaran.
+- **📊 Stats & Badges**: Grafik analisis akurasi 14 nada (`B3–C5`), daftar pencapaian lencana (*achievement badges*), dan riwayat sesi latihan.
+- **⚙️ Web Settings**: Pengaturan volume audio web, beralih ke *Sense Mode*, dan manajemen data lokal peramban.
 
 ---
 
-## 📂 Struktur Direktori Utama
+## 🛠️ Arsitektur & Tech Stack Web
 
-```
+Website ini dibangun menggunakan teknologi web modern dan arsitektur modular **Clean Architecture (Feature-First)**:
+
+| Layer | Teknologi / Package | Kegunaan pada Web |
+|---|---|---|
+| **Web Framework** | Flutter Web (Dart SDK ^3.11) | Framework pengembangan aplikasi web responsif multi-platform |
+| **State Management** | `flutter_riverpod` (^2.5.1) | Manajemen state reaktif & *dependency injection* di web |
+| **Web Audio Engine** | Low-Latency Web Audio Synthesizer | Pengolahan suara piano polyphonic berlatensi rendah di peramban |
+| **Web Database** | `drift` (^2.20.0) + IndexedDB / SQLite Web | Penyimpanan database lokal web untuk histori sesi & progres XP |
+| **Web Storage** | `shared_preferences` (^2.3.2) | Penyimpanan konfigurasi & preferensi pengguna web |
+| **Routing & Navigation** | `go_router` (^14.2.7) | Navigasi URL deklaratif & dukungan *deep linking* di browser |
+| **Web Sockets** | `web_socket_channel` (^3.0.1) | Integrasi komunikasi real-time opsional dengan Smart Piano ESP32 |
+| **Accessibility API** | Web Speech API & `flutter_tts` | Sintesis suara narasi untuk fitur *Sense Mode Web* |
+
+---
+
+## 🌐 Integrasi Perangkat ESP32 via WebSocket (Opsional)
+
+Selain menggunakan tuts piano virtual di layar web, website Melody Sense juga mendukung integrasi dengan **Smart Piano Fisik berbasis ESP32**:
+- **Komunikasi Persisten**: Menghubungkan browser dengan ESP32 melalui protokol **WebSocket** (`ws://`).
+- **Real-Time Input**: Penekanan tuts fisik pada piano ESP32 langsung terdeteksi di website secara *real-time* tanpa latensi spionase.
+
+---
+
+## 📂 Struktur Direktori Web Project
+
+```text
 lib/
-├── main.dart                          # Entry point aplikasi (ProviderScope & HomeScreen)
-├── core/                              # Shared components, theme, database, audio, providers
-│   ├── audio/                         # AudioService (flutter_soloud)
-│   ├── data/                          # Drift database, tables, DAOs, & repositories
-│   ├── domain/                        # Entities & Repository interfaces
-│   ├── providers/                     # Database, audio, & education progress providers
-│   ├── theme/                         # AppColors design system
-│   └── widgets/                       # Virtual Piano (14 tuts), SessionResultScreen, AppBottomNav
-└── features/                          # Feature modules (Clean Architecture)
-    ├── dashboard/                     # Dashboard Screen
-    ├── practice/                      # Practice Mode Selector
-    ├── progression/                   # Progression Path Screen
-    ├── stats/                         # Stats & History Screen
-    ├── free_play/                     # Free Play Screen
-    ├── note_recognition/              # Note Recognition (State, Controller, Screens)
-    ├── interval_training/             # Interval Training (State, Controller, Screens)
-    ├── rhythm_match/                  # Rhythm Match (Domain, Controller, Screens)
-    └── settings_screen.dart           # App Settings
+├── main.dart                          # Entry point aplikasi web (ProviderScope & Router)
+├── core/                              # Shared components, web theme, database, & audio providers
+│   ├── audio/                         # Web Audio Engine & Polyphonic Sound Service
+│   ├── data/                          # Drift database Web (IndexedDB / Local Storage)
+│   ├── providers/                     # Database, audio, & web state providers
+│   ├── theme/                         # AppColors design system & high-contrast web theme
+│   └── widgets/                       # Web Virtual Piano (14 tuts), Results Dialog, Bottom Navigation
+└── features/                          # Feature Modules (Clean Architecture)
+    ├── dashboard/                     # Web Dashboard Screen
+    ├── practice/                      # Practice Selector (Note, Interval, Echo, Rhythm)
+    ├── progression/                   # Web Progression Path Screen
+    ├── stats/                         # Accuracy Charts & Achievements Screen
+    ├── free_play/                     # Web Virtual Piano Free Play Screen
+    ├── note_recognition/              # Note Recognition Web Module
+    ├── interval_training/             # Interval Training Web Module
+    ├── rhythm_match/                  # Rhythm Match Web Module
+    └── settings_screen.dart           # Web Application Settings
+web/
+├── index.html                         # Entry point HTML5 web application
+├── manifest.json                      # PWA (Progressive Web App) manifest configuration
+└── favicon.png                        # Icon website Melody Sense
 ```
 
 ---
 
-## 🚀 Cara Menjalankan Aplikasi
+## 🚀 Cara Menjalankan Website Secara Lokal
 
-1. **Prasyarat**:
-   - Flutter SDK (^3.11.4)
-   - Android Studio / VS Code dengan Flutter Extension
-   - Android Emulator atau HP Physical Device
+### Prasyarat:
+- [Flutter SDK](https://flutter.dev/docs/get-started/install) (^3.11.4 atau terbaru)
+- Peramban web modern (Google Chrome, Microsoft Edge, Mozilla Firefox, atau Safari)
+- VS Code / Android Studio dengan ekstensi Flutter
 
-2. **Clone & Install Dependencies**:
+### Langkah-Langkah:
+
+1. **Clone Repositori**:
    ```bash
    git clone https://github.com/NabilQastari/melody-sense.git
    cd melody_sense
+   ```
+
+2. **Install Web Dependencies**:
+   ```bash
    flutter pub get
    ```
 
-3. **Jalankan Unit Test**:
+3. **Jalankan Website di Mode Development (Chrome)**:
    ```bash
-   flutter test
+   flutter run -d chrome
    ```
 
-4. **Jalankan Aplikasi**:
+4. **Build untuk Rilis Deployment Web**:
    ```bash
-   flutter run
+   flutter build web --release
    ```
+   *Hasil build web akan tersimpan pada direktori `build/web/` dan siap di-deploy ke web hosting (GitHub Pages, Vercel, Netlify, atau Firebase Hosting).*
 
 ---
 
-## 🏆 Berkas Pengumpulan KMIPN VIII 2026 (Babak Penyisihan 2)
+## 🏆 Berkas Pengumpulan KMIPN VIII 2026
 
-- 📱 **Executable File (Release APK)**: `build/app/outputs/flutter-apk/app-release.apk` (64.9 MB)
-- 📖 **Dokumen Teknis & Petunjuk Penggunaan**: [technical_and_user_guide.md](file:///C:/Users/nmast/.gemini/antigravity-ide/brain/8635ba8b-2899-432f-a235-82bf1ff65e74/technical_and_user_guide.md)
-- 🎬 **Naskah & Panduan Video Demo YouTube**: [video_demo_script.md](file:///C:/Users/nmast/.gemini/antigravity-ide/brain/8635ba8b-2899-432f-a235-82bf1ff65e74/video_demo_script.md)
+- 🌐 **Platform Web**: Website Melody Sense (`build/web/`)
+- 📖 **Dokumen Panduan Penggunaan**: [PANDUAN_PENGGUNAAN.md](file:///e:/Semester%205/KMIPN/melody_sense/PANDUAN_PENGGUNAAN.md)
+- 🎨 **Dokumentasi Desain UI/UX Web**: [Desain.md](file:///e:/Semester%205/KMIPN/melody_sense/Desain.md)
 
 ---
 
