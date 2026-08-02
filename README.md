@@ -163,12 +163,4 @@ web/
 
 ---
 
-## 🏆 Berkas Pengumpulan KMIPN VIII 2026
-
-- 🌐 **Platform Web**: Website Melody Sense (`build/web/`)
-- 📖 **Dokumen Panduan Penggunaan**: [PANDUAN_PENGGUNAAN.md](file:///e:/Semester%205/KMIPN/melody_sense/PANDUAN_PENGGUNAAN.md)
-- 🎨 **Dokumentasi Desain UI/UX Web**: [Desain.md](file:///e:/Semester%205/KMIPN/melody_sense/Desain.md)
-
----
-
 © 2026 Tim **AKU IKUT DIA NGIKUD** — Politeknik Negeri Ujung Pandang.
