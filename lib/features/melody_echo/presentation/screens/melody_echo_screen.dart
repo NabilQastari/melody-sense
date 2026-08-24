@@ -6,6 +6,7 @@ import 'package:melody_sense/core/domain/entities/operating_mode.dart';
 import 'package:melody_sense/core/domain/entities/practice_entities.dart';
 import 'package:melody_sense/core/network/websocket_service.dart';
 import 'package:melody_sense/core/providers/audio_providers.dart';
+import 'package:melody_sense/core/providers/note_notation_provider.dart';
 import 'package:melody_sense/core/providers/operating_mode_providers.dart';
 import 'package:melody_sense/core/providers/tts_providers.dart';
 import 'package:melody_sense/core/providers/websocket_providers.dart';
@@ -37,7 +38,8 @@ class _MelodyEchoScreenState extends ConsumerState<MelodyEchoScreen> {
   Timer? _senseAutoPlayTimer;
   Timer? _hardwareHighlightTimer;
   StreamSubscription<String>? _noteSub;
-  String? _guidedHintNote;
+  final Set<String> _guidedHintNotes = {};
+  final List<Timer> _sequenceTimers = [];
   String? _activeHardwareNote;
   int _lastRoundIndex = -1;
   MelodyEchoPhase? _lastPhase;
@@ -50,14 +52,15 @@ class _MelodyEchoScreenState extends ConsumerState<MelodyEchoScreen> {
       final mode = ref.read(operatingModeProvider);
 
       if (mode == AppOperatingMode.sense) {
-        ref.read(ttsServiceProvider).speak('Melody Echo. Dengarkan melodi lalu ulangi.');
+        ref.read(ttsServiceProvider).speak('Gema Melodi. Dengarkan melodi lalu ulangi.');
       }
 
       if (mode != AppOperatingMode.explorer) {
         final wsService = ref.read(webSocketServiceProvider);
         _noteSub = wsService.noteStream.listen((note) {
           if (mode == AppOperatingMode.sense) {
-            final spoken = ref.read(ttsServiceProvider).formatNoteForSpeech(note);
+            final notation = ref.read(noteNotationProvider);
+            final spoken = ref.read(ttsServiceProvider).formatNoteForSpeech(note, notation);
             ref.read(ttsServiceProvider).speak('Nada $spoken');
           }
           ref.read(melodyEchoControllerProvider(widget.submode).notifier).submitNote(note);
@@ -71,12 +74,20 @@ class _MelodyEchoScreenState extends ConsumerState<MelodyEchoScreen> {
     });
   }
 
+  void _clearSequenceTimers() {
+    for (final t in _sequenceTimers) {
+      t.cancel();
+    }
+    _sequenceTimers.clear();
+  }
+
   @override
   void dispose() {
     _noteSub?.cancel();
     _hintTimer?.cancel();
     _senseAutoPlayTimer?.cancel();
     _hardwareHighlightTimer?.cancel();
+    _clearSequenceTimers();
     super.dispose();
   }
 
@@ -88,6 +99,12 @@ class _MelodyEchoScreenState extends ConsumerState<MelodyEchoScreen> {
         if (!mounted) return;
         final state = ref.read(melodyEchoControllerProvider(widget.submode));
         if (state != null && !state.isSessionOver && state.phase == MelodyEchoPhase.playing) {
+          final tts = ref.read(ttsServiceProvider);
+          final notation = ref.read(noteNotationProvider);
+          final spokenNotes = state.melody
+              .map((note) => tts.formatNoteForSpeech(note, notation))
+              .join(', ');
+          tts.speak('Petunjuk melodi: $spokenNotes');
           ref.read(melodyEchoControllerProvider(widget.submode).notifier).replayMelody();
         }
       });
@@ -96,25 +113,28 @@ class _MelodyEchoScreenState extends ConsumerState<MelodyEchoScreen> {
 
   void _resetHintTimer(MelodyEchoState state) {
     _hintTimer?.cancel();
-    _guidedHintNote = null;
+    _clearSequenceTimers();
+    _guidedHintNotes.clear();
 
     if (widget.submode == PracticeSubmode.guided &&
         state.phase == MelodyEchoPhase.playing &&
         !state.isSessionOver &&
-        state.nextExpectedNote != null) {
-      final targetNote = state.nextExpectedNote;
-      _hintTimer = Timer(const Duration(seconds: 3), () {
-        if (mounted) {
-          setState(() {
-            _guidedHintNote = targetNote;
-          });
-          final mode = ref.read(operatingModeProvider);
-          if (mode == AppOperatingMode.sense && targetNote != null) {
-            final spoken = ref.read(ttsServiceProvider).formatNoteForSpeech(targetNote);
-            ref.read(ttsServiceProvider).speak('Petunjuk: nada $spoken');
+        state.melody.isNotEmpty) {
+      final melody = state.melody;
+
+      // Tampilkan hint nada melodi satu per satu secara berurutan dengan delay
+      for (int i = 0; i < melody.length; i++) {
+        final note = melody[i];
+        final delayMs = i * 250;
+        final timer = Timer(Duration(milliseconds: delayMs), () {
+          if (mounted) {
+            setState(() {
+              _guidedHintNotes.add(note);
+            });
           }
-        }
-      });
+        });
+        _sequenceTimers.add(timer);
+      }
     }
   }
 
@@ -186,10 +206,12 @@ class _MelodyEchoScreenState extends ConsumerState<MelodyEchoScreen> {
     if (state.phase != MelodyEchoPhase.playing) {
       _hintTimer?.cancel();
       _senseAutoPlayTimer?.cancel();
-      _guidedHintNote = null;
+      _clearSequenceTimers();
+      _guidedHintNotes.clear();
     }
 
     String? correctNote;
+    Set<String>? correctNotes;
     String? wrongNote;
 
     if (state.feedback == RoundFeedback.correct) {
@@ -197,8 +219,8 @@ class _MelodyEchoScreenState extends ConsumerState<MelodyEchoScreen> {
     } else if (state.feedback == RoundFeedback.wrong) {
       correctNote = state.nextExpectedNote;
       wrongNote = state.userInputs.isNotEmpty ? state.userInputs.last : null;
-    } else if (_guidedHintNote != null) {
-      correctNote = _guidedHintNote;
+    } else if (_guidedHintNotes.isNotEmpty) {
+      correctNotes = _guidedHintNotes;
     }
 
     String targetLabel;
@@ -236,6 +258,7 @@ class _MelodyEchoScreenState extends ConsumerState<MelodyEchoScreen> {
         targetLabel: targetLabel,
         targetValue: targetValue,
         correctNote: correctNote,
+        correctNotes: correctNotes,
         wrongNote: wrongNote,
         showPianoLabels: true,
         xp: state.xp,
@@ -261,6 +284,7 @@ class _MelodyEchoScreenState extends ConsumerState<MelodyEchoScreen> {
           ? const []
           : state.userInputs,
       correctNote: correctNote,
+      correctNotes: correctNotes,
       wrongNote: wrongNote,
       feedback: state.feedback,
       roundIndex: state.roundIndex,

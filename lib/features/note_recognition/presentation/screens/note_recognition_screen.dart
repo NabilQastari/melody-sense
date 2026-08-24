@@ -6,6 +6,7 @@ import 'package:melody_sense/core/domain/entities/operating_mode.dart';
 import 'package:melody_sense/core/domain/entities/practice_entities.dart';
 import 'package:melody_sense/core/network/websocket_service.dart';
 import 'package:melody_sense/core/providers/audio_providers.dart';
+import 'package:melody_sense/core/providers/note_notation_provider.dart';
 import 'package:melody_sense/core/providers/operating_mode_providers.dart';
 import 'package:melody_sense/core/providers/tts_providers.dart';
 import 'package:melody_sense/core/providers/websocket_providers.dart';
@@ -47,7 +48,7 @@ class _NoteRecognitionScreenState extends ConsumerState<NoteRecognitionScreen> {
 
       // Narasi intro saat masuk layar dalam Sense Mode
       if (mode == AppOperatingMode.sense) {
-        ref.read(ttsServiceProvider).speak('Note Recognition. Tebak nada yang dimainkan.');
+        ref.read(ttsServiceProvider).speak('Pengenalan Nada. Tebak nada yang dimainkan.');
       }
 
       // Di Maestro dan Sense Mode, dengarkan input tombol fisik ESP32
@@ -83,6 +84,10 @@ class _NoteRecognitionScreenState extends ConsumerState<NoteRecognitionScreen> {
         if (!mounted) return;
         final state = ref.read(noteRecognitionControllerProvider(widget.submode));
         if (state != null && !state.isSessionOver && state.feedback == RoundFeedback.none) {
+          final tts = ref.read(ttsServiceProvider);
+          final notation = ref.read(noteNotationProvider);
+          final spoken = tts.formatNoteForSpeech(state.targetNote, notation);
+          tts.speak('Petunjuk nada: $spoken');
           ref.read(noteRecognitionControllerProvider(widget.submode).notifier).playTarget();
         }
       });
@@ -91,11 +96,12 @@ class _NoteRecognitionScreenState extends ConsumerState<NoteRecognitionScreen> {
 
   /// Narasi TTS berurutan untuk Sense Mode saat ronde baru dimulai:
   /// 1. "Ronde {n}"
-  /// 2. "Tekan note {targetNote}"
+  /// 2. "Tekan nada {targetNote}"
   /// 3. Audio nada target diputar oleh controller
   void _speakRoundIntro(int roundIndex, String targetNote) {
     final tts = ref.read(ttsServiceProvider);
-    final spokenNote = tts.formatNoteForSpeech(targetNote);
+    final notation = ref.read(noteNotationProvider);
+    final spokenNote = tts.formatNoteForSpeech(targetNote, notation);
     tts.speakSequence([
       'Ronde ${roundIndex + 1}',
       'Tekan nada $spokenNote',
@@ -105,7 +111,8 @@ class _NoteRecognitionScreenState extends ConsumerState<NoteRecognitionScreen> {
   /// Narasi TTS saat feedback diberikan (benar/salah)
   void _speakFeedback(RoundFeedback feedback, String? pressedNote, String targetNote) {
     final tts = ref.read(ttsServiceProvider);
-    final spokenTarget = tts.formatNoteForSpeech(targetNote);
+    final notation = ref.read(noteNotationProvider);
+    final spokenTarget = tts.formatNoteForSpeech(targetNote, notation);
     if (feedback == RoundFeedback.correct) {
       tts.speak('Benar! $spokenTarget');
     } else if (feedback == RoundFeedback.wrong) {

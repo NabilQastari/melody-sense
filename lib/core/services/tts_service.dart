@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'package:flutter_tts/flutter_tts.dart';
+import '../domain/entities/note_notation.dart';
 
 /// TTSService — Layanan Text-to-Speech untuk Sense Mode (Aksesibilitas)
 /// 
 /// Membantu membaca narasi soal, feedback benar/salah, nama nada,
-/// serta instruksi aplikasi dalam Bahasa Indonesia (`id-ID`).
+/// serta instruksi aplikasi dalam Bahasa Indonesia (`id-ID` / `in-ID`).
 class TTSService {
   TTSService() {
     _initTts();
@@ -15,11 +16,25 @@ class TTSService {
   bool _isEnabled = false;
   Completer<void>? _speakCompleter;
 
-  /// Inisialisasi engine TTS dengan bahasa Indonesia
+  /// Inisialisasi engine TTS dengan bahasa Indonesia (dengan fallback in-ID -> en-US)
   Future<void> _initTts() async {
     try {
-      await _flutterTts.setLanguage('id-ID');
-      await _flutterTts.setSpeechRate(0.5); // Kecepatan bicara sedang
+      // 1. Coba id-ID (Standard Kode Indonesia)
+      final bool isIdAvailable = await _flutterTts.isLanguageAvailable('id-ID');
+      if (isIdAvailable) {
+        await _flutterTts.setLanguage('id-ID');
+      } else {
+        // 2. Coba in-ID (ISO Locale lama di Android)
+        final bool isInAvailable = await _flutterTts.isLanguageAvailable('in-ID');
+        if (isInAvailable) {
+          await _flutterTts.setLanguage('in-ID');
+        } else {
+          // 3. Fallback ke en-US
+          await _flutterTts.setLanguage('en-US');
+        }
+      }
+
+      await _flutterTts.setSpeechRate(0.48); // Kecepatan bicara sedang
       await _flutterTts.setVolume(1.0);
       await _flutterTts.setPitch(1.0);
 
@@ -31,7 +46,6 @@ class TTSService {
 
       _isInitialized = true;
     } catch (e) {
-      // Fallback jika id-ID tidak tersedia di beberapa device
       try {
         await _flutterTts.setLanguage('en-US');
         _flutterTts.setCompletionHandler(() {
@@ -74,7 +88,7 @@ class TTSService {
   }
 
   /// Ucapkan beberapa frasa secara berurutan (satu per satu, sequential).
-  /// Contoh: speakSequence(['Ronde 1', 'Tekan note C4'])
+  /// Contoh: speakSequence(['Ronde 1', 'Tekan nada Do'])
   Future<void> speakSequence(List<String> phrases, {bool force = false}) async {
     if (!_isEnabled && !force) return;
     for (final phrase in phrases) {
@@ -83,39 +97,58 @@ class TTSService {
     }
   }
 
-  /// Mengubah notasi ilmiah (mis. C#4, D4) menjadi ucapan bahasa Indonesia yang ramah (solfège + nama nada).
-  String formatNoteForSpeech(String note) {
-    switch (note) {
-      case 'B3':
-        return 'Si, B3';
-      case 'C4':
-        return 'Do, C4';
-      case 'C#4':
-        return 'Do Kres, C Sharp 4';
-      case 'D4':
-        return 'Re, D4';
-      case 'D#4':
-        return 'Re Kres, D Sharp 4';
-      case 'E4':
-        return 'Mi, E4';
-      case 'F4':
-        return 'Fa, F4';
-      case 'F#4':
-        return 'Fa Kres, F Sharp 4';
-      case 'G4':
-        return 'Sol, G4';
-      case 'G#4':
-        return 'Sol Kres, G Sharp 4';
-      case 'A4':
-        return 'La, A4';
-      case 'A#4':
-        return 'La Kres, A Sharp 4';
-      case 'B4':
-        return 'Si, B4';
-      case 'C5':
-        return 'Do tinggi, C5';
-      default:
-        return note.replaceAll('#', ' Kres ');
+  /// Mengubah notasi ilmiah (mis. C#4, D4) menjadi ucapan berdasarkan opsi `NoteNotation`.
+  /// `solfege`: "Do, Re, Mi, Fa..." (tanpa embel-embel C4/F4)
+  /// `scientific`: "C4, D4, F Sharp 4..."
+  String formatNoteForSpeech(String note, [NoteNotation notation = NoteNotation.solfege]) {
+    if (notation == NoteNotation.solfege) {
+      switch (note) {
+        case 'B3':
+          return 'Si rendah';
+        case 'C4':
+          return 'Do';
+        case 'C#4':
+          return 'Do Kres';
+        case 'D4':
+          return 'Re';
+        case 'D#4':
+          return 'Re Kres';
+        case 'E4':
+          return 'Mi';
+        case 'F4':
+          return 'Fa';
+        case 'F#4':
+          return 'Fa Kres';
+        case 'G4':
+          return 'Sol';
+        case 'G#4':
+          return 'Sol Kres';
+        case 'A4':
+          return 'La';
+        case 'A#4':
+          return 'La Kres';
+        case 'B4':
+          return 'Si';
+        case 'C5':
+          return 'Do tinggi';
+        default:
+          return note.replaceAll('#', ' Kres ');
+      }
+    } else {
+      switch (note) {
+        case 'C#4':
+          return 'C Sharp 4';
+        case 'D#4':
+          return 'D Sharp 4';
+        case 'F#4':
+          return 'F Sharp 4';
+        case 'G#4':
+          return 'G Sharp 4';
+        case 'A#4':
+          return 'A Sharp 4';
+        default:
+          return note;
+      }
     }
   }
 

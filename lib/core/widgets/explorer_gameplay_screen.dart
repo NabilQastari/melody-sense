@@ -31,6 +31,7 @@ class ExplorerGameplayScreen extends ConsumerStatefulWidget {
     this.progress = 0.0,
     this.sequenceNotes = const [],
     this.correctNote,
+    this.correctNotes,
     this.wrongNote,
     this.rootNote,
     this.activeNote,
@@ -70,6 +71,7 @@ class ExplorerGameplayScreen extends ConsumerStatefulWidget {
   final List<String> sequenceNotes;
 
   final String? correctNote;
+  final Set<String>? correctNotes;
   final String? wrongNote;
   final String? rootNote;
   final String? activeNote;
@@ -293,6 +295,7 @@ class _ExplorerGameplayScreenState
               maxHeight: 220,
               activeNote: _activeNote ?? widget.activeNote,
               correctNote: widget.correctNote,
+              correctNotes: widget.correctNotes,
               wrongNote: widget.wrongNote,
               rootNote: widget.rootNote,
               bridgeStartNote: widget.bridgeStartNote,
@@ -489,6 +492,7 @@ class _ExplorerGameplayScreenState
               maxHeight: 260,
               activeNote: _activeNote ?? widget.activeNote,
               correctNote: widget.correctNote,
+              correctNotes: widget.correctNotes,
               wrongNote: widget.wrongNote,
               rootNote: widget.rootNote,
               bridgeStartNote: widget.bridgeStartNote,
@@ -510,6 +514,7 @@ class _CappedPiano extends StatelessWidget {
     required this.maxHeight,
     required this.activeNote,
     this.correctNote,
+    this.correctNotes,
     this.wrongNote,
     this.rootNote,
     this.bridgeStartNote,
@@ -521,6 +526,7 @@ class _CappedPiano extends StatelessWidget {
   final double maxHeight;
   final String? activeNote;
   final String? correctNote;
+  final Set<String>? correctNotes;
   final String? wrongNote;
   final String? rootNote;
   final String? bridgeStartNote;
@@ -539,6 +545,7 @@ class _CappedPiano extends StatelessWidget {
             height: height,
             activeNote: activeNote,
             correctNote: correctNote,
+            correctNotes: correctNotes,
             wrongNote: wrongNote,
             rootNote: rootNote,
             bridgeStartNote: bridgeStartNote,

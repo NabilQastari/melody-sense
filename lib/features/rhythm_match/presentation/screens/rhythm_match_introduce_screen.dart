@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:melody_sense/core/domain/entities/operating_mode.dart';
 import 'package:melody_sense/core/providers/audio_providers.dart';
 import 'package:melody_sense/core/providers/education_progress_provider.dart';
+import 'package:melody_sense/core/providers/note_notation_provider.dart';
 import 'package:melody_sense/core/providers/operating_mode_providers.dart';
 import 'package:melody_sense/core/providers/tts_providers.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
@@ -79,7 +80,8 @@ class _RhythmMatchIntroduceScreenState
     final mode = ref.read(operatingModeProvider);
     final isSenseMode = mode == AppOperatingMode.sense || ref.read(senseModeProvider);
     if (isSenseMode) {
-      final spokenNote = ref.read(ttsServiceProvider).formatNoteForSpeech(note);
+      final notation = ref.read(noteNotationProvider);
+      final spokenNote = ref.read(ttsServiceProvider).formatNoteForSpeech(note, notation);
       ref.read(ttsServiceProvider).speak(spokenNote, force: true);
     }
 

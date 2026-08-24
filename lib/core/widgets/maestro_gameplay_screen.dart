@@ -21,6 +21,7 @@ class MaestroGameplayScreen extends StatelessWidget {
     this.targetValue,
     this.rootNote,
     this.correctNote,
+    this.correctNotes,
     this.wrongNote,
     this.bridgeStartNote,
     this.bridgeEndNote,
@@ -59,6 +60,9 @@ class MaestroGameplayScreen extends StatelessWidget {
 
   /// Nada jawaban benar yang di-highlight hijau.
   final String? correctNote;
+
+  /// Daftar nada jawaban benar yang di-highlight hijau.
+  final Set<String>? correctNotes;
 
   /// Nada jawaban salah yang di-highlight merah.
   final String? wrongNote;
@@ -230,6 +234,7 @@ class MaestroGameplayScreen extends StatelessWidget {
             activeNote: activeHardwareNote,
             rootNote: rootNote,
             correctNote: correctNote,
+            correctNotes: correctNotes,
             wrongNote: wrongNote,
             bridgeStartNote: bridgeStartNote,
             bridgeEndNote: bridgeEndNote,
@@ -315,6 +320,7 @@ class MaestroGameplayScreen extends StatelessWidget {
                     activeNote: activeHardwareNote,
                     rootNote: rootNote,
                     correctNote: correctNote,
+                    correctNotes: correctNotes,
                     wrongNote: wrongNote,
                     bridgeStartNote: bridgeStartNote,
                     bridgeEndNote: bridgeEndNote,

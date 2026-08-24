@@ -6,8 +6,10 @@ import 'package:flutter_soloud/flutter_soloud.dart';
 
 import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/theme/app_theme_data.dart';
+import 'package:melody_sense/core/domain/entities/note_notation.dart';
 import 'package:melody_sense/core/providers/database_providers.dart';
 import 'package:melody_sense/core/providers/education_progress_provider.dart';
+import 'package:melody_sense/core/providers/note_notation_provider.dart';
 import 'package:melody_sense/core/providers/theme_providers.dart';
 import 'package:melody_sense/core/providers/tts_providers.dart';
 import 'package:melody_sense/core/widgets/pattern_painters.dart';
@@ -356,7 +358,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ),
 
                         // ── Accessibility Section ──
-                        _buildSectionHeader('ACCESSIBILITY'),
+                        _buildSectionHeader('AKSESIBILITAS & TTS'),
                         const SizedBox(height: 10),
                         _buildCard([
                           SwitchListTile(
@@ -376,6 +378,76 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ),
                             activeTrackColor: AppColors.accent,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                          ),
+                          const Divider(height: 1, indent: 16, endIndent: 16),
+                          Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Format Notasi Pembacaan Suara (TTS)',
+                                  style: GoogleFonts.fredoka(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.primaryDark,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Pilih bagaimana TTS membaca nama nada saat latihan.',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    color: AppColors.primaryDark.withValues(alpha: 0.7),
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Consumer(
+                                  builder: (context, ref, _) {
+                                    final currentNotation = ref.watch(noteNotationProvider);
+                                    return Row(
+                                      children: [
+                                        Expanded(
+                                          child: ChoiceChip(
+                                            label: const Text('Solfège (Do Re Mi)'),
+                                            selected: currentNotation == NoteNotation.solfege,
+                                            onSelected: (selected) {
+                                              if (selected) {
+                                                ref.read(noteNotationProvider.notifier).setNotation(NoteNotation.solfege);
+                                              }
+                                            },
+                                            selectedColor: AppColors.accent,
+                                            labelStyle: TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 11,
+                                              color: currentNotation == NoteNotation.solfege ? Colors.white : AppColors.primaryDark,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: ChoiceChip(
+                                            label: const Text('Scientific (C D E)'),
+                                            selected: currentNotation == NoteNotation.scientific,
+                                            onSelected: (selected) {
+                                              if (selected) {
+                                                ref.read(noteNotationProvider.notifier).setNotation(NoteNotation.scientific);
+                                              }
+                                            },
+                                            selectedColor: AppColors.accent,
+                                            labelStyle: TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 11,
+                                              color: currentNotation == NoteNotation.scientific ? Colors.white : AppColors.primaryDark,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
                         ]),
                         const SizedBox(height: 16),

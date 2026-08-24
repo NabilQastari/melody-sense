@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:melody_sense/core/domain/entities/operating_mode.dart';
 import 'package:melody_sense/core/domain/entities/practice_entities.dart';
 import 'package:melody_sense/core/providers/audio_providers.dart';
+import 'package:melody_sense/core/providers/note_notation_provider.dart';
 import 'package:melody_sense/core/providers/operating_mode_providers.dart';
 import 'package:melody_sense/core/providers/tts_providers.dart';
 import 'package:melody_sense/core/providers/websocket_providers.dart';
@@ -68,7 +69,8 @@ class _RhythmMatchGameplayScreenState
       final wsService = ref.read(webSocketServiceProvider);
       _noteSub = wsService.noteStream.listen((note) {
         if (mode == AppOperatingMode.sense) {
-          final spoken = ref.read(ttsServiceProvider).formatNoteForSpeech(note);
+          final notation = ref.read(noteNotationProvider);
+          final spoken = ref.read(ttsServiceProvider).formatNoteForSpeech(note, notation);
           ref.read(ttsServiceProvider).speak('Nada $spoken');
         }
         _handleNotePressed(note);
@@ -78,8 +80,9 @@ class _RhythmMatchGameplayScreenState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mode == AppOperatingMode.sense && widget.song.notes.isNotEmpty) {
         final tts = ref.read(ttsServiceProvider);
-        final targetSpoken = tts.formatNoteForSpeech(widget.song.notes.first);
-        tts.speak('Rhythm Match. Lagu ${widget.song.title}. Tekan nada pertama $targetSpoken');
+        final notation = ref.read(noteNotationProvider);
+        final targetSpoken = tts.formatNoteForSpeech(widget.song.notes.first, notation);
+        tts.speak('Cocokkan Irama. Lagu ${widget.song.title}. Tekan nada pertama $targetSpoken');
       }
     });
   }
@@ -125,6 +128,7 @@ class _RhythmMatchGameplayScreenState
 
   @override
   Widget build(BuildContext context) {
+    final mode = ref.watch(operatingModeProvider);
     final audioReady = ref.watch(audioReadyProvider);
     final state = ref.watch(rhythmMatchControllerProvider(_args));
 
@@ -367,7 +371,7 @@ class _RhythmMatchGameplayScreenState
                       child: VirtualPiano(
                         activeNote: _activeHighlightNote,
                         correctNote: isGuided ? targetNote : null,
-                        onNotePressed: _handleNotePressed,
+                        onNotePressed: mode == AppOperatingMode.explorer ? _handleNotePressed : null,
                         height: pianoHeight,
                       ),
                     );

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:melody_sense/core/domain/entities/operating_mode.dart';
 import 'package:melody_sense/core/providers/audio_providers.dart';
+import 'package:melody_sense/core/providers/note_notation_provider.dart';
 import 'package:melody_sense/core/providers/operating_mode_providers.dart';
 import 'package:melody_sense/core/providers/tts_providers.dart';
 import 'package:melody_sense/core/providers/websocket_providers.dart';
@@ -38,7 +39,9 @@ class _FreePlayScreenState extends ConsumerState<FreePlayScreen> {
       final wsService = ref.read(webSocketServiceProvider);
       _noteSub = wsService.noteStream.listen((note) {
         if (mode == AppOperatingMode.sense) {
-          ref.read(ttsServiceProvider).speak('Nada $note');
+          final notation = ref.read(noteNotationProvider);
+          final spoken = ref.read(ttsServiceProvider).formatNoteForSpeech(note, notation);
+          ref.read(ttsServiceProvider).speak('Nada $spoken');
         }
         _onNotePressed(note);
       });

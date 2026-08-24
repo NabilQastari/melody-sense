@@ -58,6 +58,7 @@ class VirtualPiano extends StatefulWidget {
     this.notes = kDefaultPianoNotes,
     this.activeNote,
     this.correctNote,
+    this.correctNotes,
     this.wrongNote,
     this.rootNote,
     this.bridgeStartNote,
@@ -76,6 +77,9 @@ class VirtualPiano extends StatefulWidget {
 
   /// Nada yang benar untuk ronde ini, akan di-highlight hijau.
   final String? correctNote;
+
+  /// Daftar nada yang di-highlight hijau (misal: guided hint melodi).
+  final Set<String>? correctNotes;
 
   /// Nada yang salah yang ditekan user, akan di-highlight merah.
   final String? wrongNote;
@@ -199,7 +203,8 @@ class _VirtualPianoState extends State<VirtualPiano> {
                   note: note,
                   isBlack: false,
                   isActive: note == widget.activeNote,
-                  isCorrect: note == widget.correctNote,
+                  isCorrect: note == widget.correctNote ||
+                      (widget.correctNotes != null && widget.correctNotes!.contains(note)),
                   isWrong: note == widget.wrongNote,
                   isRoot: note == widget.rootNote,
                   showLabel: widget.showLabels,
@@ -221,6 +226,8 @@ class _VirtualPianoState extends State<VirtualPiano> {
 
           final seamX = (actualWhiteIdx + 1) * whiteKeyStride - _kKeyGap / 2;
           final leftX = seamX - blackKeyWidth / 2;
+          final isBlackKeyCorrect = blackNote == widget.correctNote ||
+              (widget.correctNotes != null && widget.correctNotes!.contains(blackNote));
 
           blackKeyWidgets.add(
             Positioned(
@@ -233,7 +240,7 @@ class _VirtualPianoState extends State<VirtualPiano> {
                   note: blackNote,
                   isBlack: true,
                   isActive: blackNote == widget.activeNote,
-                  isCorrect: blackNote == widget.correctNote,
+                  isCorrect: isBlackKeyCorrect,
                   isWrong: blackNote == widget.wrongNote,
                   isRoot: blackNote == widget.rootNote,
                   showLabel: widget.showLabels,

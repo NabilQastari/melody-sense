@@ -6,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:melody_sense/core/domain/entities/operating_mode.dart';
 import 'package:melody_sense/core/network/websocket_service.dart';
 import 'package:melody_sense/core/providers/audio_providers.dart';
+import 'package:melody_sense/core/providers/note_notation_provider.dart';
 import 'package:melody_sense/core/providers/operating_mode_providers.dart';
 import 'package:melody_sense/core/providers/tts_providers.dart';
 import 'package:melody_sense/core/providers/websocket_providers.dart';
@@ -50,7 +51,7 @@ class _IntervalTrainingScreenState extends ConsumerState<IntervalTrainingScreen>
 
       // Narasi intro saat masuk layar dalam Sense Mode
       if (mode == AppOperatingMode.sense) {
-        ref.read(ttsServiceProvider).speak('Interval Training. Tebak jarak interval nada.');
+        ref.read(ttsServiceProvider).speak('Latihan Interval. Tebak jarak interval nada.');
       }
 
       if (mode != AppOperatingMode.explorer) {
@@ -86,6 +87,11 @@ class _IntervalTrainingScreenState extends ConsumerState<IntervalTrainingScreen>
         if (!mounted) return;
         final state = ref.read(intervalTrainingControllerProvider(widget.submode));
         if (state != null && !state.isSessionOver && state.feedback == RoundFeedback.none) {
+          final tts = ref.read(ttsServiceProvider);
+          final notation = ref.read(noteNotationProvider);
+          final spokenRoot = tts.formatNoteForSpeech(state.rootNote, notation);
+          final spokenTarget = tts.formatNoteForSpeech(state.targetNote, notation);
+          tts.speak('Petunjuk: Dari $spokenRoot, tekan nada $spokenTarget');
           ref.read(intervalTrainingControllerProvider(widget.submode).notifier).playTarget();
         }
       });
@@ -169,8 +175,9 @@ class _IntervalTrainingScreenState extends ConsumerState<IntervalTrainingScreen>
       _startSenseAutoPlayTimer();
       if (mode == AppOperatingMode.sense) {
         final tts = ref.read(ttsServiceProvider);
-        final spokenRoot = tts.formatNoteForSpeech(state.rootNote);
-        final spokenTarget = tts.formatNoteForSpeech(state.targetNote);
+        final notation = ref.read(noteNotationProvider);
+        final spokenRoot = tts.formatNoteForSpeech(state.rootNote, notation);
+        final spokenTarget = tts.formatNoteForSpeech(state.targetNote, notation);
         tts.speakSequence([
           'Ronde ${state.roundIndex + 1}',
           '${state.intervalName}',
@@ -185,7 +192,8 @@ class _IntervalTrainingScreenState extends ConsumerState<IntervalTrainingScreen>
       _senseAutoPlayTimer?.cancel();
       if (mode == AppOperatingMode.sense) {
         final tts = ref.read(ttsServiceProvider);
-        final spokenTarget = tts.formatNoteForSpeech(state.targetNote);
+        final notation = ref.read(noteNotationProvider);
+        final spokenTarget = tts.formatNoteForSpeech(state.targetNote, notation);
         if (state.feedback == RoundFeedback.correct) {
           tts.speak('Benar! $spokenTarget');
         } else if (state.feedback == RoundFeedback.wrong) {

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:melody_sense/core/domain/entities/operating_mode.dart';
 import 'package:melody_sense/core/network/websocket_service.dart';
+import 'package:melody_sense/core/providers/note_notation_provider.dart';
 import 'package:melody_sense/core/providers/operating_mode_providers.dart';
 import 'package:melody_sense/core/providers/tts_providers.dart';
 import 'package:melody_sense/core/providers/websocket_providers.dart';
@@ -54,7 +55,9 @@ class _MaestroChallengeScreenState
     // TTS hanya aktif di Sense Mode
     final mode = ref.read(operatingModeProvider);
     if (mode == AppOperatingMode.sense) {
-      ref.read(ttsServiceProvider).speak('Nada $note');
+      final notation = ref.read(noteNotationProvider);
+      final spoken = ref.read(ttsServiceProvider).formatNoteForSpeech(note, notation);
+      ref.read(ttsServiceProvider).speak('Nada $spoken');
     }
 
     _noteHighlightTimer?.cancel();
