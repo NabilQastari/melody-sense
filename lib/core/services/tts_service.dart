@@ -1,20 +1,39 @@
 import 'dart:async';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+
 import '../domain/entities/note_notation.dart';
+import '../domain/entities/operating_mode.dart';
+import '../providers/operating_mode_providers.dart';
+import '../providers/tts_providers.dart';
 
 /// TTSService — Layanan Text-to-Speech untuk Sense Mode (Aksesibilitas)
 /// 
 /// Membantu membaca narasi soal, feedback benar/salah, nama nada,
 /// serta instruksi aplikasi dalam Bahasa Indonesia (`id-ID` / `in-ID`).
 class TTSService {
-  TTSService() {
+  TTSService(this._ref) {
     _initTts();
   }
 
+  final Ref _ref;
   final FlutterTts _flutterTts = FlutterTts();
   bool _isInitialized = false;
-  bool _isEnabled = false;
   Completer<void>? _speakCompleter;
+
+  /// Status apakah TTS sedang aktif.
+  /// TTS aktif jika Global TTS Setting (`senseModeProvider`) bernilai true,
+  /// ATAU mode operasional saat ini adalah Sense Mode (`AppOperatingMode.sense`).
+  bool get isEnabled {
+    final globalTts = _ref.read(senseModeProvider);
+    final mode = _ref.read(operatingModeProvider);
+    return globalTts || mode == AppOperatingMode.sense;
+  }
+
+  /// Compatibility helper method
+  void setEnabled(bool enabled) {
+    // Dynamic calculation via isEnabled getter
+  }
 
   /// Inisialisasi engine TTS dengan bahasa Indonesia (dengan fallback in-ID -> en-US)
   Future<void> _initTts() async {
@@ -57,18 +76,10 @@ class TTSService {
     }
   }
 
-  /// Atur apakah Sense Mode aktif
-  void setEnabled(bool enabled) {
-    _isEnabled = enabled;
-  }
-
-  /// Status apakah Sense Mode sedang aktif
-  bool get isEnabled => _isEnabled;
-
-  /// Ucapkan teks jika Sense Mode diaktifkan.
+  /// Ucapkan teks jika Sense Mode / Global TTS diaktifkan.
   /// Menunggu sampai speech selesai (await-able).
   Future<void> speak(String text, {bool force = false}) async {
-    if ((!_isEnabled && !force) || text.trim().isEmpty) return;
+    if ((!isEnabled && !force) || text.trim().isEmpty) return;
 
     if (!_isInitialized) {
       await _initTts();
@@ -90,7 +101,7 @@ class TTSService {
   /// Ucapkan beberapa frasa secara berurutan (satu per satu, sequential).
   /// Contoh: speakSequence(['Ronde 1', 'Tekan nada Do'])
   Future<void> speakSequence(List<String> phrases, {bool force = false}) async {
-    if (!_isEnabled && !force) return;
+    if (!isEnabled && !force) return;
     for (final phrase in phrases) {
       if (phrase.trim().isEmpty) continue;
       await speak(phrase, force: force);

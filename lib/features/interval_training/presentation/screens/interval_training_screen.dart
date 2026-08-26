@@ -112,6 +112,12 @@ class _IntervalTrainingScreenState extends ConsumerState<IntervalTrainingScreen>
           setState(() {
             _guidedRootHint = state.rootNote;
           });
+          final tts = ref.read(ttsServiceProvider);
+          if (tts.isEnabled) {
+            final notation = ref.read(noteNotationProvider);
+            final spokenRoot = tts.formatNoteForSpeech(state.rootNote, notation);
+            tts.speak('Petunjuk nada awal: $spokenRoot');
+          }
         }
       });
 
@@ -120,6 +126,12 @@ class _IntervalTrainingScreenState extends ConsumerState<IntervalTrainingScreen>
           setState(() {
             _guidedTargetHint = state.targetNote;
           });
+          final tts = ref.read(ttsServiceProvider);
+          if (tts.isEnabled) {
+            final notation = ref.read(noteNotationProvider);
+            final spokenTarget = tts.formatNoteForSpeech(state.targetNote, notation);
+            tts.speak('Petunjuk nada target: $spokenTarget');
+          }
         }
       });
     }
@@ -138,34 +150,26 @@ class _IntervalTrainingScreenState extends ConsumerState<IntervalTrainingScreen>
       );
     }
 
-    if (state.isSessionOver && state.completion == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
     if (state.isSessionOver) {
       _senseAutoPlayTimer?.cancel();
+      _rootHintTimer?.cancel();
+      _targetHintTimer?.cancel();
       final completion = state.completion!;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!context.mounted) return;
-        if (mode == AppOperatingMode.sense) {
-          final accuracy = (state.accuracy * 100).toInt();
-          ref.read(ttsServiceProvider).speak('Sesi selesai. Akurasi $accuracy persen.');
-        }
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => SessionResultScreen(
-              isWin: state.isWin,
-              accuracy: state.accuracy,
-              xpEarned: state.xp,
-              streakDays: completion.streakDays,
-              leveledUp: completion.leveledUp,
-              retryScreenBuilder: (_) => IntervalTrainingScreen(submode: widget.submode),
-            ),
-          ),
-        );
-      });
+      return SessionResultScreen(
+        isWin: state.isWin,
+        accuracy: state.accuracy,
+        xpEarned: state.xp,
+        perfectCount: state.correctCount,
+        totalNotes: state.totalRounds,
+        customSubtitle:
+            'Latihan interval (${state.submode.name.toUpperCase()}) selesai.\n'
+            'Tebakan tepat ${state.correctCount}/${state.totalRounds} ronde (${(state.accuracy * 100).toStringAsFixed(0)}% akurasi).',
+        streakDays: completion.streakDays,
+        leveledUp: completion.leveledUp,
+        retryScreenBuilder: (context) => IntervalTrainingScreen(
+          submode: widget.submode,
+        ),
+      );
     }
 
     // Lacak pergantian ronde & narasi TTS berurutan
@@ -180,7 +184,7 @@ class _IntervalTrainingScreenState extends ConsumerState<IntervalTrainingScreen>
         final spokenTarget = tts.formatNoteForSpeech(state.targetNote, notation);
         tts.speakSequence([
           'Ronde ${state.roundIndex + 1}',
-          '${state.intervalName}',
+          'Interval ${state.intervalName}',
           'Dari $spokenRoot, tekan nada $spokenTarget',
         ]);
       }

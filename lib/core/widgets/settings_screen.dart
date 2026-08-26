@@ -365,7 +365,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             value: ref.watch(senseModeProvider),
                             onChanged: _updateSenseMode,
                             title: Text(
-                              'Sense Mode',
+                              'Panduan Suara (TTS Global)',
                               style: GoogleFonts.fredoka(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
@@ -373,7 +373,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               ),
                             ),
                             subtitle: Text(
-                              'Mengaktifkan panduan suara (TTS) & getaran taktil untuk tunanetra.',
+                              'Mengaktifkan panduan suara (TTS) untuk seluruh bagian di aplikasi.',
                               style: TextStyle(fontSize: 11.5, color: AppColors.primaryDark.withValues(alpha: 0.7)),
                             ),
                             activeTrackColor: AppColors.accent,

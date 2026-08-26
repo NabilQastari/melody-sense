@@ -132,6 +132,21 @@ class _RhythmMatchGameplayScreenState
     final audioReady = ref.watch(audioReadyProvider);
     final state = ref.watch(rhythmMatchControllerProvider(_args));
 
+    ref.listen(rhythmMatchControllerProvider(_args), (previous, next) {
+      if (next == null) return;
+      if (previous?.currentNoteIndex != next.currentNoteIndex && !next.isSessionOver && next.selectedSong.notes.isNotEmpty && next.currentNoteIndex < next.selectedSong.notes.length) {
+        if (widget.submode == PracticeSubmode.guided) {
+          final tts = ref.read(ttsServiceProvider);
+          if (tts.isEnabled) {
+            final notation = ref.read(noteNotationProvider);
+            final nextTarget = next.selectedSong.notes[next.currentNoteIndex];
+            final spoken = tts.formatNoteForSpeech(nextTarget, notation);
+            tts.speak('Nada $spoken');
+          }
+        }
+      }
+    });
+
     if (state == null || audioReady.isLoading) {
       return Scaffold(
         backgroundColor: AppColors.background,

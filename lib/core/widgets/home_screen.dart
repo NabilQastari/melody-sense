@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:melody_sense/core/providers/tts_providers.dart';
 import 'package:melody_sense/core/theme/app_colors.dart';
 import 'package:melody_sense/core/widgets/app_bottom_nav.dart';
 import 'package:melody_sense/features/dashboard/presentation/screens/dashboard_screen.dart';
@@ -13,14 +15,14 @@ import 'package:melody_sense/features/stats/presentation/screens/stats_screen.da
 /// di-push ON TOP of this, menutupi navbar).
 ///
 /// Default tab: Practice (index 1).
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _currentIndex = 0; // Dashboard tab (Sesi 9 default)
 
   static const _tabs = <AppTab>[
@@ -52,7 +54,10 @@ class _HomeScreenState extends State<HomeScreen> {
               currentTab: _tabs[_currentIndex],
               onTabSelected: (tab) {
                 final idx = _tabs.indexOf(tab);
-                if (idx >= 0) setState(() => _currentIndex = idx);
+                if (idx >= 0) {
+                  ref.read(ttsServiceProvider).stop();
+                  setState(() => _currentIndex = idx);
+                }
               },
             ),
           ],

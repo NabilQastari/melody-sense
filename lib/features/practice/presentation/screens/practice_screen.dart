@@ -190,7 +190,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           ),
           onTap: () {
             ref.read(operatingModeProvider.notifier).state = AppOperatingMode.explorer;
-            ref.read(ttsServiceProvider).setEnabled(false);
+            ref.read(ttsServiceProvider).stop();
             setState(() {
               _showChallenges = true;
             });
@@ -249,7 +249,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
             ),
             onTap: () {
               ref.read(operatingModeProvider.notifier).state = AppOperatingMode.maestro;
-              ref.read(ttsServiceProvider).setEnabled(false);
+              ref.read(ttsServiceProvider).stop();
               setState(() {
                 _showChallenges = true;
               });
@@ -302,7 +302,6 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
             ),
             onTap: () {
               ref.read(operatingModeProvider.notifier).state = AppOperatingMode.sense;
-              ref.read(senseModeProvider.notifier).toggle(true);
               setState(() {
                 _showChallenges = true;
               });
@@ -336,7 +335,11 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         Row(
           children: [
             GestureDetector(
-              onTap: () => setState(() => _showChallenges = false),
+              onTap: () {
+                ref.read(operatingModeProvider.notifier).state = AppOperatingMode.explorer;
+                ref.read(ttsServiceProvider).stop();
+                setState(() => _showChallenges = false);
+              },
               child: Container(
                 padding: const EdgeInsets.all(8),
                 margin: const EdgeInsets.only(right: 12),

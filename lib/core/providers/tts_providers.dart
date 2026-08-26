@@ -4,10 +4,10 @@ import '../services/tts_service.dart';
 
 /// Provider singleton untuk TTSService
 final ttsServiceProvider = Provider<TTSService>((ref) {
-  return TTSService();
+  return TTSService(ref);
 });
 
-/// StateNotifier untuk mengelola status toggle Sense Mode (Aksesibilitas)
+/// StateNotifier untuk mengelola status toggle Pengaturan TTS Global (Aksesibilitas)
 class SenseModeNotifier extends StateNotifier<bool> {
   SenseModeNotifier(this._ref) : super(false) {
     _loadFromPrefs();
@@ -19,23 +19,22 @@ class SenseModeNotifier extends StateNotifier<bool> {
     final prefs = await SharedPreferences.getInstance();
     final enabled = prefs.getBool('sense_mode') ?? false;
     state = enabled;
-    _ref.read(ttsServiceProvider).setEnabled(enabled);
   }
 
   Future<void> toggle(bool enabled) async {
     state = enabled;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('sense_mode', enabled);
-    _ref.read(ttsServiceProvider).setEnabled(enabled);
 
     if (enabled) {
       _ref.read(ttsServiceProvider).speak(
-            'Sense Mode diaktifkan. Melacak narasi suara dan navigasi taktil.',
+            'Panduan suara TTS diaktifkan untuk seluruh aplikasi.',
             force: true,
           );
     } else {
+      _ref.read(ttsServiceProvider).stop();
       _ref.read(ttsServiceProvider).speak(
-            'Sense Mode dinonaktifkan.',
+            'Panduan suara TTS dinonaktifkan.',
             force: true,
           );
     }

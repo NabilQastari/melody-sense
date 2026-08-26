@@ -132,6 +132,12 @@ class _NoteRecognitionScreenState extends ConsumerState<NoteRecognitionScreen> {
           setState(() {
             _guidedHintNote = state.targetNote;
           });
+          final tts = ref.read(ttsServiceProvider);
+          if (tts.isEnabled) {
+            final notation = ref.read(noteNotationProvider);
+            final spokenNote = tts.formatNoteForSpeech(state.targetNote, notation);
+            tts.speak('Petunjuk: $spokenNote');
+          }
         }
       });
     }

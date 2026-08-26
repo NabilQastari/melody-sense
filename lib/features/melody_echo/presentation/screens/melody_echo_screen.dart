@@ -122,6 +122,13 @@ class _MelodyEchoScreenState extends ConsumerState<MelodyEchoScreen> {
         state.melody.isNotEmpty) {
       final melody = state.melody;
 
+      final tts = ref.read(ttsServiceProvider);
+      if (tts.isEnabled) {
+        final notation = ref.read(noteNotationProvider);
+        final spokenNotes = melody.map((n) => tts.formatNoteForSpeech(n, notation)).join(', ');
+        tts.speak('Petunjuk melodi: $spokenNotes');
+      }
+
       // Tampilkan hint nada melodi satu per satu secara berurutan dengan delay
       for (int i = 0; i < melody.length; i++) {
         final note = melody[i];
@@ -159,28 +166,25 @@ class _MelodyEchoScreenState extends ConsumerState<MelodyEchoScreen> {
     }
 
     if (state.isSessionOver) {
+      _hintTimer?.cancel();
       _senseAutoPlayTimer?.cancel();
+      _clearSequenceTimers();
       final completion = state.completion!;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!context.mounted) return;
-        if (mode == AppOperatingMode.sense) {
-          final accuracy = (state.accuracy * 100).toInt();
-          ref.read(ttsServiceProvider).speak('Sesi selesai. Akurasi $accuracy persen.');
-        }
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => SessionResultScreen(
-              isWin: state.isWin,
-              accuracy: state.accuracy,
-              xpEarned: state.xp,
-              streakDays: completion.streakDays,
-              leveledUp: completion.leveledUp,
-              retryScreenBuilder: (_) =>
-                  MelodyEchoScreen(submode: widget.submode),
-            ),
-          ),
-        );
-      });
+      return SessionResultScreen(
+        isWin: state.isWin,
+        accuracy: state.accuracy,
+        xpEarned: state.xp,
+        perfectCount: state.correctCount,
+        totalNotes: state.totalRounds,
+        customSubtitle:
+            'Gema Melodi (${state.submode.name.toUpperCase()}) selesai.\n'
+            'Berhasil menyelesaikan ${state.correctCount}/${state.totalRounds} ronde (${(state.accuracy * 100).toStringAsFixed(0)}% akurasi).',
+        streakDays: completion.streakDays,
+        leveledUp: completion.leveledUp,
+        retryScreenBuilder: (context) => MelodyEchoScreen(
+          submode: widget.submode,
+        ),
+      );
     }
 
     // Lacak pergantian ronde, fase, atau input index untuk mereset timer petunjuk (hint) & auto play
